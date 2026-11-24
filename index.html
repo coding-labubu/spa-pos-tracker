@@ -1047,7 +1047,6 @@
   } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js';
 
   import {
-    getFirestore,
     doc,
     setDoc,
     getDocFromServer,
@@ -1300,12 +1299,14 @@
     showLogin('正在连接云端 / Connecting to cloud...');
 
     try {
+      // Inside startCloudSync:
       const snapshot = await getDocFromServer(targetDoc);
 
       if (activeSession !== sessionVersion) return;
 
       if (snapshot.exists()) {
         mergeStateData(snapshot.data());
+        state.role = 'boss';
       } else {
         const confirmed = confirm(
           'No cloud ledger was found.\n\n' +
@@ -1417,10 +1418,11 @@
         throw new Error('Please configure your administrator UID.');
       }
 
+      // Inside initFirebaseSync:
       const app = initializeApp(FIREBASE_CONFIG);
       auth = getAuth(app);
       db = initializeFirestore(app, {
-        experimentalAutoDetectLongPolling: true
+        experimentalForceLongPolling: true
       });
 
       await setPersistence(auth, browserSessionPersistence);
