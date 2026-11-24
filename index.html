@@ -1052,7 +1052,8 @@
     setDoc,
     getDocFromServer,
     onSnapshot,
-    serverTimestamp
+    serverTimestamp,
+    initializeFirestore
   } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
 
   import {
@@ -1412,7 +1413,9 @@
 
       const app = initializeApp(FIREBASE_CONFIG);
       auth = getAuth(app);
-      db = getFirestore(app);
+      db = initializeFirestore(app, {
+        experimentalAutoDetectLongPolling: true
+      });
 
       await setPersistence(auth, browserSessionPersistence);
 
