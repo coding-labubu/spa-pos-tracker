@@ -1358,7 +1358,13 @@
           }
 
           if (snap.metadata.fromCache) {
-            setCloudBadge('⚠️ 离线 / Offline', 'tag-amber');
+            if (!navigator.onLine) {
+              setCloudBadge('⚠️ 离线 / Offline', 'tag-amber');
+            } else if (!initialCloudLoaded) {
+              setCloudBadge('☁️ 正在连接云端 / Connecting...', 'tag-blue');
+            } else {setCloudBadge('☁️ 正在重新连接 / Reconnecting...', 'tag-amber');
+            }
+
             setDashboardLocked(true);
             return;
           }
