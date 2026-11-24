@@ -860,8 +860,25 @@
   </div>
 
 <script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js';
-  import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
+  import {
+    initializeApp
+  } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
+
+  import {
+    getFirestore,
+    doc,
+    setDoc,
+    onSnapshot
+  } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+  import {
+    getAuth,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged,
+    setPersistence,
+    browserSessionPersistence
+  } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
     // Replace these values with your Firebase Web App config from Firebase Console
     const FIREBASE_CONFIG = {
       apiKey: 'AIzaSyCwcwtECiFjZYiny6RruwV0qt7D6kGPcjU',
@@ -871,6 +888,38 @@
       messagingSenderId: '799158416407',
       appId: '1:799158416407:web:9a0de7a73583e7ddd45852'
     };
+
+    let auth = null;
+    let currentUser = null;
+    let unsubscribeCloud = null;
+
+    async function login(email, password) {
+      try {
+        await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+      } catch (error) {
+        console.error(error.code, error.message);
+        alert('登录失败 / Sign-in failed');
+      }
+    }
+
+    async function logout() {
+      if (ubsubscribeCloud) {
+        ubsubscribeCloud();
+        unsubscribeCloud = null;
+      }
+
+      cloudEnabled = false;
+      currentUser = null;
+
+      localStorage.removeItem(STORAGE_KEY);
+
+      await signOut(auth);
+      location.reload();
+    }
 
     const FIRESTORE_DOC_PATH = ['pos_systems', 'default_store'];
     const STORAGE_KEY = 'massage_pos_full_v2';
