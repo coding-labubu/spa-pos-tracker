@@ -457,16 +457,6 @@
       background: #eff6ff;
     }
 
-    canvas.sig-pad {
-      border: 2px dashed #94a3b8;
-      border-radius: 8px;
-      background: #fff;
-      touch-action: none;
-      width: 100%;
-      height: 130px;
-      cursor: crosshair;
-    }
-
     @media print {
       body * {
         visibility: hidden;
@@ -499,6 +489,7 @@
         <span id="appTitle">💆 门店收银与技师提成系统</span>
         <button class="btn-primary btn-sm" id="langBtn" onclick="toggleLang()">🌐 中 / EN</button>
         <span class="tag tag-purple" id="roleBadge">👑 店长 (Boss)</span>
+        <span class="tag tag-amber" id="cloudStatusBadge">☁️ 未配置 Firebase（本地模式）</span>
       </h1>
       <div class="toolbar">
         <button class="btn-outline btn-sm" onclick="openRoleModal()">🔐 切换权限</button>
@@ -750,7 +741,7 @@
             <option value="fixed">固定金额 ($)</option>
             <option value="percent">百分比 (%)</option>
           </select>
-          <input type="number" id="srvCommVal" step="0.01" id="srvCommLabelInput" placeholder="提成数值" style="width:95px;" />
+          <input type="number" id="srvCommVal" step="0.01" placeholder="提成数值" style="width:95px;" />
           <input type="number" id="srvDuration" placeholder="时长(分)" style="width:85px;" />
           <button class="btn-primary btn-sm" onclick="saveService()">+ 添加/保存项目</button>
         </div>
@@ -868,7 +859,20 @@
     </div>
   </div>
 
-  <script>
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js';
+  import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
+    // Replace these values with your Firebase Web App config from Firebase Console
+    const FIREBASE_CONFIG = {
+      apiKey: 'AIzaSyCwcwtECiFjZYiny6RruwV0qt7D6kGPcjU',
+      authDomain: 'spa-pos-tracker-af386.firebaseapp.com',
+      projectId: 'spa-pos-tracker-af386',
+      storageBucket: 'spa-pos-tracker-af386.firebasestorage.app',
+      messagingSenderId: '799158416407',
+      appId: '1:799158416407:web:9a0de7a73583e7ddd45852'
+    };
+
+    const FIRESTORE_DOC_PATH = ['pos_systems', 'default_store'];
     const STORAGE_KEY = 'massage_pos_full_v2';
     const todayStr = () => new Date().toISOString().slice(0, 10);
     const nowStr = () => new Date().toLocaleString();
@@ -907,6 +911,37 @@
     };
 
     let checkoutCart = [];
+    let db = null;
+    let cloudDocRef = null;
+    let cloudEnabled = false;
+    let isApplyingRemote = false;
+
+    function isFirebaseConfigured() {
+      return Boolean(
+        FIREBASE_CONFIG.apiKey &&
+        !FIREBASE_CONFIG.apiKey.startsWith('YOUR_') &&
+        FIREBASE_CONFIG.projectId &&
+        !FIREBASE_CONFIG.projectId.startsWith('YOUR_')
+      );
+    }
+
+    function setCloudBadge(text, cls = 'tag-amber') {
+      const el = document.getElementById('cloudStatusBadge');
+      if (!el) return;
+      el.className = `tag ${cls}`;
+      el.textContent = text;
+    }
+
+    function mergeStateData(incoming) {
+      if (!incoming || typeof incoming !== 'object') return;
+      state = {
+        ...state,
+        ...incoming,
+        passwords: { ...state.passwords, ...(incoming.passwords || {}) },
+        memberCfg: { ...state.memberCfg, ...(incoming.memberCfg || {}) },
+        quickTips: Array.isArray(incoming.quickTips) ? incoming.quickTips : state.quickTips
+      };
+    }
 
     function addAudit(action, detail) {
       const roleName = state.role === 'boss' ? '店长(Boss)' : (state.role === 'front' ? '前台(Front)' : '技师');
@@ -914,32 +949,76 @@
       if (state.auditLogs.length > 300) state.auditLogs.pop();
     }
 
-    function maskPhone(phone) {
-      if (!phone) return '';
-      const digits = phone.replace(/\D/g, '');
-      if (digits.length >= 7) {
-        return phone.slice(0, 3) + '****' + phone.slice(-4);
-      }
-      return phone.length > 2 ? phone.slice(0, 1) + '***' + phone.slice(-1) : '****';
-    }
-
     function closeModal(id) {
       document.getElementById(id).classList.remove('open');
+    }
+
+    function saveLocalCache() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function saveState() {
+      saveLocalCache();
+      if (!cloudEnabled || !cloudDocRef || isApplyingRemote) return;
+      try {
+        setCloudBadge('☁️ 同步中...', 'tag-blue');
+        await setDoc(cloudDocRef, {
+          ...state,
+          updatedAt: Date.now()
+        });
+        setCloudBadge('☁️ 云端已同步', 'tag-green');
+      } catch (e) {
+        console.error('Firestore write failed:', e);
+        setCloudBadge('⚠️ 云端写入失败（已存本地）', 'tag-amber');
+      }
+    }
+
+    function initFirebaseSync() {
+      if (!isFirebaseConfigured()) {
+        setCloudBadge('☁️ 未配置 Firebase（本地模式）', 'tag-amber');
+        return;
+      }
+      try {
+        const app = initializeApp(FIREBASE_CONFIG);
+        db = getFirestore(app);
+        cloudDocRef = doc(db, FIRESTORE_DOC_PATH[0], FIRESTORE_DOC_PATH[1]);
+        cloudEnabled = true;
+        setCloudBadge('☁️ 连接云端中...', 'tag-blue');
+
+        onSnapshot(cloudDocRef, (snap) => {
+          if (snap.exists()) {
+            isApplyingRemote = true;
+            const remoteData = snap.data();
+            delete remoteData.updatedAt;
+            mergeStateData(remoteData);
+            saveLocalCache();
+            applyAppearance();
+            applyRoleVisibility();
+            renderAll();
+            isApplyingRemote = false;
+            setCloudBadge('☁️ 云端实时同步', 'tag-green');
+          } else {
+            setCloudBadge('☁️ 初始化云端账本...', 'tag-blue');
+            saveState();
+          }
+        }, (err) => {
+          console.error('Firestore listener error:', err);
+          setCloudBadge('⚠️ 云端连接异常（本地模式）', 'tag-amber');
+        });
+      } catch (e) {
+        console.error('Firebase init failed:', e);
+        setCloudBadge('⚠️ Firebase 配置有误', 'tag-amber');
+      }
     }
 
     function loadState() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          state = {
-            ...state,
-            ...parsed,
-            passwords: { ...state.passwords, ...(parsed.passwords || {}) },
-            memberCfg: { ...state.memberCfg, ...(parsed.memberCfg || {}) },
-            quickTips: Array.isArray(parsed.quickTips) ? parsed.quickTips : state.quickTips
-          };
-        }
+        if (raw) mergeStateData(JSON.parse(raw));
       } catch (e) {
         console.error(e);
       }
@@ -952,14 +1031,7 @@
       applyAppearance();
       applyRoleVisibility();
       renderAll();
-    }
-
-    function saveState() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      } catch (e) {
-        console.error(e);
-      }
+      initFirebaseSync();
     }
 
     const I18N = {
@@ -1757,7 +1829,7 @@
       reader.onload = () => {
         try {
           const imported = JSON.parse(reader.result);
-          state = { ...state, ...imported };
+          mergeStateData(imported);
           addAudit('导入备份', file.name);
           saveState();
           applyAppearance();
@@ -1798,6 +1870,53 @@
       closeModal('resetModal');
       renderAll();
     }
+
+    // Expose inline onclick handlers to module scope
+    Object.assign(window, {
+      toggleLang,
+      openRoleModal,
+      closeModal,
+      toggleSound,
+      playBell,
+      toggleTouch,
+      changeScale,
+      toggleTheme,
+      openPayslipModal,
+      exportCSV,
+      exportJSON,
+      importJSON,
+      openAuditModal,
+      openResetModal,
+      toggleSelectAllTimers,
+      openMergedCheckout,
+      setTipType,
+      addTip,
+      addQuickTip,
+      setSfPay,
+      addServiceFee,
+      setPeriod,
+      clearStaffFilter,
+      saveEmployee,
+      editEmployee,
+      deleteEmployee,
+      updateCommLabel,
+      saveService,
+      editService,
+      deleteService,
+      toggleRoleSelectExtras,
+      verifyRoleSwitch,
+      saveRolePasswords,
+      completeCheckout,
+      resetData,
+      startServiceTimer,
+      extendTimer,
+      toggleTimerCheck,
+      openDirectServiceCheckout,
+      openTimerCheckout,
+      deleteOrder,
+      deleteTip,
+      deleteServiceFee
+    });
 
     setInterval(renderTimers, 1000);
     loadState();
