@@ -782,8 +782,9 @@
           <span class="tag tag-blue" id="tipStaffBadge">未选技师</span>
         </div>
         <div class="inline-inputs" style="margin-bottom:8px;">
-          <button class="btn-primary btn-sm" id="tipCardBtn" onclick="setTipType('银行卡小费')">💳 银行卡小费</button>
-          <button class="btn-outline btn-sm" id="tipCashBtn" onclick="setTipType('现金小费')">💵 现金小费</button>
+          <button class="btn-primary btn-sm tip-type-btn" data-type="银行卡小费" onclick="setTipType('银行卡小费')">💳 银行卡小费</button>
+          <button class="btn-outline btn-sm tip-type-btn" data-type="Venmo小费" onclick="setTipType('Venmo小费')">📱 Venmo小费</button>
+          <button class="btn-outline btn-sm tip-type-btn" data-type="现金小费" onclick="setTipType('现金小费')">💵 现金小费</button>
           <input type="number" id="tipAmount" step="0.01" placeholder="金额 ($)" style="width:110px;" />
           <input type="text" id="tipNote" placeholder="备注（可选）" style="flex:1; min-width:110px;" />
           <button class="btn-success btn-sm" onclick="addTip()">+ 添加小费</button>
@@ -847,6 +848,7 @@
               <th>底薪</th>
               <th>项目提成</th>
               <th>银行卡小费</th>
+              <th>Venmo小费</th>
               <th>现金小费</th>
               <th>税费扣除</th>
               <th>实发总计</th>
@@ -885,7 +887,7 @@
       <div class="card">
         <div class="card-title">
           <span>💰 小费与服务费明细</span>
-          <span class="tag tag-green" id="tipTotalTag">卡$0 | 现$0</span>
+          <span class="tag tag-green" id="tipTotalTag">卡$0 | V$0 | 现$0</span>
         </div>
         <div style="overflow-x:auto; margin-bottom:12px;">
           <table>
@@ -1299,7 +1301,6 @@
     showLogin('正在连接云端 / Connecting to cloud...');
 
     try {
-      // Inside startCloudSync:
       const snapshot = await getDocFromServer(targetDoc);
 
       if (activeSession !== sessionVersion) return;
@@ -1327,19 +1328,13 @@
 
       if (activeSession !== sessionVersion) return;
 
-      state.role = 'boss';
-
-      await setDoc(targetDoc, getCloudPayload());
-
-      if (activeSession !== sessionVersion) return;
-
       cloudEnabled = true;
       initialCloudLoaded = true;
 
       showDashboard();
       initializeDashboard();
 
-      setCloudBadge('☁️ 云端已连接 / Connected', 'tag-green');
+      setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green');
 
       unsubscribeCloud = onSnapshot(
         targetDoc,
@@ -1361,12 +1356,10 @@
           if (snap.metadata.fromCache) {
             if (!navigator.onLine) {
               setCloudBadge('⚠️ 离线 / Offline', 'tag-amber');
-            } else if (!initialCloudLoaded) {
-              setCloudBadge('☁️ 正在连接云端 / Connecting...', 'tag-blue');
-            } else {setCloudBadge('☁️ 正在重新连接 / Reconnecting...', 'tag-amber');
+              setDashboardLocked(true);
+            } else {
+              setCloudBadge('☁️ 同步中 / Syncing...', 'tag-blue');
             }
-
-            setDashboardLocked(true);
             return;
           }
 
@@ -1418,7 +1411,6 @@
         throw new Error('Please configure your administrator UID.');
       }
 
-      // Inside initFirebaseSync:
       const app = initializeApp(FIREBASE_CONFIG);
       auth = getAuth(app);
       db = initializeFirestore(app, {
@@ -1642,6 +1634,7 @@
       }
     });
 
+    setTipType(state.tipType || '银行卡小费');
     applyAppearance();
     applyRoleVisibility();
     setDashboardLocked(false);
@@ -2056,8 +2049,9 @@
 
   function setTipType(type) {
     state.tipType = type;
-    document.getElementById('tipCardBtn').className = type === '银行卡小费' ? 'btn-primary btn-sm' : 'btn-outline btn-sm';
-    document.getElementById('tipCashBtn').className = type === '现金小费' ? 'btn-primary btn-sm' : 'btn-outline btn-sm';
+    document.querySelectorAll('.tip-type-btn').forEach(btn => {
+      btn.className = btn.dataset.type === type ? 'btn-primary btn-sm tip-type-btn' : 'btn-outline btn-sm tip-type-btn';
+    });
   }
 
   function addQuickTip() {
@@ -2251,10 +2245,11 @@
       const mins = eOrders.reduce((s, o) => s + Number(o.duration || 0), 0);
       const comm = eOrders.reduce((s, o) => s + Number(o.commission || 0), 0);
       const cardTip = eTips.filter(t => t.type === '银行卡小费').reduce((s, t) => s + Number(t.amount || 0), 0);
+      const venmoTip = eTips.filter(t => t.type === 'Venmo小费').reduce((s, t) => s + Number(t.amount || 0), 0);
       const cashTip = eTips.filter(t => t.type === '现金小费').reduce((s, t) => s + Number(t.amount || 0), 0);
       const base = Number(emp.base || 0);
       const tax = Number(emp.tax || 0);
-      const netPay = base + comm + cardTip + cashTip - tax;
+      const netPay = base + comm + cardTip + venmoTip + cashTip - tax;
 
       return `
         <tr>
@@ -2266,12 +2261,13 @@
           <td>$${base.toFixed(2)}</td>
           <td>$${comm.toFixed(2)}</td>
           <td>$${cardTip.toFixed(2)}</td>
+          <td>$${venmoTip.toFixed(2)}</td>
           <td>$${cashTip.toFixed(2)}</td>
           <td>$${tax.toFixed(2)}</td>
           <td><strong>$${netPay.toFixed(2)}</strong></td>
         </tr>
       `;
-    }).join('') || '<tr><td colspan="11">暂无技师数据</td></tr>';
+    }).join('') || '<tr><td colspan="12">暂无技师数据</td></tr>';
 
     const filteredOrders = state.filterStaffId ? orders.filter(o => o.staffId === state.filterStaffId) : orders;
     const filteredTips = state.filterStaffId ? tips.filter(t => t.staffId === state.filterStaffId) : tips;
@@ -2293,8 +2289,9 @@
     `).join('') || '<tr><td colspan="7">暂无订单记录</td></tr>';
 
     const cardSum = filteredTips.filter(t => t.type === '银行卡小费').reduce((s, t) => s + Number(t.amount || 0), 0);
+    const venmoSum = filteredTips.filter(t => t.type === 'Venmo小费').reduce((s, t) => s + Number(t.amount || 0), 0);
     const cashSum = filteredTips.filter(t => t.type === '现金小费').reduce((s, t) => s + Number(t.amount || 0), 0);
-    document.getElementById('tipTotalTag').textContent = `卡$${cardSum.toFixed(0)} | 现$${cashSum.toFixed(0)}`;
+    document.getElementById('tipTotalTag').textContent = `卡$${cardSum.toFixed(0)} | V$${venmoSum.toFixed(0)} | 现$${cashSum.toFixed(0)}`;
 
     document.getElementById('tipDetailBody').innerHTML = filteredTips.map(t => `
       <tr>
