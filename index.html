@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>门店收银与技师提成管理系统 / POS & Commission System</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --purple: #7c3aed;
+      --scale: 1;
+      --btn-pad: 10px 14px;
+    }
+
+    body.eye-care {
+      --bg: #f3efe6;
+      --card: #fbf8f1;
+      --border: #e5dec9;
+    }
+
+    body.scale-lg {
+      --scale: 1.12;
+    }
+
+    body.scale-xl {
+      --scale: 1.24;
+    }
+
+    body.touch-mode {
+      --btn-pad: 15px 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: calc(14px * var(--scale));
+      line-height: 1.45;
+    }
+
+    .container {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: var(--card);
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 14px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .topbar h1 {
+      margin: 0;
+      font-size: 1.25em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      align-items: center;
+    }
+
+    button,
+    select,
+    input,
+    textarea {
+      font-family: inherit;
+      font-size: 0.94em;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 7px 11px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    button:hover {
+      filter: brightness(0.95);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: #fff;
+      border-color: var(--success);
+    }
+
+    .btn-warning {
+      background: var(--warning);
+      color: #fff;
+      border-color: var(--warning);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+      border-color: var(--danger);
+    }
+
+    .btn-purple {
+      background: var(--purple);
+      color: #fff;
+      border-color: var(--purple);
+    }
+
+    .btn-outline {
+      background: var(--card);
+      color: var(--text);
+    }
+
+    .btn-sm {
+      padding: 4px 9px;
+      font-size: 0.84em;
+    }
+
+    .active-pill {
+      background: var(--primary) !important;
+      color: #fff !important;
+      border-color: var(--primary) !important;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    @media (max-width: 1024px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      font-size: 1.06em;
+      font-weight: 700;
+      margin: 0 0 10px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .inline-inputs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .form-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .form-row label {
+      font-size: 0.86em;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .merge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      background: #f5f3ff;
+      border: 1px solid #ddd6fe;
+      padding: 8px 12px;
+      border-radius: 9px;
+      margin-bottom: 12px;
+    }
+
+    .timer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 12px;
+    }
+
+    .timer-box {
+      border: 2px solid #93c5fd;
+      background: #eff6ff;
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .timer-box.checked {
+      border-color: var(--purple);
+      box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+    }
+
+    .timer-box.warning {
+      border-color: #fb923c;
+      background: #fff7ed;
+    }
+
+    .timer-box.done {
+      border-color: #22c55e;
+      background: #f0fdf4;
+    }
+
+    .timer-clock {
+      font-size: 1.5em;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: #1d4ed8;
+    }
+
+    .timer-box.done .timer-clock {
+      color: #15803d;
+    }
+
+    .staff-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .staff-pill {
+      padding: 6px 13px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .staff-pill.selected {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .service-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+      gap: 10px;
+    }
+
+    .service-item-btn {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: var(--btn-pad);
+      background: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .service-main-click {
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1.02em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .service-main-click:hover {
+      color: var(--primary);
+    }
+
+    .time-badge {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #93c5fd;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 0.86em;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 9px;
+      margin-bottom: 12px;
+    }
+
+    .stat-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 9px 11px;
+    }
+
+    .stat-label {
+      font-size: 0.8em;
+      color: var(--muted);
+    }
+
+    .stat-val {
+      font-size: 1.2em;
+      font-weight: 800;
+      margin-top: 2px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9em;
+    }
+
+    th,
+    td {
+      padding: 7px 9px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 0.8em;
+      font-weight: 600;
+      background: #e2e8f0;
+      color: #334155;
+    }
+
+    .tag-blue {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .tag-green {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .tag-purple {
+      background: #f3e8ff;
+      color: #6b21a8;
+    }
+
+    .tag-amber {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 14px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      background: #fff;
+      border-radius: 14px;
+      max-width: 620px;
+      width: 100%;
+      padding: 20px;
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    }
+
+    .pay-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 9px;
+      margin: 12px 0;
+    }
+
+    .pay-btn {
+      padding: 13px 8px;
+      font-size: 0.98em;
+      border: 2px solid var(--border);
+      background: #f8fafc;
+    }
+
+    .pay-btn:hover {
+      border-color: var(--primary);
+      background: #eff6ff;
+    }
+
+    canvas.sig-pad {
+      border: 2px dashed #94a3b8;
+      border-radius: 8px;
+      background: #fff;
+      touch-action: none;
+      width: 100%;
+      height: 130px;
+      cursor: crosshair;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+
+      #printArea,
+      #printArea * {
+        visibility: visible;
+      }
+
+      #printArea {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 20px;
+        background: #fff;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <h1>
+        <span id="appTitle">💆 门店收银与技师提成系统</span>
+        <button class="btn-primary btn-sm" id="langBtn" onclick="toggleLang()">🌐 中 / EN</button>
+        <span class="tag tag-purple" id="roleBadge">👑 店长 (Boss)</span>
+      </h1>
+      <div class="toolbar">
+        <button class="btn-outline btn-sm" onclick="openRoleModal()">🔐 切换权限</button>
+        <button class="btn-outline btn-sm" id="soundToggleBtn" onclick="toggleSound()">🔔 铃声:开</button>
+        <button class="btn-outline btn-sm" onclick="playBell()">🔊 试听</button>
+        <button class="btn-outline btn-sm" id="touchBtn" onclick="toggleTouch()">👆 触控</button>
+        <select id="scaleSelect" onchange="changeScale(this.value)">
+          <option value="">标准字号</option>
+          <option value="scale-lg">大字号</option>
+          <option value="scale-xl">超大字号</option>
+        </select>
+        <button class="btn-outline btn-sm" onclick="toggleTheme()">🌿 护眼</button>
+        <button class="btn-purple btn-sm boss-only" onclick="openPayslipModal()">🖨️ 工资条</button>
+        <button class="btn-success btn-sm boss-only" onclick="exportCSV()">📊 导出CSV</button>
+        <button class="btn-outline btn-sm boss-only" onclick="exportJSON()">💾 导出备份</button>
+        <button class="btn-outline btn-sm boss-only" onclick="document.getElementById('importFile').click()">📂 导入恢复</button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)" />
+        <button class="btn-outline btn-sm boss-only" onclick="openAuditModal()">📜 审计日志</button>
+        <button class="btn-danger btn-sm boss-only" onclick="openResetModal()">🗑️ 清空</button>
+      </div>
+    </div>
+
+    <!-- 记账日期与当前技师快捷切换 -->
+    <div class="card">
+      <div class="inline-inputs" style="justify-content:space-between;">
+        <div class="inline-inputs">
+          <strong data-i18n="entryDate">📅 记账日期：</strong>
+          <input type="date" id="entryDate" />
+          <strong style="margin-left:8px;" data-i18n="curTech">👤 当前技师：</strong>
+          <div class="staff-pills" id="quickStaffBar"></div>
+        </div>
+        <span id="therapistLockBanner" class="tag tag-amber" style="display:none;">🔒 技师只读模式（仅显示已验证PIN的个人明细）</span>
+      </div>
+    </div>
+
+    <!-- 服务计时看板 -->
+    <div class="card non-therapist">
+      <div class="card-title">
+        <span data-i18n="timerBoardTitle">⏱️ 服务计时看板（支持加钟 & 到点原位结账 & 多选合并结账）</span>
+        <span class="tag tag-blue" id="activeTimerCount">0 进行中</span>
+      </div>
+      <div class="merge-bar">
+        <div class="inline-inputs">
+          <button class="btn-outline btn-sm" onclick="toggleSelectAllTimers(true)">☑️ 全选待结</button>
+          <button class="btn-outline btn-sm" onclick="toggleSelectAllTimers(false)">取消全选</button>
+          <span id="mergeSummary">已选 0 项 · 原价 $0.00</span>
+        </div>
+        <button class="btn-purple btn-sm" id="mergeCheckoutBtn" onclick="openMergedCheckout()" disabled>🧾 合并结账 (已选 0 项)</button>
+      </div>
+      <div class="timer-grid" id="timerGrid"></div>
+    </div>
+
+    <!-- 录入订单（点项目结账 / 点时间开钟） -->
+    <div class="card non-therapist">
+      <div class="card-title">
+        <span data-i18n="orderEntryTitle">📋 录入订单（点项目结账 / 点时间开钟）</span>
+        <span class="tag tag-green" id="selectedStaffBadge">未选技师</span>
+      </div>
+      <div class="service-grid" id="serviceGrid"></div>
+    </div>
+
+    <!-- 小费与服务费录入 -->
+    <div class="grid-2 non-therapist">
+      <div class="card">
+        <div class="card-title">
+          <span data-i18n="tipEntryTitle">💵 小费录入（银行卡优先）</span>
+          <span class="tag tag-blue" id="tipStaffBadge">未选技师</span>
+        </div>
+        <div class="inline-inputs" style="margin-bottom:8px;">
+          <button class="btn-primary btn-sm" id="tipCardBtn" onclick="setTipType('银行卡小费')">💳 银行卡小费</button>
+          <button class="btn-outline btn-sm" id="tipCashBtn" onclick="setTipType('现金小费')">💵 现金小费</button>
+          <input type="number" id="tipAmount" step="0.01" placeholder="金额 ($)" style="width:110px;" />
+          <input type="text" id="tipNote" placeholder="备注（可选）" style="flex:1; min-width:110px;" />
+          <button class="btn-success btn-sm" onclick="addTip()">+ 添加小费</button>
+        </div>
+        <div class="inline-inputs">
+          <span style="font-size:0.85em; color:var(--muted);">快捷预设：</span>
+          <div id="quickTipButtons" class="inline-inputs"></div>
+          <input type="number" id="newQuickTip" step="0.01" placeholder="预设$" style="width:85px;" />
+          <button class="btn-outline btn-sm" onclick="addQuickTip()">+ 设为快捷</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span data-i18n="sfEntryTitle">🛎️ 每日收入 - 服务费录入</span>
+          <span class="tag tag-amber">计入门店总营收</span>
+        </div>
+        <div class="inline-inputs">
+          <button class="btn-primary btn-sm sf-pay-btn" data-pay="现金" onclick="setSfPay('现金')">💵 现金</button>
+          <button class="btn-outline btn-sm sf-pay-btn" data-pay="银行卡" onclick="setSfPay('银行卡')">💳 银行卡</button>
+          <button class="btn-outline btn-sm sf-pay-btn" data-pay="Venmo" onclick="setSfPay('Venmo')">📱 Venmo</button>
+          <input type="number" id="sfAmount" step="0.01" placeholder="金额 ($)" style="width:110px;" />
+          <input type="text" id="sfNote" placeholder="备注（可选）" style="flex:1; min-width:110px;" />
+          <button class="btn-success btn-sm" onclick="addServiceFee()">+ 添加服务费</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 营收与提成统计看板 -->
+    <div class="card">
+      <div class="card-title">
+        <span>📈 营收与提成统计看板</span>
+        <div class="inline-inputs">
+          <button class="btn-primary btn-sm period-btn" data-p="day" onclick="setPeriod('day')">按日</button>
+          <button class="btn-outline btn-sm period-btn" data-p="month" onclick="setPeriod('month')">按月</button>
+          <button class="btn-outline btn-sm period-btn" data-p="year" onclick="setPeriod('year')">按年</button>
+          <button class="btn-outline btn-sm period-btn" data-p="range" onclick="setPeriod('range')">任意时间段</button>
+          <input type="date" id="statDate" onchange="renderAll()" />
+          <input type="date" id="statStart" onchange="renderAll()" style="display:none;" />
+          <input type="date" id="statEnd" onchange="renderAll()" style="display:none;" />
+        </div>
+      </div>
+      <div class="stat-grid" id="statSummaryGrid"></div>
+    </div>
+
+    <!-- 技师业绩与实发汇总 -->
+    <div class="card">
+      <div class="card-title">
+        <span>👩‍⚕️ 技师业绩与实发汇总（点击技师姓名筛选下方明细）</span>
+        <button class="btn-outline btn-sm" onclick="clearStaffFilter()">显示全部技师</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>技师姓名</th>
+              <th>职级</th>
+              <th>单数</th>
+              <th>工时</th>
+              <th>项目营业额</th>
+              <th>底薪</th>
+              <th>项目提成</th>
+              <th>银行卡小费</th>
+              <th>现金小费</th>
+              <th>税费扣除</th>
+              <th>实发总计</th>
+            </tr>
+          </thead>
+          <tbody id="staffSummaryBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 明细区域 -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">
+          <span>🧾 项目提成明细 <span class="tag tag-blue" id="filterTag">全部技师</span></span>
+          <span class="tag" id="orderCountTag">0 笔</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>当前技师</th>
+                <th>项目名称</th>
+                <th>原价/实收</th>
+                <th>收款方式</th>
+                <th>提成</th>
+                <th>日期/备注</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="orderDetailBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>💰 小费与服务费明细</span>
+          <span class="tag tag-green" id="tipTotalTag">卡$0 | 现$0</span>
+        </div>
+        <div style="overflow-x:auto; margin-bottom:12px;">
+          <table>
+            <thead>
+              <tr>
+                <th>当前技师</th>
+                <th>小费类型</th>
+                <th>金额</th>
+                <th>日期/备注</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="tipDetailBody"></tbody>
+          </table>
+        </div>
+        <div class="card-title">
+          <span>🛎️ 服务费与会员年费入账明细</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>类别/渠道</th>
+                <th>金额</th>
+                <th>日期/备注</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="sfDetailBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 员工与项目管理（仅店长可见） -->
+    <div class="grid-2 boss-only">
+      <div class="card">
+        <div class="card-title">
+          <span>👥 员工（技师）与PIN码管理</span>
+        </div>
+        <input type="hidden" id="editEmpId" />
+        <div class="inline-inputs" style="margin-bottom:10px;">
+          <input type="text" id="empName" placeholder="技师姓名" style="width:120px;" />
+          <input type="text" id="empRole" placeholder="职级 (如: 按摩师)" value="按摩师" style="width:120px;" />
+          <input type="number" id="empBase" step="0.01" placeholder="底薪 ($)" value="0" style="width:95px;" />
+          <input type="number" id="empTax" step="0.01" placeholder="税费 ($)" style="width:95px;" />
+          <input type="text" id="empPin" maxlength="4" placeholder="4位PIN" style="width:85px;" />
+          <button class="btn-primary btn-sm" onclick="saveEmployee()">+ 添加/保存</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>姓名</th>
+                <th>职级</th>
+                <th>底薪</th>
+                <th>税费</th>
+                <th>PIN码</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="empTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>🛠️ 新增业务项目与提成规则</span>
+        </div>
+        <input type="hidden" id="editSrvId" />
+        <div class="inline-inputs" style="margin-bottom:10px;">
+          <input type="text" id="srvName" placeholder="项目名称" style="width:130px;" />
+          <input type="number" id="srvPrice" step="0.01" placeholder="项目单价 ($)" style="width:105px;" />
+          <select id="srvCommType" onchange="updateCommLabel()">
+            <option value="fixed">固定金额 ($)</option>
+            <option value="percent">百分比 (%)</option>
+          </select>
+          <input type="number" id="srvCommVal" step="0.01" id="srvCommLabelInput" placeholder="提成数值" style="width:95px;" />
+          <input type="number" id="srvDuration" placeholder="时长(分)" style="width:85px;" />
+          <button class="btn-primary btn-sm" onclick="saveService()">+ 添加/保存项目</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>项目名称</th>
+                <th>单价</th>
+                <th>提成规则</th>
+                <th>工作时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="srvTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 切换角色模态框 -->
+  <div class="modal-backdrop" id="roleModal">
+    <div class="modal">
+      <div class="card-title">
+        <span>🔐 切换管理权限角色</span>
+        <button class="btn-outline btn-sm" onclick="closeModal('roleModal')">✕</button>
+      </div>
+      <div class="form-row">
+        <label>选择身份角色</label>
+        <select id="roleSelectInput" onchange="toggleRoleSelectExtras()">
+          <option value="boss">👑 店长 (Boss / Admin - 默认密码 8888)</option>
+          <option value="front">🖥️ 前台收银 (Front Desk - 默认密码 1234)</option>
+          <option value="therapist">💆 技师个人查询 (Therapist - 需本人4位PIN码)</option>
+        </select>
+      </div>
+      <div class="form-row" id="therapistSelectRow" style="display:none;">
+        <label>选择技师姓名</label>
+        <select id="roleTherapistSelect"></select>
+      </div>
+      <div class="form-row">
+        <label>输入密码 / 4位PIN码</label>
+        <input type="password" id="rolePwdInput" placeholder="输入密码或PIN" />
+      </div>
+      <div class="inline-inputs" style="margin-bottom:14px;">
+        <button class="btn-primary btn-sm" onclick="verifyRoleSwitch()">确认切换</button>
+      </div>
+      <div class="boss-only" style="border-top:1px solid var(--border); padding-top:12px;">
+        <div class="form-row">
+          <label>店长修改系统密码：</label>
+          <div class="inline-inputs">
+            <input type="password" id="newBossPwd" placeholder="新店长密码" style="width:140px;" />
+            <input type="password" id="newFrontPwd" placeholder="新前台密码" style="width:140px;" />
+            <button class="btn-warning btn-sm" onclick="saveRolePasswords()">保存新密码</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 审计日志模态框 -->
+  <div class="modal-backdrop" id="auditModal">
+    <div class="modal">
+      <div class="card-title">
+        <span>📜 敏感操作审计日志 (Audit Log)</span>
+        <button class="btn-outline btn-sm" onclick="closeModal('auditModal')">✕</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>操作时间</th>
+              <th>操作角色</th>
+              <th>操作类型</th>
+              <th>详细内容</th>
+            </tr>
+          </thead>
+          <tbody id="auditTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 结账模态框 -->
+  <div class="modal-backdrop" id="checkoutModal">
+    <div class="modal">
+      <div class="card-title">
+        <span>🧾 收款结账</span>
+        <button class="btn-outline btn-sm" onclick="closeModal('checkoutModal')">✕</button>
+      </div>
+      <div id="checkoutItemsList" style="margin-bottom:10px;"></div>
+      <div id="checkoutTotalInfo" style="font-weight:700; margin-bottom:12px;"></div>
+      <div class="pay-grid">
+        <button class="pay-btn" onclick="completeCheckout('现金')">1. 💵 现金</button>
+        <button class="pay-btn" onclick="completeCheckout('银行卡')">2. 💳 银行卡</button>
+        <button class="pay-btn" onclick="completeCheckout('Venmo')">3. 📱 Venmo</button>
+        <button class="pay-btn" onclick="completeCheckout('礼品卡')">4. 🎁 礼品卡</button>
+        <button class="pay-btn" onclick="completeCheckout('优惠券')">5. 🎟️ 优惠券</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 清空确认模态框 -->
+  <div class="modal-backdrop" id="resetModal">
+    <div class="modal">
+      <div class="card-title">
+        <span>⚠️ 二次确认：清空账本数据</span>
+        <button class="btn-outline btn-sm" onclick="closeModal('resetModal')">✕</button>
+      </div>
+      <p>请选择要重置的范围（操作将记入审计日志）：</p>
+      <div class="inline-inputs">
+        <button class="btn-warning btn-sm" onclick="resetData('orders')">🧹 仅清空流水账单（保留技师与项目）</button>
+        <button class="btn-danger btn-sm" onclick="resetData('all')">💥 全部清空（彻底重置为空白账本）</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'massage_pos_full_v2';
+    const todayStr = () => new Date().toISOString().slice(0, 10);
+    const nowStr = () => new Date().toLocaleString();
+
+    let state = {
+      lang: 'zh',
+      role: 'boss', // boss | front | therapist
+      therapistViewId: null,
+      passwords: { boss: '8888', front: '1234' },
+      employees: [],
+      services: [],
+      orders: [],
+      tips: [],
+      serviceFees: [],
+      timers: [],
+      appointments: [],
+      members: [],
+      memberCfg: {
+        singlePrice: '',
+        singleDisc: '',
+        doublePrice: '',
+        doubleDisc: '',
+        contractText: '1. 本年费会员自开通之日起有效期为一年，仅限本人（双人会员限登记的两位共享人）到店消费使用。\n2. 每次结算符合条件的按摩项目均可享受对应会员专属优惠减免。\n3. 年费一经开通不予退还，不可转让给第三方使用。'
+      },
+      auditLogs: [],
+      quickTips: [5, 10, 20],
+      selectedStaffId: null,
+      filterStaffId: null,
+      tipType: '银行卡小费',
+      sfPayMethod: '现金',
+      period: 'day',
+      soundEnabled: true,
+      touchMode: false,
+      scale: '',
+      eyeCare: false
+    };
+
+    let checkoutCart = [];
+
+    function addAudit(action, detail) {
+      const roleName = state.role === 'boss' ? '店长(Boss)' : (state.role === 'front' ? '前台(Front)' : '技师');
+      state.auditLogs.unshift({ time: nowStr(), role: roleName, action, detail });
+      if (state.auditLogs.length > 300) state.auditLogs.pop();
+    }
+
+    function maskPhone(phone) {
+      if (!phone) return '';
+      const digits = phone.replace(/\D/g, '');
+      if (digits.length >= 7) {
+        return phone.slice(0, 3) + '****' + phone.slice(-4);
+      }
+      return phone.length > 2 ? phone.slice(0, 1) + '***' + phone.slice(-1) : '****';
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          state = {
+            ...state,
+            ...parsed,
+            passwords: { ...state.passwords, ...(parsed.passwords || {}) },
+            memberCfg: { ...state.memberCfg, ...(parsed.memberCfg || {}) },
+            quickTips: Array.isArray(parsed.quickTips) ? parsed.quickTips : state.quickTips
+          };
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
+      document.getElementById('entryDate').value = todayStr();
+      document.getElementById('statDate').value = todayStr();
+      document.getElementById('statStart').value = todayStr();
+      document.getElementById('statEnd').value = todayStr();
+
+      applyAppearance();
+      applyRoleVisibility();
+      renderAll();
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    const I18N = {
+      zh: {
+        appTitle: '💆 门店收银与技师提成系统',
+        entryDate: '📅 记账日期：',
+        curTech: '👤 当前技师：',
+        timerBoardTitle: '⏱️ 服务计时看板（支持加钟 & 到点原位结账 & 多选合并结账）',
+        tipEntryTitle: '💵 小费录入（银行卡优先）',
+        sfEntryTitle: '🛎️ 每日收入 - 服务费录入',
+        orderEntryTitle: '📋 录入订单（点项目结账 / 点时间开钟）'
+      },
+      en: {
+        appTitle: '💆 Spa POS & Commission System',
+        entryDate: '📅 Date:',
+        curTech: '👤 Therapist:',
+        timerBoardTitle: '⏱️ Active Timers (Extend / Checkout / Multi-Merge)',
+        tipEntryTitle: '💵 Tip Entry (Card Priority)',
+        sfEntryTitle: '🛎️ Daily Service Fee',
+        orderEntryTitle: '📋 Order Entry (Click Service to Pay / Time to Start)'
+      }
+    };
+
+    function toggleLang() {
+      state.lang = state.lang === 'zh' ? 'en' : 'zh';
+      saveState();
+      applyAppearance();
+      renderAll();
+    }
+
+    function applyAppearance() {
+      document.body.className = [
+        state.scale,
+        state.eyeCare ? 'eye-care' : '',
+        state.touchMode ? 'touch-mode' : ''
+      ].filter(Boolean).join(' ');
+
+      document.getElementById('scaleSelect').value = state.scale || '';
+      document.getElementById('soundToggleBtn').textContent = state.soundEnabled
+        ? (state.lang === 'en' ? '🔔 Sound:ON' : '🔔 铃声:开')
+        : (state.lang === 'en' ? '🔕 Sound:OFF' : '🔕 铃声:关');
+      document.getElementById('touchBtn').classList.toggle('active-pill', !!state.touchMode);
+
+      const dict = I18N[state.lang] || I18N.zh;
+      document.getElementById('appTitle').textContent = dict.appTitle;
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const k = el.getAttribute('data-i18n');
+        if (dict[k]) el.textContent = dict[k];
+      });
+    }
+
+    function toggleSound() {
+      state.soundEnabled = !state.soundEnabled;
+      saveState();
+      applyAppearance();
+    }
+
+    function toggleTouch() {
+      state.touchMode = !state.touchMode;
+      saveState();
+      applyAppearance();
+    }
+
+    function toggleTheme() {
+      state.eyeCare = !state.eyeCare;
+      saveState();
+      applyAppearance();
+    }
+
+    function changeScale(v) {
+      state.scale = v;
+      saveState();
+      applyAppearance();
+    }
+
+    function playBell() {
+      if (!state.soundEnabled) return;
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.18, ctx.currentTime + i * 0.14);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.14 + 0.5);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + i * 0.14);
+          osc.stop(ctx.currentTime + i * 0.14 + 0.52);
+        });
+      } catch (e) {}
+    }
+
+    function applyRoleVisibility() {
+      const isBoss = state.role === 'boss';
+      const isTherapist = state.role === 'therapist';
+      const badge = document.getElementById('roleBadge');
+
+      if (isBoss) {
+        badge.textContent = '👑 店长 (Boss)';
+      } else if (state.role === 'front') {
+        badge.textContent = '🖥️ 前台 (Front Desk)';
+      } else {
+        const emp = state.employees.find(e => e.id === state.therapistViewId);
+        badge.textContent = `💆 技师 (${emp ? emp.name : '只读'})`;
+      }
+
+      document.querySelectorAll('.boss-only').forEach(el => {
+        el.style.display = isBoss ? '' : 'none';
+      });
+      document.querySelectorAll('.non-therapist').forEach(el => {
+        el.style.display = isTherapist ? 'none' : '';
+      });
+      document.getElementById('therapistLockBanner').style.display = isTherapist ? 'inline-block' : 'none';
+      if (isTherapist && state.therapistViewId) {
+        state.filterStaffId = state.therapistViewId;
+      }
+    }
+
+    function openRoleModal() {
+      const sel = document.getElementById('roleTherapistSelect');
+      sel.innerHTML = state.employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+      document.getElementById('roleSelectInput').value = state.role;
+      document.getElementById('rolePwdInput').value = '';
+      toggleRoleSelectExtras();
+      document.getElementById('roleModal').classList.add('open');
+    }
+
+    function toggleRoleSelectExtras() {
+      const r = document.getElementById('roleSelectInput').value;
+      document.getElementById('therapistSelectRow').style.display = r === 'therapist' ? 'flex' : 'none';
+    }
+
+    function verifyRoleSwitch() {
+      const r = document.getElementById('roleSelectInput').value;
+      const pwd = document.getElementById('rolePwdInput').value.trim();
+
+      if (r === 'boss') {
+        if (pwd !== state.passwords.boss) return alert('店长密码错误！');
+        state.role = 'boss';
+        state.therapistViewId = null;
+        state.filterStaffId = null;
+      } else if (r === 'front') {
+        if (pwd !== state.passwords.front) return alert('前台密码错误！');
+        state.role = 'front';
+        state.therapistViewId = null;
+        state.filterStaffId = null;
+      } else {
+        const empId = document.getElementById('roleTherapistSelect').value;
+        const emp = state.employees.find(e => e.id === empId);
+        if (!emp) return alert('请选择技师');
+        if (emp.pin && pwd !== emp.pin) return alert('该技师的 4 位查询 PIN 码错误！');
+        state.role = 'therapist';
+        state.therapistViewId = emp.id;
+        state.filterStaffId = emp.id;
+      }
+
+      saveState();
+      applyRoleVisibility();
+      renderAll();
+      closeModal('roleModal');
+    }
+
+    function saveRolePasswords() {
+      const nb = document.getElementById('newBossPwd').value.trim();
+      const nf = document.getElementById('newFrontPwd').value.trim();
+      if (nb) state.passwords.boss = nb;
+      if (nf) state.passwords.front = nf;
+      document.getElementById('newBossPwd').value = '';
+      document.getElementById('newFrontPwd').value = '';
+      addAudit('修改权限密码', '更新了店长/前台登录密码');
+      saveState();
+      alert('密码已更新！');
+    }
+
+    function openAuditModal() {
+      document.getElementById('auditTableBody').innerHTML = state.auditLogs.map(l => `
+        <tr>
+          <td>${l.time}</td>
+          <td>${l.role}</td>
+          <td>${l.action}</td>
+          <td>${l.detail}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="4">暂无审计记录</td></tr>';
+      document.getElementById('auditModal').classList.add('open');
+    }
+
+    function saveEmployee() {
+      if (state.role !== 'boss') return alert('仅店长可操作');
+      const name = document.getElementById('empName').value.trim();
+      if (!name) return alert('请输入技师姓名');
+      const role = document.getElementById('empRole').value.trim() || '按摩师';
+      const base = parseFloat(document.getElementById('empBase').value) || 0;
+      const tax = parseFloat(document.getElementById('empTax').value) || 0;
+      const pin = document.getElementById('empPin').value.trim();
+      const editId = document.getElementById('editEmpId').value;
+
+      if (editId) {
+        const emp = state.employees.find(e => e.id === editId);
+        if (emp) {
+          Object.assign(emp, { name, role, base, tax, pin });
+          addAudit('修改技师资料', `${name} (${role})`);
+        }
+      } else {
+        const id = 'emp_' + Date.now();
+        state.employees.push({ id, name, role, base, tax, pin });
+        if (!state.selectedStaffId) state.selectedStaffId = id;
+        addAudit('新增技师', `${name} (${role})`);
+      }
+
+      document.getElementById('empName').value = '';
+      document.getElementById('empRole').value = '按摩师';
+      document.getElementById('empBase').value = '0';
+      document.getElementById('empTax').value = '';
+      document.getElementById('empPin').value = '';
+      document.getElementById('editEmpId').value = '';
+      saveState();
+      renderAll();
+    }
+
+    function editEmployee(id) {
+      const emp = state.employees.find(e => e.id === id);
+      if (!emp) return;
+      document.getElementById('empName').value = emp.name;
+      document.getElementById('empRole').value = emp.role;
+      document.getElementById('empBase').value = emp.base;
+      document.getElementById('empTax').value = emp.tax || '';
+      document.getElementById('empPin').value = emp.pin || '';
+      document.getElementById('editEmpId').value = emp.id;
+    }
+
+    function deleteEmployee(id) {
+      if (state.role !== 'boss') return alert('仅店长可删除');
+      const emp = state.employees.find(e => e.id === id);
+      if (!confirm('确定删除该技师？')) return;
+      state.employees = state.employees.filter(e => e.id !== id);
+      if (state.selectedStaffId === id) {
+        state.selectedStaffId = state.employees[0]?.id || null;
+      }
+      addAudit('删除技师', emp ? emp.name : id);
+      saveState();
+      renderAll();
+    }
+
+    function updateCommLabel() {
+      const type = document.getElementById('srvCommType').value;
+      document.getElementById('srvCommVal').placeholder = type === 'fixed' ? '固定提成 ($)' : '提成比例 (%)';
+    }
+
+    function calcCommission(srv, price) {
+      if (!srv) return 0;
+      const val = parseFloat(srv.commVal) || 0;
+      return srv.commType === 'percent' ? +(price * (val / 100)).toFixed(2) : +val.toFixed(2);
+    }
+
+    function saveService() {
+      if (state.role !== 'boss') return alert('仅店长可设置项目价格');
+      const name = document.getElementById('srvName').value.trim();
+      if (!name) return alert('请输入项目名称');
+      const price = parseFloat(document.getElementById('srvPrice').value) || 0;
+      const commType = document.getElementById('srvCommType').value;
+      const commVal = parseFloat(document.getElementById('srvCommVal').value) || 0;
+      const duration = parseInt(document.getElementById('srvDuration').value, 10) || 0;
+      const editId = document.getElementById('editSrvId').value;
+
+      if (editId) {
+        const srv = state.services.find(s => s.id === editId);
+        if (srv) {
+          Object.assign(srv, { name, price, commType, commVal, duration });
+          addAudit('修改项目价格/规则', `${name} $${price}`);
+        }
+      } else {
+        state.services.push({ id: 'srv_' + Date.now(), name, price, commType, commVal, duration });
+        addAudit('新增项目', `${name} $${price}`);
+      }
+
+      document.getElementById('srvName').value = '';
+      document.getElementById('srvPrice').value = '';
+      document.getElementById('srvCommVal').value = '';
+      document.getElementById('srvDuration').value = '';
+      document.getElementById('editSrvId').value = '';
+      saveState();
+      renderAll();
+    }
+
+    function editService(id) {
+      const srv = state.services.find(s => s.id === id);
+      if (!srv) return;
+      document.getElementById('srvName').value = srv.name;
+      document.getElementById('srvPrice').value = srv.price;
+      document.getElementById('srvCommType').value = srv.commType;
+      updateCommLabel();
+      document.getElementById('srvCommVal').value = srv.commVal;
+      document.getElementById('srvDuration').value = srv.duration || '';
+      document.getElementById('editSrvId').value = srv.id;
+    }
+
+    function deleteService(id) {
+      if (state.role !== 'boss') return alert('仅店长可删除项目');
+      const srv = state.services.find(s => s.id === id);
+      if (!confirm('确定删除该项目？')) return;
+      state.services = state.services.filter(s => s.id !== id);
+      addAudit('删除项目', srv ? srv.name : id);
+      saveState();
+      renderAll();
+    }
+
+    function startServiceTimer(serviceId, overrideStaffId = null) {
+      const targetStaff = overrideStaffId || state.selectedStaffId;
+      if (!targetStaff) return alert('请先选择「当前技师」');
+      const srv = state.services.find(s => s.id === serviceId);
+      const emp = state.employees.find(e => e.id === targetStaff);
+      if (!srv || !emp) return;
+
+      const mins = srv.duration > 0 ? srv.duration : 60;
+      const now = Date.now();
+      state.timers.push({
+        id: 'tm_' + now + '_' + Math.random().toString(36).slice(2, 6),
+        staffId: emp.id,
+        staffName: emp.name,
+        serviceId: srv.id,
+        serviceName: srv.name,
+        price: srv.price,
+        durationMins: mins,
+        startTime: now,
+        endTime: now + mins * 60000,
+        status: 'running',
+        bellPlayed: false,
+        checked: false
+      });
+      saveState();
+      renderTimers();
+    }
+
+    function extendTimer(timerId, addMins = 15) {
+      const t = state.timers.find(item => item.id === timerId);
+      if (!t) return;
+      t.durationMins += addMins;
+      t.endTime = Math.max(Date.now(), t.endTime) + addMins * 60000;
+      t.status = 'running';
+      t.bellPlayed = false;
+      saveState();
+      renderTimers();
+    }
+
+    function toggleTimerCheck(timerId) {
+      const t = state.timers.find(item => item.id === timerId);
+      if (!t) return;
+      t.checked = !t.checked;
+      saveState();
+      renderTimers();
+    }
+
+    function toggleSelectAllTimers(val) {
+      state.timers.forEach(t => { t.checked = val; });
+      saveState();
+      renderTimers();
+    }
+
+    function openDirectServiceCheckout(serviceId) {
+      if (!state.selectedStaffId) return alert('请先选择「当前技师」');
+      const srv = state.services.find(s => s.id === serviceId);
+      const emp = state.employees.find(e => e.id === state.selectedStaffId);
+      if (!srv || !emp) return;
+
+      checkoutCart = [{
+        staffId: emp.id,
+        staffName: emp.name,
+        serviceId: srv.id,
+        serviceName: srv.name,
+        price: srv.price,
+        commission: calcCommission(srv, srv.price),
+        duration: srv.duration || 0,
+        timerId: null
+      }];
+      showCheckoutModal();
+    }
+
+    function openTimerCheckout(timerId) {
+      const t = state.timers.find(item => item.id === timerId);
+      if (!t) return;
+      const srv = state.services.find(s => s.id === t.serviceId);
+      checkoutCart = [{
+        staffId: t.staffId,
+        staffName: t.staffName,
+        serviceId: t.serviceId,
+        serviceName: t.serviceName,
+        price: t.price,
+        commission: calcCommission(srv, t.price),
+        duration: t.durationMins || 0,
+        timerId: t.id
+      }];
+      showCheckoutModal();
+    }
+
+    function openMergedCheckout() {
+      const selected = state.timers.filter(t => t.checked);
+      if (!selected.length) return;
+      checkoutCart = selected.map(t => {
+        const srv = state.services.find(s => s.id === t.serviceId);
+        return {
+          staffId: t.staffId,
+          staffName: t.staffName,
+          serviceId: t.serviceId,
+          serviceName: t.serviceName,
+          price: t.price,
+          commission: calcCommission(srv, t.price),
+          duration: t.durationMins || 0,
+          timerId: t.id
+        };
+      });
+      showCheckoutModal();
+    }
+
+    function showCheckoutModal() {
+      const total = checkoutCart.reduce((sum, item) => sum + Number(item.price || 0), 0);
+      document.getElementById('checkoutItemsList').innerHTML = checkoutCart.map(item =>
+        `<div style="padding:4px 0; border-bottom:1px dashed var(--border);">${item.staffName} · ${item.serviceName} — <strong>$${Number(item.price).toFixed(2)}</strong></div>`
+      ).join('');
+      document.getElementById('checkoutTotalInfo').textContent = `合计应收：$${total.toFixed(2)}`;
+      document.getElementById('checkoutModal').classList.add('open');
+    }
+
+    function completeCheckout(payMethod) {
+      const dateVal = document.getElementById('entryDate').value || todayStr();
+      const finishedTimerIds = new Set();
+
+      checkoutCart.forEach(item => {
+        state.orders.push({
+          id: 'ord_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          date: dateVal,
+          staffId: item.staffId,
+          staffName: item.staffName,
+          serviceId: item.serviceId,
+          serviceName: item.serviceName,
+          price: Number(item.price || 0),
+          commission: Number(item.commission || 0),
+          duration: Number(item.duration || 0),
+          payMethod
+        });
+        if (item.timerId) finishedTimerIds.add(item.timerId);
+      });
+
+      if (finishedTimerIds.size) {
+        state.timers = state.timers.filter(t => !finishedTimerIds.has(t.id));
+      }
+
+      checkoutCart = [];
+      closeModal('checkoutModal');
+      saveState();
+      renderAll();
+    }
+
+    function setTipType(type) {
+      state.tipType = type;
+      document.getElementById('tipCardBtn').className = type === '银行卡小费' ? 'btn-primary btn-sm' : 'btn-outline btn-sm';
+      document.getElementById('tipCashBtn').className = type === '现金小费' ? 'btn-primary btn-sm' : 'btn-outline btn-sm';
+    }
+
+    function addQuickTip() {
+      const val = parseFloat(document.getElementById('newQuickTip').value);
+      if (!val || val <= 0) return;
+      if (!state.quickTips.includes(val)) state.quickTips.push(val);
+      document.getElementById('newQuickTip').value = '';
+      saveState();
+      renderQuickTips();
+    }
+
+    function addTip(presetAmount = null) {
+      if (!state.selectedStaffId) return alert('请先选择「当前技师」');
+      const emp = state.employees.find(e => e.id === state.selectedStaffId);
+      if (!emp) return;
+      const amount = presetAmount !== null ? presetAmount : parseFloat(document.getElementById('tipAmount').value);
+      if (!amount || amount <= 0) return alert('请输入有效小费金额');
+      const note = document.getElementById('tipNote').value.trim();
+
+      state.tips.push({
+        id: 'tip_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+        date: document.getElementById('entryDate').value || todayStr(),
+        staffId: emp.id,
+        staffName: emp.name,
+        type: state.tipType,
+        amount: +amount.toFixed(2),
+        note
+      });
+
+      document.getElementById('tipAmount').value = '';
+      document.getElementById('tipNote').value = '';
+      saveState();
+      renderAll();
+    }
+
+    function setSfPay(method) {
+      state.sfPayMethod = method;
+      document.querySelectorAll('.sf-pay-btn').forEach(btn => {
+        btn.className = btn.dataset.pay === method ? 'btn-primary btn-sm sf-pay-btn' : 'btn-outline btn-sm sf-pay-btn';
+      });
+    }
+
+    function addServiceFee() {
+      const amount = parseFloat(document.getElementById('sfAmount').value);
+      if (!amount || amount <= 0) return alert('请输入有效服务费金额');
+      const note = document.getElementById('sfNote').value.trim();
+      state.serviceFees.push({
+        id: 'sf_' + Date.now(),
+        date: document.getElementById('entryDate').value || todayStr(),
+        payMethod: state.sfPayMethod,
+        amount: +amount.toFixed(2),
+        note
+      });
+      document.getElementById('sfAmount').value = '';
+      document.getElementById('sfNote').value = '';
+      saveState();
+      renderAll();
+    }
+
+    function setPeriod(p) {
+      state.period = p;
+      document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.className = btn.dataset.p === p ? 'btn-primary btn-sm period-btn' : 'btn-outline btn-sm period-btn';
+      });
+      document.getElementById('statDate').style.display = p === 'range' ? 'none' : '';
+      document.getElementById('statStart').style.display = p === 'range' ? '' : 'none';
+      document.getElementById('statEnd').style.display = p === 'range' ? '' : 'none';
+      renderAll();
+    }
+
+    function matchPeriod(dateStr) {
+      if (!dateStr) return false;
+      const refDate = document.getElementById('statDate').value || todayStr();
+      if (state.period === 'day') return dateStr === refDate;
+      if (state.period === 'month') return dateStr.slice(0, 7) === refDate.slice(0, 7);
+      if (state.period === 'year') return dateStr.slice(0, 4) === refDate.slice(0, 4);
+      const start = document.getElementById('statStart').value;
+      const end = document.getElementById('statEnd').value;
+      if (start && dateStr < start) return false;
+      if (end && dateStr > end) return false;
+      return true;
+    }
+
+    function clearStaffFilter() {
+      if (state.role === 'therapist') return;
+      state.filterStaffId = null;
+      renderAll();
+    }
+
+    function renderQuickTips() {
+      document.getElementById('quickTipButtons').innerHTML = state.quickTips.map(v =>
+        `<button class="btn-outline btn-sm" onclick="addTip(${v})">$${v}</button>`
+      ).join('');
+    }
+
+    function renderTimers() {
+      const now = Date.now();
+      let bellNeeded = false;
+
+      const html = state.timers.map(t => {
+        const remMs = t.endTime - now;
+        const isDone = remMs <= 0;
+        if (isDone && !t.bellPlayed) {
+          t.bellPlayed = true;
+          t.status = 'done';
+          bellNeeded = true;
+        }
+        const remSecs = Math.max(0, Math.floor(remMs / 1000));
+        const mm = String(Math.floor(remSecs / 60)).padStart(2, '0');
+        const ss = String(remSecs % 60).padStart(2, '0');
+        const boxClass = ['timer-box', t.checked ? 'checked' : '', isDone ? 'done' : (remSecs <= 300 ? 'warning' : '')].filter(Boolean).join(' ');
+
+        return `
+          <div class="${boxClass}">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label style="font-weight:700; cursor:pointer;">
+                <input type="checkbox" ${t.checked ? 'checked' : ''} onchange="toggleTimerCheck('${t.id}')" />
+                ${t.staffName} · ${t.serviceName}
+              </label>
+              <span class="tag ${isDone ? 'tag-green' : 'tag-blue'}">${isDone ? '已到点' : '计时中'}</span>
+            </div>
+            <div class="timer-clock">${mm}:${ss}</div>
+            <div class="inline-inputs">
+              <button class="btn-outline btn-sm" onclick="extendTimer('${t.id}', 15)">+15分</button>
+              <button class="btn-success btn-sm" onclick="openTimerCheckout('${t.id}')">结账</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('timerGrid').innerHTML = html || '<div style="color:var(--muted);">当前没有进行中的计时</div>';
+      document.getElementById('activeTimerCount').textContent = `${state.timers.length} 进行中`;
+
+      const checkedItems = state.timers.filter(t => t.checked);
+      const checkedSum = checkedItems.reduce((s, t) => s + Number(t.price || 0), 0);
+      document.getElementById('mergeSummary').textContent = `已选 ${checkedItems.length} 项 · 原价 $${checkedSum.toFixed(2)}`;
+      const mergeBtn = document.getElementById('mergeCheckoutBtn');
+      mergeBtn.disabled = checkedItems.length === 0;
+      mergeBtn.textContent = `🧾 合并结账 (已选 ${checkedItems.length} 项)`;
+
+      if (bellNeeded) {
+        saveState();
+        playBell();
+      }
+    }
+
+    function renderAll() {
+      renderQuickTips();
+      renderTimers();
+
+      const selectedEmp = state.employees.find(e => e.id === state.selectedStaffId);
+      document.getElementById('selectedStaffBadge').textContent = selectedEmp ? `当前技师：${selectedEmp.name}` : '未选技师';
+      document.getElementById('tipStaffBadge').textContent = selectedEmp ? `当前技师：${selectedEmp.name}` : '未选技师';
+
+      document.getElementById('quickStaffBar').innerHTML = state.employees.map(emp =>
+        `<button class="staff-pill ${emp.id === state.selectedStaffId ? 'selected' : ''}" onclick="state.selectedStaffId='${emp.id}'; saveState(); renderAll();">${emp.name}</button>`
+      ).join('') || '<span style="color:var(--muted);">请先在下方添加技师</span>';
+
+      document.getElementById('serviceGrid').innerHTML = state.services.map(srv =>
+        `<div class="service-item-btn">
+          <div class="service-main-click" onclick="openDirectServiceCheckout('${srv.id}')">
+            <span>${srv.name}</span>
+            <span>$${Number(srv.price).toFixed(2)}</span>
+          </div>
+          <button class="time-badge" onclick="startServiceTimer('${srv.id}')">⏱️ 开钟 (${srv.duration || 60}分)</button>
+        </div>`
+      ).join('') || '<div style="color:var(--muted);">请先在下方添加服务项目</div>';
+
+      const orders = state.orders.filter(o => matchPeriod(o.date));
+      const tips = state.tips.filter(t => matchPeriod(t.date));
+      const fees = state.serviceFees.filter(f => matchPeriod(f.date));
+
+      const serviceRev = orders.reduce((s, o) => s + Number(o.price || 0), 0);
+      const feeRev = fees.reduce((s, f) => s + Number(f.amount || 0), 0);
+      const totalRev = serviceRev + feeRev;
+      const totalComm = orders.reduce((s, o) => s + Number(o.commission || 0), 0);
+      const totalTips = tips.reduce((s, t) => s + Number(t.amount || 0), 0);
+
+      document.getElementById('statSummaryGrid').innerHTML = `
+        <div class="stat-box"><div class="stat-label">门店总营收</div><div class="stat-val">$${totalRev.toFixed(2)}</div></div>
+        <div class="stat-box"><div class="stat-label">项目营业额</div><div class="stat-val">$${serviceRev.toFixed(2)}</div></div>
+        <div class="stat-box"><div class="stat-label">服务费收入</div><div class="stat-val">$${feeRev.toFixed(2)}</div></div>
+        <div class="stat-box"><div class="stat-label">技师总提成</div><div class="stat-val">$${totalComm.toFixed(2)}</div></div>
+        <div class="stat-box"><div class="stat-label">技师总小费</div><div class="stat-val">$${totalTips.toFixed(2)}</div></div>
+      `;
+
+      document.getElementById('staffSummaryBody').innerHTML = state.employees.map(emp => {
+        const eOrders = orders.filter(o => o.staffId === emp.id);
+        const eTips = tips.filter(t => t.staffId === emp.id);
+        const rev = eOrders.reduce((s, o) => s + Number(o.price || 0), 0);
+        const mins = eOrders.reduce((s, o) => s + Number(o.duration || 0), 0);
+        const comm = eOrders.reduce((s, o) => s + Number(o.commission || 0), 0);
+        const cardTip = eTips.filter(t => t.type === '银行卡小费').reduce((s, t) => s + Number(t.amount || 0), 0);
+        const cashTip = eTips.filter(t => t.type === '现金小费').reduce((s, t) => s + Number(t.amount || 0), 0);
+        const base = Number(emp.base || 0);
+        const tax = Number(emp.tax || 0);
+        const netPay = base + comm + cardTip + cashTip - tax;
+
+        return `
+          <tr>
+            <td><a href="javascript:void(0)" onclick="state.filterStaffId='${emp.id}'; renderAll();"><strong>${emp.name}</strong></a></td>
+            <td>${emp.role}</td>
+            <td>${eOrders.length}</td>
+            <td>${(mins / 60).toFixed(1)}h</td>
+            <td>$${rev.toFixed(2)}</td>
+            <td>$${base.toFixed(2)}</td>
+            <td>$${comm.toFixed(2)}</td>
+            <td>$${cardTip.toFixed(2)}</td>
+            <td>$${cashTip.toFixed(2)}</td>
+            <td>$${tax.toFixed(2)}</td>
+            <td><strong>$${netPay.toFixed(2)}</strong></td>
+          </tr>
+        `;
+      }).join('') || '<tr><td colspan="11">暂无技师数据</td></tr>';
+
+      const filteredOrders = state.filterStaffId ? orders.filter(o => o.staffId === state.filterStaffId) : orders;
+      const filteredTips = state.filterStaffId ? tips.filter(t => t.staffId === state.filterStaffId) : tips;
+      const filterEmp = state.employees.find(e => e.id === state.filterStaffId);
+
+      document.getElementById('filterTag').textContent = filterEmp ? filterEmp.name : '全部技师';
+      document.getElementById('orderCountTag').textContent = `${filteredOrders.length} 笔`;
+
+      document.getElementById('orderDetailBody').innerHTML = filteredOrders.map(o => `
+        <tr>
+          <td>${o.staffName}</td>
+          <td>${o.serviceName}</td>
+          <td>$${Number(o.price).toFixed(2)}</td>
+          <td><span class="tag tag-blue">${o.payMethod}</span></td>
+          <td>$${Number(o.commission).toFixed(2)}</td>
+          <td>${o.date}</td>
+          <td><button class="btn-danger btn-sm" onclick="deleteOrder('${o.id}')">删</button></td>
+        </tr>
+      `).join('') || '<tr><td colspan="7">暂无订单记录</td></tr>';
+
+      const cardSum = filteredTips.filter(t => t.type === '银行卡小费').reduce((s, t) => s + Number(t.amount || 0), 0);
+      const cashSum = filteredTips.filter(t => t.type === '现金小费').reduce((s, t) => s + Number(t.amount || 0), 0);
+      document.getElementById('tipTotalTag').textContent = `卡$${cardSum.toFixed(0)} | 现$${cashSum.toFixed(0)}`;
+
+      document.getElementById('tipDetailBody').innerHTML = filteredTips.map(t => `
+        <tr>
+          <td>${t.staffName}</td>
+          <td>${t.type}</td>
+          <td>$${Number(t.amount).toFixed(2)}</td>
+          <td>${t.date}${t.note ? ' · ' + t.note : ''}</td>
+          <td><button class="btn-danger btn-sm" onclick="deleteTip('${t.id}')">删</button></td>
+        </tr>
+      `).join('') || '<tr><td colspan="5">暂无小费记录</td></tr>';
+
+      document.getElementById('sfDetailBody').innerHTML = fees.map(f => `
+        <tr>
+          <td>服务费 (${f.payMethod})</td>
+          <td>$${Number(f.amount).toFixed(2)}</td>
+          <td>${f.date}${f.note ? ' · ' + f.note : ''}</td>
+          <td><button class="btn-danger btn-sm" onclick="deleteServiceFee('${f.id}')">删</button></td>
+        </tr>
+      `).join('') || '<tr><td colspan="4">暂无服务费记录</td></tr>';
+
+      document.getElementById('empTableBody').innerHTML = state.employees.map(emp => `
+        <tr>
+          <td>${emp.name}</td>
+          <td>${emp.role}</td>
+          <td>$${Number(emp.base || 0).toFixed(2)}</td>
+          <td>$${Number(emp.tax || 0).toFixed(2)}</td>
+          <td>${emp.pin || '-'}</td>
+          <td>
+            <button class="btn-outline btn-sm" onclick="editEmployee('${emp.id}')">编辑</button>
+            <button class="btn-danger btn-sm" onclick="deleteEmployee('${emp.id}')">删除</button>
+          </td>
+        </tr>
+      `).join('') || '<tr><td colspan="6">暂无员工</td></tr>';
+
+      document.getElementById('srvTableBody').innerHTML = state.services.map(srv => `
+        <tr>
+          <td>${srv.name}</td>
+          <td>$${Number(srv.price).toFixed(2)}</td>
+          <td>${srv.commType === 'percent' ? srv.commVal + '%' : '$' + Number(srv.commVal).toFixed(2)}</td>
+          <td>${srv.duration || 0} 分钟</td>
+          <td>
+            <button class="btn-outline btn-sm" onclick="editService('${srv.id}')">编辑</button>
+            <button class="btn-danger btn-sm" onclick="deleteService('${srv.id}')">删除</button>
+          </td>
+        </tr>
+      `).join('') || '<tr><td colspan="5">暂无服务项目</td></tr>';
+    }
+
+    function deleteOrder(id) {
+      if (state.role !== 'boss') return alert('仅店长可删除账单');
+      state.orders = state.orders.filter(o => o.id !== id);
+      addAudit('删除订单', id);
+      saveState();
+      renderAll();
+    }
+
+    function deleteTip(id) {
+      if (state.role !== 'boss') return alert('仅店长可删除小费');
+      state.tips = state.tips.filter(t => t.id !== id);
+      addAudit('删除小费', id);
+      saveState();
+      renderAll();
+    }
+
+    function deleteServiceFee(id) {
+      if (state.role !== 'boss') return alert('仅店长可删除服务费');
+      state.serviceFees = state.serviceFees.filter(f => f.id !== id);
+      addAudit('删除服务费', id);
+      saveState();
+      renderAll();
+    }
+
+    function openPayslipModal() {
+      window.print();
+    }
+
+    function exportCSV() {
+      const rows = [['Date', 'Staff', 'Service', 'Price', 'Commission', 'Payment']];
+      state.orders.forEach(o => rows.push([o.date, o.staffName, o.serviceName, o.price, o.commission, o.payMethod]));
+      const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `pos_orders_${todayStr()}.csv`;
+      a.click();
+    }
+
+    function exportJSON() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `pos_backup_${todayStr()}.json`;
+      a.click();
+    }
+
+    function importJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const imported = JSON.parse(reader.result);
+          state = { ...state, ...imported };
+          addAudit('导入备份', file.name);
+          saveState();
+          applyAppearance();
+          applyRoleVisibility();
+          renderAll();
+          alert('数据已恢复！');
+        } catch (err) {
+          alert('无效的 JSON 文件');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function openResetModal() {
+      document.getElementById('resetModal').classList.add('open');
+    }
+
+    function resetData(mode) {
+      if (state.role !== 'boss') return alert('仅店长可清空数据');
+      if (mode === 'orders') {
+        state.orders = [];
+        state.tips = [];
+        state.serviceFees = [];
+        state.timers = [];
+        addAudit('清空流水账单', '保留员工与服务项目');
+      } else {
+        state.employees = [];
+        state.services = [];
+        state.orders = [];
+        state.tips = [];
+        state.serviceFees = [];
+        state.timers = [];
+        state.selectedStaffId = null;
+        state.filterStaffId = null;
+        addAudit('全部清空账本', '重置为空白账本');
+      }
+      saveState();
+      closeModal('resetModal');
+      renderAll();
+    }
+
+    setInterval(renderTimers, 1000);
+    loadState();
+  </script>
+</body>
+</html>
