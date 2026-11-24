@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>门店收银与技师提成管理系统 / POS & Commission System</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💆</text></svg>" />
   <style>
     :root {
       --bg: #f4f6f9;
@@ -480,10 +481,222 @@
         display: none !important;
       }
     }
+
+    /* ==============================
+      FIREBASE LOGIN PAGE
+    ============================== */
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .login-screen {
+      position: fixed;
+      inset: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f4f6f9;
+      padding: 24px;
+      z-index: 9999;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+    }
+
+    .login-logo {
+      width: 64px;
+      height: 64px;
+      background: #eff6ff;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 18px;
+    }
+
+    .login-title {
+      font-size: 24px;
+      text-align: center;
+      margin: 0 0 8px;
+      font-weight: 800;
+      color: #1e293b;
+    }
+
+    .login-subtitle {
+      text-align: center;
+      color: #64748b;
+      font-size: 13px;
+      margin-bottom: 26px;
+    }
+
+    .login-field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-bottom: 16px;
+    }
+
+    .login-field label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .login-field input {
+      width: 100%;
+      min-height: 46px;
+      padding: 12px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
+      font-size: 15px;
+    }
+
+    .login-field input:focus {
+      outline: 2px solid #93c5fd;
+      border-color: #2563eb;
+    }
+
+    .login-submit {
+      width: 100%;
+      min-height: 46px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 9px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .login-error {
+      color: #dc2626;
+      font-size: 13px;
+      text-align: center;
+      margin-top: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .login-footer {
+      text-align: center;
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 20px;
+    }
+
+    .login-reset {
+      display: block;
+      margin: 12px auto;
+      color: #2563eb;
+      background: transparent;
+      border: none;
+    }
+
+    .logout-btn {
+      color: #dc2626;
+      border-color: #fecaca;
+      background: #fef2f2;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
+
+  <!-- Firebase Authentication Login -->
+  <div id="loginScreen" class="login-screen">
+
+    <div class="login-card">
+
+      <div class="login-logo">💆</div>
+
+      <h1 class="login-title">
+        Spa POS System
+      </h1>
+
+      <div class="login-subtitle">
+        门店收银与技师提成管理系统
+        <br>
+        Secure Administrator Access
+      </div>
+
+      <form id="loginForm">
+
+        <div class="login-field">
+          <label for="loginEmail">
+            邮箱 / Email
+          </label>
+
+          <input
+            type="email"
+            id="loginEmail"
+            placeholder="Enter your email"
+            autocomplete="username"
+            required
+          />
+        </div>
+
+        <div class="login-field">
+          <label for="loginPassword">
+            密码 / Password
+          </label>
+
+          <input
+            type="password"
+            id="loginPassword"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          id="loginSubmitBtn"
+          class="login-submit"
+          disabled
+        >
+          登录 / Sign In
+        </button>
+
+      </form>
+
+      <button
+        type="button"
+        id="resetPasswordBtn"
+        class="login-reset"
+        disabled
+      >
+        忘记密码 / Forgot Password?
+      </button>
+
+      <div
+        id="loginError"
+        class="login-error"
+        role="status"
+      >
+        正在加载 / Loading Firebase...
+      </div>
+
+      <div class="login-footer">
+        🔒 Authorized Personnel Only
+        <br>
+        仅限授权人员使用
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Existing POS dashboard -->
+  <div class="container" id="appContainer" hidden>
     <div class="topbar">
       <h1>
         <span id="appTitle">💆 门店收银与技师提成系统</span>
@@ -492,7 +705,17 @@
         <span class="tag tag-amber" id="cloudStatusBadge">☁️ 未配置 Firebase（本地模式）</span>
       </h1>
       <div class="toolbar">
-        <button class="btn-outline btn-sm" onclick="openRoleModal()">🔐 切换权限</button>
+        <span
+          id="currentUserEmail"
+          class="tag tag-blue"
+        ></span>
+
+        <button
+          class="btn-sm logout-btn"
+          onclick="logout()"
+        >
+          🚪 退出登录 / Sign Out
+        </button>
         <button class="btn-outline btn-sm" id="soundToggleBtn" onclick="toggleSound()">🔔 铃声:开</button>
         <button class="btn-outline btn-sm" onclick="playBell()">🔊 试听</button>
         <button class="btn-outline btn-sm" id="touchBtn" onclick="toggleTouch()">👆 触控</button>
@@ -701,7 +924,7 @@
     <div class="grid-2 boss-only">
       <div class="card">
         <div class="card-title">
-          <span>👥 员工（技师）与PIN码管理</span>
+          <span>👥 员工管理 / Employee Management</span>
         </div>
         <input type="hidden" id="editEmpId" />
         <div class="inline-inputs" style="margin-bottom:10px;">
@@ -709,7 +932,6 @@
           <input type="text" id="empRole" placeholder="职级 (如: 按摩师)" value="按摩师" style="width:120px;" />
           <input type="number" id="empBase" step="0.01" placeholder="底薪 ($)" value="0" style="width:95px;" />
           <input type="number" id="empTax" step="0.01" placeholder="税费 ($)" style="width:95px;" />
-          <input type="text" id="empPin" maxlength="4" placeholder="4位PIN" style="width:85px;" />
           <button class="btn-primary btn-sm" onclick="saveEmployee()">+ 添加/保存</button>
         </div>
         <div style="overflow-x:auto;">
@@ -720,7 +942,6 @@
                 <th>职级</th>
                 <th>底薪</th>
                 <th>税费</th>
-                <th>PIN码</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -758,45 +979,6 @@
             </thead>
             <tbody id="srvTableBody"></tbody>
           </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 切换角色模态框 -->
-  <div class="modal-backdrop" id="roleModal">
-    <div class="modal">
-      <div class="card-title">
-        <span>🔐 切换管理权限角色</span>
-        <button class="btn-outline btn-sm" onclick="closeModal('roleModal')">✕</button>
-      </div>
-      <div class="form-row">
-        <label>选择身份角色</label>
-        <select id="roleSelectInput" onchange="toggleRoleSelectExtras()">
-          <option value="boss">👑 店长 (Boss / Admin - 默认密码 8888)</option>
-          <option value="front">🖥️ 前台收银 (Front Desk - 默认密码 1234)</option>
-          <option value="therapist">💆 技师个人查询 (Therapist - 需本人4位PIN码)</option>
-        </select>
-      </div>
-      <div class="form-row" id="therapistSelectRow" style="display:none;">
-        <label>选择技师姓名</label>
-        <select id="roleTherapistSelect"></select>
-      </div>
-      <div class="form-row">
-        <label>输入密码 / 4位PIN码</label>
-        <input type="password" id="rolePwdInput" placeholder="输入密码或PIN" />
-      </div>
-      <div class="inline-inputs" style="margin-bottom:14px;">
-        <button class="btn-primary btn-sm" onclick="verifyRoleSwitch()">确认切换</button>
-      </div>
-      <div class="boss-only" style="border-top:1px solid var(--border); padding-top:12px;">
-        <div class="form-row">
-          <label>店长修改系统密码：</label>
-          <div class="inline-inputs">
-            <input type="password" id="newBossPwd" placeholder="新店长密码" style="width:140px;" />
-            <input type="password" id="newFrontPwd" placeholder="新前台密码" style="width:140px;" />
-            <button class="btn-warning btn-sm" onclick="saveRolePasswords()">保存新密码</button>
-          </div>
         </div>
       </div>
     </div>
@@ -862,14 +1044,16 @@
 <script type="module">
   import {
     initializeApp
-  } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
+  } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js';
 
   import {
     getFirestore,
     doc,
     setDoc,
-    onSnapshot
-  } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+    getDocFromServer,
+    onSnapshot,
+    serverTimestamp
+  } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
 
   import {
     getAuth,
@@ -877,594 +1061,936 @@
     signOut,
     onAuthStateChanged,
     setPersistence,
-    browserSessionPersistence
-  } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-    // Replace these values with your Firebase Web App config from Firebase Console
-    const FIREBASE_CONFIG = {
-      apiKey: 'AIzaSyCwcwtECiFjZYiny6RruwV0qt7D6kGPcjU',
-      authDomain: 'spa-pos-tracker-af386.firebaseapp.com',
-      projectId: 'spa-pos-tracker-af386',
-      storageBucket: 'spa-pos-tracker-af386.firebasestorage.app',
-      messagingSenderId: '799158416407',
-      appId: '1:799158416407:web:9a0de7a73583e7ddd45852'
-    };
+    browserSessionPersistence,
+    sendPasswordResetEmail
+  } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js';
 
-    let auth = null;
-    let currentUser = null;
-    let unsubscribeCloud = null;
+  const FIREBASE_CONFIG = {
+    apiKey: 'AIzaSyCwcwtECiFjZYiny6RruwV0qt7D6kGPcjU',
+    authDomain: 'spa-pos-tracker-af386.firebaseapp.com',
+    projectId: 'spa-pos-tracker-af386',
+    storageBucket: 'spa-pos-tracker-af386.firebasestorage.app',
+    messagingSenderId: '799158416407',
+    appId: '1:799158416407:web:9a0de7a73583e7ddd45852'
+  };
 
-    async function login(email, password) {
-      try {
-        await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-      } catch (error) {
-        console.error(error.code, error.message);
-        alert('登录失败 / Sign-in failed');
-      }
+  const ADMIN_UID = '8qzT5mvmg6SX9MkEhywAb5iVB8u2';
+  const FIRESTORE_DOC_PATH = ['pos_systems', 'default_store'];
+  const todayStr = () => new Date().toISOString().slice(0, 10);
+  const nowStr = () => new Date().toLocaleString();
+
+  let state = {
+    lang: 'zh',
+    role: null,
+    therapistViewId: null,
+    employees: [],
+    services: [],
+    orders: [],
+    tips: [],
+    serviceFees: [],
+    timers: [],
+    appointments: [],
+    members: [],
+    memberCfg: {
+      singlePrice: '',
+      singleDisc: '',
+      doublePrice: '',
+      doubleDisc: '',
+      contractText: '1. 本年费会员自开通之日起有效期为一年，仅限本人（双人会员限登记的两位共享人）到店消费使用。\n2. 每次结算符合条件的按摩项目均可享受对应会员专属优惠减免。\n3. 年费一经开通不予退还，不可转让给第三方使用。'
+    },
+    auditLogs: [],
+    quickTips: [5, 10, 20],
+    selectedStaffId: null,
+    filterStaffId: null,
+    tipType: '银行卡小费',
+    sfPayMethod: '现金',
+    period: 'day',
+    soundEnabled: true,
+    touchMode: false,
+    scale: '',
+    eyeCare: false
+  };
+
+  const EMPTY_STATE = structuredClone(state);
+
+  let checkoutCart = [];
+  let db = null;
+  let auth = null;
+  let currentUser = null;
+  let cloudDocRef = null;
+  let unsubscribeCloud = null;
+  let cloudEnabled = false;
+  let initialCloudLoaded = false;
+  let isApplyingRemote = false;
+  let saveQueue = Promise.resolve();
+  let saveFailed = false;
+  let sessionVersion = 0;
+
+  function isFirebaseConfigured() {
+    return Boolean(
+      FIREBASE_CONFIG.apiKey &&
+      !FIREBASE_CONFIG.apiKey.startsWith('YOUR_') &&
+      FIREBASE_CONFIG.projectId &&
+      !FIREBASE_CONFIG.projectId.startsWith('YOUR_')
+    );
+  }
+
+  function setCloudBadge(text, cls = 'tag-amber') {
+    const el = document.getElementById('cloudStatusBadge');
+    if (!el) return;
+    el.className = `tag ${cls}`;
+    el.textContent = text;
+  }
+
+  function sanitizeStateData(incoming) {
+    if (!incoming || typeof incoming !== 'object') {
+      return {};
     }
 
-    async function logout() {
-      if (ubsubscribeCloud) {
-        ubsubscribeCloud();
-        unsubscribeCloud = null;
-      }
+    const clean = structuredClone(incoming);
 
-      cloudEnabled = false;
-      currentUser = null;
+    delete clean.passwords;
+    delete clean.updatedAt;
+    delete clean.role;
+    delete clean.therapistViewId;
 
-      localStorage.removeItem(STORAGE_KEY);
-
-      await signOut(auth);
-      location.reload();
+    if (Array.isArray(clean.employees)) {
+      clean.employees = clean.employees.map(emp => {
+        const safeEmployee = { ...emp };
+        delete safeEmployee.pin;
+        return safeEmployee;
+      });
     }
 
-    const FIRESTORE_DOC_PATH = ['pos_systems', 'default_store'];
-    const STORAGE_KEY = 'massage_pos_full_v2';
-    const todayStr = () => new Date().toISOString().slice(0, 10);
-    const nowStr = () => new Date().toLocaleString();
+    return clean;
+  }
 
-    let state = {
-      lang: 'zh',
-      role: 'boss', // boss | front | therapist
-      therapistViewId: null,
-      passwords: { boss: '8888', front: '1234' },
-      employees: [],
-      services: [],
-      orders: [],
-      tips: [],
-      serviceFees: [],
-      timers: [],
-      appointments: [],
-      members: [],
+  function mergeStateData(incoming) {
+    const clean = sanitizeStateData(incoming);
+
+    state = {
+      ...state,
+      ...clean,
       memberCfg: {
-        singlePrice: '',
-        singleDisc: '',
-        doublePrice: '',
-        doubleDisc: '',
-        contractText: '1. 本年费会员自开通之日起有效期为一年，仅限本人（双人会员限登记的两位共享人）到店消费使用。\n2. 每次结算符合条件的按摩项目均可享受对应会员专属优惠减免。\n3. 年费一经开通不予退还，不可转让给第三方使用。'
+        ...state.memberCfg,
+        ...(clean.memberCfg || {})
       },
-      auditLogs: [],
-      quickTips: [5, 10, 20],
-      selectedStaffId: null,
-      filterStaffId: null,
-      tipType: '银行卡小费',
-      sfPayMethod: '现金',
-      period: 'day',
-      soundEnabled: true,
-      touchMode: false,
-      scale: '',
-      eyeCare: false
+      quickTips: Array.isArray(clean.quickTips)
+        ? clean.quickTips
+        : state.quickTips,
+      role: currentUser?.uid === ADMIN_UID
+        ? 'boss'
+        : null,
+      therapistViewId: null
     };
+  }
 
-    let checkoutCart = [];
-    let db = null;
-    let cloudDocRef = null;
-    let cloudEnabled = false;
-    let isApplyingRemote = false;
+  function getCloudPayload() {
+    return {
+      ...sanitizeStateData(state),
+      updatedAt: serverTimestamp()
+    };
+  }
 
-    function isFirebaseConfigured() {
-      return Boolean(
-        FIREBASE_CONFIG.apiKey &&
-        !FIREBASE_CONFIG.apiKey.startsWith('YOUR_') &&
-        FIREBASE_CONFIG.projectId &&
-        !FIREBASE_CONFIG.projectId.startsWith('YOUR_')
+  function setDashboardLocked(locked) {
+    const dashboard = document.getElementById('appContainer');
+    const logoutButton = dashboard.querySelector('.logout-btn');
+
+    dashboard.querySelectorAll('button, input, select, textarea').forEach(element => {
+      if (element !== logoutButton) {
+        element.disabled = locked;
+      }
+    });
+
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.querySelectorAll('button, input, select, textarea').forEach(element => {
+        element.disabled = locked;
+      });
+    });
+  }
+
+  function addAudit(action, detail) {
+    const roleName = state.role === 'boss' ? '店长(Boss)' : (state.role === 'front' ? '前台(Front)' : '技师');
+    state.auditLogs.unshift({ time: nowStr(), role: roleName, action, detail });
+    if (state.auditLogs.length > 300) state.auditLogs.pop();
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  function saveState() {
+    if (
+      !currentUser ||
+      currentUser.uid !== ADMIN_UID ||
+      !cloudEnabled ||
+      !cloudDocRef ||
+      !initialCloudLoaded ||
+      isApplyingRemote ||
+      saveFailed
+    ) {
+      return Promise.resolve(false);
+    }
+
+    const payload = getCloudPayload();
+    const targetDoc = cloudDocRef;
+    const activeSession = sessionVersion;
+
+    setCloudBadge('☁️ 同步中 / Saving...', 'tag-blue');
+
+    saveQueue = saveQueue
+      .catch(error => {
+        console.error('Previous save failed:', error);
+      })
+      .then(async () => {
+        if (
+          activeSession !== sessionVersion ||
+          !currentUser ||
+          currentUser.uid !== ADMIN_UID ||
+          saveFailed
+        ) {
+          return false;
+        }
+
+        try {
+          await setDoc(targetDoc, payload);
+
+          if (activeSession === sessionVersion) {
+            setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green');
+          }
+
+          return true;
+        } catch (error) {
+          console.error('Firestore write failed:', error.code, error.message);
+
+          if (activeSession === sessionVersion) {
+            saveFailed = true;
+            setCloudBadge('⚠️ 保存失败 / Save failed', 'tag-amber');
+            setDashboardLocked(true);
+
+            alert(
+              'Cloud save failed. ' +
+              'Do not refresh until you have ' +
+              'preserved your unsaved records.\n\n' +
+              error.code
+            );
+          }
+
+          return false;
+        }
+      });
+
+    return saveQueue;
+  }
+
+  async function startCloudSync(user) {
+    if (!user || user.uid !== ADMIN_UID) {
+      throw new Error('Unauthorized account');
+    }
+
+    const activeSession = sessionVersion;
+
+    cloudDocRef = doc(db, FIRESTORE_DOC_PATH[0], FIRESTORE_DOC_PATH[1]);
+    const targetDoc = cloudDocRef;
+
+    cloudEnabled = false;
+    initialCloudLoaded = false;
+
+    showLogin('正在连接云端 / Connecting to cloud...');
+
+    try {
+      const snapshot = await getDocFromServer(targetDoc);
+
+      if (activeSession !== sessionVersion) return;
+
+      if (snapshot.exists()) {
+        mergeStateData(snapshot.data());
+      } else {
+        const confirmed = confirm(
+          'No cloud ledger was found.\n\n' +
+          'Create a new empty store ledger?\n' +
+          'You can restore your JSON backup afterward.'
+        );
+
+        if (!confirmed) {
+          await signOut(auth);
+          return;
+        }
+
+        state = structuredClone(EMPTY_STATE);
+        state.role = 'boss';
+
+        await setDoc(targetDoc, getCloudPayload());
+      }
+
+      if (activeSession !== sessionVersion) return;
+
+      state.role = 'boss';
+
+      await setDoc(targetDoc, getCloudPayload());
+
+      if (activeSession !== sessionVersion) return;
+
+      cloudEnabled = true;
+      initialCloudLoaded = true;
+
+      showDashboard();
+      initializeDashboard();
+
+      setCloudBadge('☁️ 云端已连接 / Connected', 'tag-green');
+
+      unsubscribeCloud = onSnapshot(
+        targetDoc,
+        { includeMetadataChanges: true },
+        snap => {
+          if (
+            activeSession !== sessionVersion ||
+            !currentUser ||
+            currentUser.uid !== ADMIN_UID
+          ) {
+            return;
+          }
+
+          if (snap.metadata.hasPendingWrites) {
+            setCloudBadge('☁️ 等待同步 / Sync pending', 'tag-blue');
+            return;
+          }
+
+          if (snap.metadata.fromCache) {
+            setCloudBadge('⚠️ 离线 / Offline', 'tag-amber');
+            setDashboardLocked(true);
+            return;
+          }
+
+          if (!snap.exists()) {
+            cloudEnabled = false;
+            setDashboardLocked(true);
+            setCloudBadge('⚠️ 云端账本不存在', 'tag-amber');
+            return;
+          }
+
+          if (!saveFailed) {
+            setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green');
+            setDashboardLocked(false);
+            renderAll();
+          }
+        },
+        error => {
+          console.error('Firestore listener error:', error.code, error.message);
+          cloudEnabled = false;
+          setCloudBadge('⚠️ 连接异常 / Connection error', 'tag-amber');
+          setDashboardLocked(true);
+
+          if (error.code === 'permission-denied') {
+            signOut(auth).catch(console.error);
+          }
+        }
       );
-    }
+    } catch (error) {
+      console.error('Cloud initialization failed:', error.code, error.message);
+      cloudEnabled = false;
+      initialCloudLoaded = false;
 
-    function setCloudBadge(text, cls = 'tag-amber') {
-      const el = document.getElementById('cloudStatusBadge');
-      if (!el) return;
-      el.className = `tag ${cls}`;
-      el.textContent = text;
-    }
-
-    function mergeStateData(incoming) {
-      if (!incoming || typeof incoming !== 'object') return;
-      state = {
-        ...state,
-        ...incoming,
-        passwords: { ...state.passwords, ...(incoming.passwords || {}) },
-        memberCfg: { ...state.memberCfg, ...(incoming.memberCfg || {}) },
-        quickTips: Array.isArray(incoming.quickTips) ? incoming.quickTips : state.quickTips
-      };
-    }
-
-    function addAudit(action, detail) {
-      const roleName = state.role === 'boss' ? '店长(Boss)' : (state.role === 'front' ? '前台(Front)' : '技师');
-      state.auditLogs.unshift({ time: nowStr(), role: roleName, action, detail });
-      if (state.auditLogs.length > 300) state.auditLogs.pop();
-    }
-
-    function closeModal(id) {
-      document.getElementById(id).classList.remove('open');
-    }
-
-    function saveLocalCache() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      } catch (e) {
-        console.error(e);
+      if (auth.currentUser) {
+        await signOut(auth).catch(console.error);
       }
-    }
 
-    async function saveState() {
-      saveLocalCache();
-      if (!cloudEnabled || !cloudDocRef || isApplyingRemote) return;
-      try {
-        setCloudBadge('☁️ 同步中...', 'tag-blue');
-        await setDoc(cloudDocRef, {
-          ...state,
-          updatedAt: Date.now()
-        });
-        setCloudBadge('☁️ 云端已同步', 'tag-green');
-      } catch (e) {
-        console.error('Firestore write failed:', e);
-        setCloudBadge('⚠️ 云端写入失败（已存本地）', 'tag-amber');
-      }
+      clearSessionData();
+      showLogin('Cloud connection failed: ' + (error.code || error.message));
     }
+  }
 
-    function initFirebaseSync() {
+  async function initFirebaseSync() {
+    try {
       if (!isFirebaseConfigured()) {
-        setCloudBadge('☁️ 未配置 Firebase（本地模式）', 'tag-amber');
+        throw new Error('Firebase configuration is missing.');
+      }
+
+      if (ADMIN_UID === 'YOUR_ADMIN_UID') {
+        throw new Error('Please configure your administrator UID.');
+      }
+
+      const app = initializeApp(FIREBASE_CONFIG);
+      auth = getAuth(app);
+      db = getFirestore(app);
+
+      await setPersistence(auth, browserSessionPersistence);
+
+      document.getElementById('loginForm').addEventListener('submit', login);
+      document.getElementById('resetPasswordBtn').addEventListener('click', resetPassword);
+      document.getElementById('loginSubmitBtn').disabled = false;
+      document.getElementById('resetPasswordBtn').disabled = false;
+
+      onAuthStateChanged(auth, async user => {
+        clearSessionData();
+
+        if (!user) {
+          showLogin();
+          return;
+        }
+
+        if (user.uid !== ADMIN_UID) {
+          await signOut(auth);
+          showLogin('无访问权限 / Access denied');
+          return;
+        }
+
+        currentUser = user;
+        await startCloudSync(user);
+      });
+    } catch (error) {
+      console.error('Firebase initialization failed:', error);
+      showLogin('Firebase configuration error: ' + error.message);
+    }
+  }
+
+  function showLogin(message = '') {
+    document.getElementById('appContainer').hidden = true;
+    document.getElementById('loginScreen').hidden = false;
+    document.getElementById('loginError').textContent = message;
+    document.querySelectorAll('.modal-backdrop').forEach(modal => {
+      modal.classList.remove('open');
+    });
+  }
+
+  function showDashboard() {
+    document.getElementById('loginScreen').hidden = true;
+    document.getElementById('appContainer').hidden = false;
+    document.getElementById('currentUserEmail').textContent = currentUser?.email || '';
+    document.getElementById('loginPassword').value = '';
+  }
+
+  function clearSessionData() {
+    sessionVersion++;
+
+    if (unsubscribeCloud) {
+      unsubscribeCloud();
+      unsubscribeCloud = null;
+    }
+
+    cloudEnabled = false;
+    initialCloudLoaded = false;
+    isApplyingRemote = false;
+    saveFailed = false;
+
+    currentUser = null;
+    cloudDocRef = null;
+
+    checkoutCart = [];
+    saveQueue = Promise.resolve();
+
+    state = structuredClone(EMPTY_STATE);
+
+    document.getElementById('currentUserEmail').textContent = '';
+
+    [
+      'quickStaffBar',
+      'timerGrid',
+      'serviceGrid',
+      'statSummaryGrid',
+      'staffSummaryBody',
+      'orderDetailBody',
+      'tipDetailBody',
+      'sfDetailBody',
+      'empTableBody',
+      'srvTableBody',
+      'auditTableBody',
+      'checkoutItemsList',
+      'checkoutTotalInfo',
+      'quickTipButtons'
+    ].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.replaceChildren();
+      }
+    });
+
+    document.querySelectorAll('#appContainer input, .modal input, .modal textarea').forEach(input => {
+      input.value = '';
+    });
+  }
+
+  async function login(event) {
+    event.preventDefault();
+    if (!auth) return;
+
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const button = document.getElementById('loginSubmitBtn');
+    const errorBox = document.getElementById('loginError');
+
+    button.disabled = true;
+    button.textContent = '登录中 / Signing in...';
+    errorBox.textContent = '';
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      document.getElementById('loginPassword').value = '';
+    } catch (error) {
+      console.error('Authentication error:', error.code, error.message);
+
+      switch (error.code) {
+        case 'auth/invalid-credential':
+        case 'auth/wrong-password':
+        case 'auth/user-not-found':
+          errorBox.textContent = '邮箱或密码错误 / Invalid credentials';
+          break;
+        case 'auth/too-many-requests':
+          errorBox.textContent = '尝试次数过多，请稍后重试 / Try again later';
+          break;
+        case 'auth/network-request-failed':
+          errorBox.textContent = '网络连接失败 / Network connection failed';
+          break;
+        case 'auth/operation-not-allowed':
+          errorBox.textContent = 'Firebase Email/Password sign-in is not enabled.';
+          break;
+        default:
+          errorBox.textContent = '登录失败 / Sign-in failed: ' + error.code;
+      }
+    } finally {
+      button.disabled = false;
+      button.textContent = '登录 / Sign In';
+    }
+  }
+
+  async function logout() {
+    if (!auth) return;
+
+    if (saveFailed) {
+      exportJSON();
+      if (!confirm(
+        'Some changes may not have been saved. ' +
+        'A backup has been requested. Sign out anyway?'
+      )) {
         return;
       }
-      try {
-        const app = initializeApp(FIREBASE_CONFIG);
-        db = getFirestore(app);
-        cloudDocRef = doc(db, FIRESTORE_DOC_PATH[0], FIRESTORE_DOC_PATH[1]);
-        cloudEnabled = true;
-        setCloudBadge('☁️ 连接云端中...', 'tag-blue');
-
-        onSnapshot(cloudDocRef, (snap) => {
-          if (snap.exists()) {
-            isApplyingRemote = true;
-            const remoteData = snap.data();
-            delete remoteData.updatedAt;
-            mergeStateData(remoteData);
-            saveLocalCache();
-            applyAppearance();
-            applyRoleVisibility();
-            renderAll();
-            isApplyingRemote = false;
-            setCloudBadge('☁️ 云端实时同步', 'tag-green');
-          } else {
-            setCloudBadge('☁️ 初始化云端账本...', 'tag-blue');
-            saveState();
-          }
-        }, (err) => {
-          console.error('Firestore listener error:', err);
-          setCloudBadge('⚠️ 云端连接异常（本地模式）', 'tag-amber');
-        });
-      } catch (e) {
-        console.error('Firebase init failed:', e);
-        setCloudBadge('⚠️ Firebase 配置有误', 'tag-amber');
-      }
     }
 
-    function loadState() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) mergeStateData(JSON.parse(raw));
-      } catch (e) {
-        console.error(e);
-      }
+    try {
+      setDashboardLocked(true);
 
-      document.getElementById('entryDate').value = todayStr();
-      document.getElementById('statDate').value = todayStr();
-      document.getElementById('statStart').value = todayStr();
-      document.getElementById('statEnd').value = todayStr();
+      const finished = await Promise.race([
+        saveQueue.then(() => true),
+        new Promise(resolve => setTimeout(() => resolve(false), 5000))
+      ]);
 
-      applyAppearance();
-      applyRoleVisibility();
-      renderAll();
-      initFirebaseSync();
-    }
-
-    const I18N = {
-      zh: {
-        appTitle: '💆 门店收银与技师提成系统',
-        entryDate: '📅 记账日期：',
-        curTech: '👤 当前技师：',
-        timerBoardTitle: '⏱️ 服务计时看板（支持加钟 & 到点原位结账 & 多选合并结账）',
-        tipEntryTitle: '💵 小费录入（银行卡优先）',
-        sfEntryTitle: '🛎️ 每日收入 - 服务费录入',
-        orderEntryTitle: '📋 录入订单（点项目结账 / 点时间开钟）'
-      },
-      en: {
-        appTitle: '💆 Spa POS & Commission System',
-        entryDate: '📅 Date:',
-        curTech: '👤 Therapist:',
-        timerBoardTitle: '⏱️ Active Timers (Extend / Checkout / Multi-Merge)',
-        tipEntryTitle: '💵 Tip Entry (Card Priority)',
-        sfEntryTitle: '🛎️ Daily Service Fee',
-        orderEntryTitle: '📋 Order Entry (Click Service to Pay / Time to Start)'
-      }
-    };
-
-    function toggleLang() {
-      state.lang = state.lang === 'zh' ? 'en' : 'zh';
-      saveState();
-      applyAppearance();
-      renderAll();
-    }
-
-    function applyAppearance() {
-      document.body.className = [
-        state.scale,
-        state.eyeCare ? 'eye-care' : '',
-        state.touchMode ? 'touch-mode' : ''
-      ].filter(Boolean).join(' ');
-
-      document.getElementById('scaleSelect').value = state.scale || '';
-      document.getElementById('soundToggleBtn').textContent = state.soundEnabled
-        ? (state.lang === 'en' ? '🔔 Sound:ON' : '🔔 铃声:开')
-        : (state.lang === 'en' ? '🔕 Sound:OFF' : '🔕 铃声:关');
-      document.getElementById('touchBtn').classList.toggle('active-pill', !!state.touchMode);
-
-      const dict = I18N[state.lang] || I18N.zh;
-      document.getElementById('appTitle').textContent = dict.appTitle;
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const k = el.getAttribute('data-i18n');
-        if (dict[k]) el.textContent = dict[k];
-      });
-    }
-
-    function toggleSound() {
-      state.soundEnabled = !state.soundEnabled;
-      saveState();
-      applyAppearance();
-    }
-
-    function toggleTouch() {
-      state.touchMode = !state.touchMode;
-      saveState();
-      applyAppearance();
-    }
-
-    function toggleTheme() {
-      state.eyeCare = !state.eyeCare;
-      saveState();
-      applyAppearance();
-    }
-
-    function changeScale(v) {
-      state.scale = v;
-      saveState();
-      applyAppearance();
-    }
-
-    function playBell() {
-      if (!state.soundEnabled) return;
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.value = freq;
-          gain.gain.setValueAtTime(0.18, ctx.currentTime + i * 0.14);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.14 + 0.5);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start(ctx.currentTime + i * 0.14);
-          osc.stop(ctx.currentTime + i * 0.14 + 0.52);
-        });
-      } catch (e) {}
-    }
-
-    function applyRoleVisibility() {
-      const isBoss = state.role === 'boss';
-      const isTherapist = state.role === 'therapist';
-      const badge = document.getElementById('roleBadge');
-
-      if (isBoss) {
-        badge.textContent = '👑 店长 (Boss)';
-      } else if (state.role === 'front') {
-        badge.textContent = '🖥️ 前台 (Front Desk)';
-      } else {
-        const emp = state.employees.find(e => e.id === state.therapistViewId);
-        badge.textContent = `💆 技师 (${emp ? emp.name : '只读'})`;
-      }
-
-      document.querySelectorAll('.boss-only').forEach(el => {
-        el.style.display = isBoss ? '' : 'none';
-      });
-      document.querySelectorAll('.non-therapist').forEach(el => {
-        el.style.display = isTherapist ? 'none' : '';
-      });
-      document.getElementById('therapistLockBanner').style.display = isTherapist ? 'inline-block' : 'none';
-      if (isTherapist && state.therapistViewId) {
-        state.filterStaffId = state.therapistViewId;
-      }
-    }
-
-    function openRoleModal() {
-      const sel = document.getElementById('roleTherapistSelect');
-      sel.innerHTML = state.employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-      document.getElementById('roleSelectInput').value = state.role;
-      document.getElementById('rolePwdInput').value = '';
-      toggleRoleSelectExtras();
-      document.getElementById('roleModal').classList.add('open');
-    }
-
-    function toggleRoleSelectExtras() {
-      const r = document.getElementById('roleSelectInput').value;
-      document.getElementById('therapistSelectRow').style.display = r === 'therapist' ? 'flex' : 'none';
-    }
-
-    function verifyRoleSwitch() {
-      const r = document.getElementById('roleSelectInput').value;
-      const pwd = document.getElementById('rolePwdInput').value.trim();
-
-      if (r === 'boss') {
-        if (pwd !== state.passwords.boss) return alert('店长密码错误！');
-        state.role = 'boss';
-        state.therapistViewId = null;
-        state.filterStaffId = null;
-      } else if (r === 'front') {
-        if (pwd !== state.passwords.front) return alert('前台密码错误！');
-        state.role = 'front';
-        state.therapistViewId = null;
-        state.filterStaffId = null;
-      } else {
-        const empId = document.getElementById('roleTherapistSelect').value;
-        const emp = state.employees.find(e => e.id === empId);
-        if (!emp) return alert('请选择技师');
-        if (emp.pin && pwd !== emp.pin) return alert('该技师的 4 位查询 PIN 码错误！');
-        state.role = 'therapist';
-        state.therapistViewId = emp.id;
-        state.filterStaffId = emp.id;
-      }
-
-      saveState();
-      applyRoleVisibility();
-      renderAll();
-      closeModal('roleModal');
-    }
-
-    function saveRolePasswords() {
-      const nb = document.getElementById('newBossPwd').value.trim();
-      const nf = document.getElementById('newFrontPwd').value.trim();
-      if (nb) state.passwords.boss = nb;
-      if (nf) state.passwords.front = nf;
-      document.getElementById('newBossPwd').value = '';
-      document.getElementById('newFrontPwd').value = '';
-      addAudit('修改权限密码', '更新了店长/前台登录密码');
-      saveState();
-      alert('密码已更新！');
-    }
-
-    function openAuditModal() {
-      document.getElementById('auditTableBody').innerHTML = state.auditLogs.map(l => `
-        <tr>
-          <td>${l.time}</td>
-          <td>${l.role}</td>
-          <td>${l.action}</td>
-          <td>${l.detail}</td>
-        </tr>
-      `).join('') || '<tr><td colspan="4">暂无审计记录</td></tr>';
-      document.getElementById('auditModal').classList.add('open');
-    }
-
-    function saveEmployee() {
-      if (state.role !== 'boss') return alert('仅店长可操作');
-      const name = document.getElementById('empName').value.trim();
-      if (!name) return alert('请输入技师姓名');
-      const role = document.getElementById('empRole').value.trim() || '按摩师';
-      const base = parseFloat(document.getElementById('empBase').value) || 0;
-      const tax = parseFloat(document.getElementById('empTax').value) || 0;
-      const pin = document.getElementById('empPin').value.trim();
-      const editId = document.getElementById('editEmpId').value;
-
-      if (editId) {
-        const emp = state.employees.find(e => e.id === editId);
-        if (emp) {
-          Object.assign(emp, { name, role, base, tax, pin });
-          addAudit('修改技师资料', `${name} (${role})`);
+      if (!finished || saveFailed) {
+        exportJSON();
+        if (!confirm(
+          'Cloud saves are incomplete. ' +
+          'Confirm your backup was downloaded. ' +
+          'Sign out anyway?'
+        )) {
+          setDashboardLocked(false);
+          return;
         }
-      } else {
-        const id = 'emp_' + Date.now();
-        state.employees.push({ id, name, role, base, tax, pin });
-        if (!state.selectedStaffId) state.selectedStaffId = id;
-        addAudit('新增技师', `${name} (${role})`);
       }
 
-      document.getElementById('empName').value = '';
-      document.getElementById('empRole').value = '按摩师';
-      document.getElementById('empBase').value = '0';
-      document.getElementById('empTax').value = '';
-      document.getElementById('empPin').value = '';
-      document.getElementById('editEmpId').value = '';
-      saveState();
-      renderAll();
-    }
-
-    function editEmployee(id) {
-      const emp = state.employees.find(e => e.id === id);
-      if (!emp) return;
-      document.getElementById('empName').value = emp.name;
-      document.getElementById('empRole').value = emp.role;
-      document.getElementById('empBase').value = emp.base;
-      document.getElementById('empTax').value = emp.tax || '';
-      document.getElementById('empPin').value = emp.pin || '';
-      document.getElementById('editEmpId').value = emp.id;
-    }
-
-    function deleteEmployee(id) {
-      if (state.role !== 'boss') return alert('仅店长可删除');
-      const emp = state.employees.find(e => e.id === id);
-      if (!confirm('确定删除该技师？')) return;
-      state.employees = state.employees.filter(e => e.id !== id);
-      if (state.selectedStaffId === id) {
-        state.selectedStaffId = state.employees[0]?.id || null;
+      await signOut(auth);
+      clearSessionData();
+      showLogin('已退出登录 / Signed out');
+      location.reload();
+    } catch (error) {
+      console.error('Logout failed:', error);
+      alert('Sign-out failed. Please try again.');
+      if (!saveFailed) {
+        setDashboardLocked(false);
       }
-      addAudit('删除技师', emp ? emp.name : id);
-      saveState();
-      renderAll();
+    }
+  }
+
+  async function resetPassword() {
+    if (!auth) return;
+
+    const email = document.getElementById('loginEmail').value.trim();
+    const errorBox = document.getElementById('loginError');
+
+    if (!email) {
+      errorBox.textContent = '请先输入邮箱 / Enter your email first';
+      return;
     }
 
-    function updateCommLabel() {
-      const type = document.getElementById('srvCommType').value;
-      document.getElementById('srvCommVal').placeholder = type === 'fixed' ? '固定提成 ($)' : '提成比例 (%)';
+    try {
+      await sendPasswordResetEmail(auth, email);
+      errorBox.textContent =
+        '如果账户存在，您将收到密码重置邮件。' +
+        ' / If the account exists, a reset email will be sent.';
+    } catch (error) {
+      console.error('Password reset:', error.code);
+      errorBox.textContent = '无法发送重置邮件 / Unable to send reset email.';
     }
+  }
 
-    function calcCommission(srv, price) {
-      if (!srv) return 0;
-      const val = parseFloat(srv.commVal) || 0;
-      return srv.commType === 'percent' ? +(price * (val / 100)).toFixed(2) : +val.toFixed(2);
-    }
+  function initializeDashboard() {
+    const today = todayStr();
 
-    function saveService() {
-      if (state.role !== 'boss') return alert('仅店长可设置项目价格');
-      const name = document.getElementById('srvName').value.trim();
-      if (!name) return alert('请输入项目名称');
-      const price = parseFloat(document.getElementById('srvPrice').value) || 0;
-      const commType = document.getElementById('srvCommType').value;
-      const commVal = parseFloat(document.getElementById('srvCommVal').value) || 0;
-      const duration = parseInt(document.getElementById('srvDuration').value, 10) || 0;
-      const editId = document.getElementById('editSrvId').value;
-
-      if (editId) {
-        const srv = state.services.find(s => s.id === editId);
-        if (srv) {
-          Object.assign(srv, { name, price, commType, commVal, duration });
-          addAudit('修改项目价格/规则', `${name} $${price}`);
-        }
-      } else {
-        state.services.push({ id: 'srv_' + Date.now(), name, price, commType, commVal, duration });
-        addAudit('新增项目', `${name} $${price}`);
+    ['entryDate', 'statDate', 'statStart', 'statEnd'].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.value = today;
       }
+    });
 
-      document.getElementById('srvName').value = '';
-      document.getElementById('srvPrice').value = '';
-      document.getElementById('srvCommVal').value = '';
-      document.getElementById('srvDuration').value = '';
-      document.getElementById('editSrvId').value = '';
-      saveState();
-      renderAll();
+    applyAppearance();
+    applyRoleVisibility();
+    setDashboardLocked(false);
+    renderAll();
+  }
+
+  function escapeHTML(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  const I18N = {
+    zh: {
+      appTitle: '💆 门店收银与技师提成系统',
+      entryDate: '📅 记账日期：',
+      curTech: '👤 当前技师：',
+      timerBoardTitle: '⏱️ 服务计时看板（支持加钟 & 到点原位结账 & 多选合并结账）',
+      tipEntryTitle: '💵 小费录入（银行卡优先）',
+      sfEntryTitle: '🛎️ 每日收入 - 服务费录入',
+      orderEntryTitle: '📋 录入订单（点项目结账 / 点时间开钟）'
+    },
+    en: {
+      appTitle: '💆 Spa POS & Commission System',
+      entryDate: '📅 Date:',
+      curTech: '👤 Therapist:',
+      timerBoardTitle: '⏱️ Active Timers (Extend / Checkout / Multi-Merge)',
+      tipEntryTitle: '💵 Tip Entry (Card Priority)',
+      sfEntryTitle: '🛎️ Daily Service Fee',
+      orderEntryTitle: '📋 Order Entry (Click Service to Pay / Time to Start)'
     }
+  };
 
-    function editService(id) {
-      const srv = state.services.find(s => s.id === id);
-      if (!srv) return;
-      document.getElementById('srvName').value = srv.name;
-      document.getElementById('srvPrice').value = srv.price;
-      document.getElementById('srvCommType').value = srv.commType;
-      updateCommLabel();
-      document.getElementById('srvCommVal').value = srv.commVal;
-      document.getElementById('srvDuration').value = srv.duration || '';
-      document.getElementById('editSrvId').value = srv.id;
-    }
+  function toggleLang() {
+    state.lang = state.lang === 'zh' ? 'en' : 'zh';
+    saveState();
+    applyAppearance();
+    renderAll();
+  }
 
-    function deleteService(id) {
-      if (state.role !== 'boss') return alert('仅店长可删除项目');
-      const srv = state.services.find(s => s.id === id);
-      if (!confirm('确定删除该项目？')) return;
-      state.services = state.services.filter(s => s.id !== id);
-      addAudit('删除项目', srv ? srv.name : id);
-      saveState();
-      renderAll();
-    }
+  function applyAppearance() {
+    document.body.className = [
+      state.scale,
+      state.eyeCare ? 'eye-care' : '',
+      state.touchMode ? 'touch-mode' : ''
+    ].filter(Boolean).join(' ');
 
-    function startServiceTimer(serviceId, overrideStaffId = null) {
-      const targetStaff = overrideStaffId || state.selectedStaffId;
-      if (!targetStaff) return alert('请先选择「当前技师」');
-      const srv = state.services.find(s => s.id === serviceId);
-      const emp = state.employees.find(e => e.id === targetStaff);
-      if (!srv || !emp) return;
+    document.getElementById('scaleSelect').value = state.scale || '';
+    document.getElementById('soundToggleBtn').textContent = state.soundEnabled
+      ? (state.lang === 'en' ? '🔔 Sound:ON' : '🔔 铃声:开')
+      : (state.lang === 'en' ? '🔕 Sound:OFF' : '🔕 铃声:关');
+    document.getElementById('touchBtn').classList.toggle('active-pill', !!state.touchMode);
 
-      const mins = srv.duration > 0 ? srv.duration : 60;
-      const now = Date.now();
-      state.timers.push({
-        id: 'tm_' + now + '_' + Math.random().toString(36).slice(2, 6),
-        staffId: emp.id,
-        staffName: emp.name,
-        serviceId: srv.id,
-        serviceName: srv.name,
-        price: srv.price,
-        durationMins: mins,
-        startTime: now,
-        endTime: now + mins * 60000,
-        status: 'running',
-        bellPlayed: false,
-        checked: false
+    const dict = I18N[state.lang] || I18N.zh;
+    document.getElementById('appTitle').textContent = dict.appTitle;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const k = el.getAttribute('data-i18n');
+      if (dict[k]) el.textContent = dict[k];
+    });
+  }
+
+  function toggleSound() {
+    state.soundEnabled = !state.soundEnabled;
+    saveState();
+    applyAppearance();
+  }
+
+  function toggleTouch() {
+    state.touchMode = !state.touchMode;
+    saveState();
+    applyAppearance();
+  }
+
+  function toggleTheme() {
+    state.eyeCare = !state.eyeCare;
+    saveState();
+    applyAppearance();
+  }
+
+  function changeScale(v) {
+    state.scale = v;
+    saveState();
+    applyAppearance();
+  }
+
+  function playBell() {
+    if (!state.soundEnabled) return;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.18, ctx.currentTime + i * 0.14);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.14 + 0.5);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + i * 0.14);
+        osc.stop(ctx.currentTime + i * 0.14 + 0.52);
       });
-      saveState();
-      renderTimers();
+    } catch (e) {}
+  }
+
+  function applyRoleVisibility() {
+    const isAdmin = currentUser?.uid === ADMIN_UID;
+    state.role = isAdmin ? 'boss' : null;
+
+    document.getElementById('roleBadge').textContent = isAdmin
+      ? '👑 店长 / Administrator'
+      : '🔒 Unauthorized';
+
+    document.querySelectorAll('.boss-only').forEach(element => {
+      element.style.display = isAdmin ? '' : 'none';
+    });
+
+    document.querySelectorAll('.non-therapist').forEach(element => {
+      element.style.display = isAdmin ? '' : 'none';
+    });
+
+    document.getElementById('therapistLockBanner').style.display = 'none';
+  }
+
+  function openAuditModal() {
+    document.getElementById('auditTableBody').innerHTML = state.auditLogs.map(l => `
+      <tr>
+        <td>${l.time}</td>
+        <td>${l.role}</td>
+        <td>${l.action}</td>
+        <td>${escapeHTML(l.detail)}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="4">暂无审计记录</td></tr>';
+    document.getElementById('auditModal').classList.add('open');
+  }
+
+  function saveEmployee() {
+    if (!currentUser || currentUser.uid !== ADMIN_UID || !initialCloudLoaded) {
+      return alert('Unauthorized');
     }
 
-    function extendTimer(timerId, addMins = 15) {
-      const t = state.timers.find(item => item.id === timerId);
-      if (!t) return;
-      t.durationMins += addMins;
-      t.endTime = Math.max(Date.now(), t.endTime) + addMins * 60000;
-      t.status = 'running';
-      t.bellPlayed = false;
-      saveState();
-      renderTimers();
+    const name = document.getElementById('empName').value.trim();
+    if (!name) {
+      return alert('请输入技师姓名');
     }
 
-    function toggleTimerCheck(timerId) {
-      const t = state.timers.find(item => item.id === timerId);
-      if (!t) return;
-      t.checked = !t.checked;
-      saveState();
-      renderTimers();
+    const role = document.getElementById('empRole').value.trim() || '按摩师';
+    const base = parseFloat(document.getElementById('empBase').value) || 0;
+    const tax = parseFloat(document.getElementById('empTax').value) || 0;
+    const editId = document.getElementById('editEmpId').value;
+
+    if (editId) {
+      const emp = state.employees.find(e => e.id === editId);
+      if (emp) {
+        Object.assign(emp, { name, role, base, tax });
+        delete emp.pin;
+        addAudit('修改技师资料', `${name} (${role})`);
+      }
+    } else {
+      const id = 'emp_' + crypto.randomUUID();
+      state.employees.push({ id, name, role, base, tax });
+      if (!state.selectedStaffId) {
+        state.selectedStaffId = id;
+      }
+      addAudit('新增技师', `${name} (${role})`);
     }
 
-    function toggleSelectAllTimers(val) {
-      state.timers.forEach(t => { t.checked = val; });
-      saveState();
-      renderTimers();
+    document.getElementById('empName').value = '';
+    document.getElementById('empRole').value = '按摩师';
+    document.getElementById('empBase').value = '0';
+    document.getElementById('empTax').value = '';
+    document.getElementById('editEmpId').value = '';
+
+    saveState();
+    renderAll();
+  }
+
+  function editEmployee(id) {
+    const emp = state.employees.find(e => e.id === id);
+    if (!emp) return;
+
+    document.getElementById('empName').value = emp.name;
+    document.getElementById('empRole').value = emp.role;
+    document.getElementById('empBase').value = emp.base;
+    document.getElementById('empTax').value = emp.tax || '';
+    document.getElementById('editEmpId').value = emp.id;
+  }
+
+  function deleteEmployee(id) {
+    if (state.role !== 'boss') return alert('仅店长可删除');
+    const emp = state.employees.find(e => e.id === id);
+    if (!confirm('确定删除该技师？')) return;
+    state.employees = state.employees.filter(e => e.id !== id);
+    if (state.selectedStaffId === id) {
+      state.selectedStaffId = state.employees[0]?.id || null;
+    }
+    addAudit('删除技师', emp ? emp.name : id);
+    saveState();
+    renderAll();
+  }
+
+  function updateCommLabel() {
+    const type = document.getElementById('srvCommType').value;
+    document.getElementById('srvCommVal').placeholder = type === 'fixed' ? '固定提成 ($)' : '提成比例 (%)';
+  }
+
+  function calcCommission(srv, price) {
+    if (!srv) return 0;
+    const val = parseFloat(srv.commVal) || 0;
+    return srv.commType === 'percent' ? +(price * (val / 100)).toFixed(2) : +val.toFixed(2);
+  }
+
+  function saveService() {
+    if (state.role !== 'boss') return alert('仅店长可设置项目价格');
+    const name = document.getElementById('srvName').value.trim();
+    if (!name) return alert('请输入项目名称');
+    const price = parseFloat(document.getElementById('srvPrice').value) || 0;
+    const commType = document.getElementById('srvCommType').value;
+    const commVal = parseFloat(document.getElementById('srvCommVal').value) || 0;
+    const duration = parseInt(document.getElementById('srvDuration').value, 10) || 0;
+    const editId = document.getElementById('editSrvId').value;
+
+    if (editId) {
+      const srv = state.services.find(s => s.id === editId);
+      if (srv) {
+        Object.assign(srv, { name, price, commType, commVal, duration });
+        addAudit('修改项目价格/规则', `${name} $${price}`);
+      }
+    } else {
+      state.services.push({ id: 'srv_' + Date.now(), name, price, commType, commVal, duration });
+      addAudit('新增项目', `${name} $${price}`);
     }
 
-    function openDirectServiceCheckout(serviceId) {
-      if (!state.selectedStaffId) return alert('请先选择「当前技师」');
-      const srv = state.services.find(s => s.id === serviceId);
-      const emp = state.employees.find(e => e.id === state.selectedStaffId);
-      if (!srv || !emp) return;
+    document.getElementById('srvName').value = '';
+    document.getElementById('srvPrice').value = '';
+    document.getElementById('srvCommVal').value = '';
+    document.getElementById('srvDuration').value = '';
+    document.getElementById('editSrvId').value = '';
+    saveState();
+    renderAll();
+  }
 
-      checkoutCart = [{
-        staffId: emp.id,
-        staffName: emp.name,
-        serviceId: srv.id,
-        serviceName: srv.name,
-        price: srv.price,
-        commission: calcCommission(srv, srv.price),
-        duration: srv.duration || 0,
-        timerId: null
-      }];
-      showCheckoutModal();
-    }
+  function editService(id) {
+    const srv = state.services.find(s => s.id === id);
+    if (!srv) return;
+    document.getElementById('srvName').value = srv.name;
+    document.getElementById('srvPrice').value = srv.price;
+    document.getElementById('srvCommType').value = srv.commType;
+    updateCommLabel();
+    document.getElementById('srvCommVal').value = srv.commVal;
+    document.getElementById('srvDuration').value = srv.duration || '';
+    document.getElementById('editSrvId').value = srv.id;
+  }
 
-    function openTimerCheckout(timerId) {
-      const t = state.timers.find(item => item.id === timerId);
-      if (!t) return;
+  function deleteService(id) {
+    if (state.role !== 'boss') return alert('仅店长可删除项目');
+    const srv = state.services.find(s => s.id === id);
+    if (!confirm('确定删除该项目？')) return;
+    state.services = state.services.filter(s => s.id !== id);
+    addAudit('删除项目', srv ? srv.name : id);
+    saveState();
+    renderAll();
+  }
+
+  function startServiceTimer(serviceId, overrideStaffId = null) {
+    const targetStaff = overrideStaffId || state.selectedStaffId;
+    if (!targetStaff) return alert('请先选择「当前技师」');
+    const srv = state.services.find(s => s.id === serviceId);
+    const emp = state.employees.find(e => e.id === targetStaff);
+    if (!srv || !emp) return;
+
+    const mins = srv.duration > 0 ? srv.duration : 60;
+    const now = Date.now();
+    state.timers.push({
+      id: 'tm_' + now + '_' + Math.random().toString(36).slice(2, 6),
+      staffId: emp.id,
+      staffName: emp.name,
+      serviceId: srv.id,
+      serviceName: srv.name,
+      price: srv.price,
+      durationMins: mins,
+      startTime: now,
+      endTime: now + mins * 60000,
+      status: 'running',
+      bellPlayed: false,
+      checked: false
+    });
+    saveState();
+    renderTimers();
+  }
+
+  function extendTimer(timerId, addMins = 15) {
+    const t = state.timers.find(item => item.id === timerId);
+    if (!t) return;
+    t.durationMins += addMins;
+    t.endTime = Math.max(Date.now(), t.endTime) + addMins * 60000;
+    t.status = 'running';
+    t.bellPlayed = false;
+    saveState();
+    renderTimers();
+  }
+
+  function toggleTimerCheck(timerId) {
+    const t = state.timers.find(item => item.id === timerId);
+    if (!t) return;
+    t.checked = !t.checked;
+    saveState();
+    renderTimers();
+  }
+
+  function toggleSelectAllTimers(val) {
+    state.timers.forEach(t => { t.checked = val; });
+    saveState();
+    renderTimers();
+  }
+
+  function openDirectServiceCheckout(serviceId) {
+    if (!state.selectedStaffId) return alert('请先选择「当前技师」');
+    const srv = state.services.find(s => s.id === serviceId);
+    const emp = state.employees.find(e => e.id === state.selectedStaffId);
+    if (!srv || !emp) return;
+
+    checkoutCart = [{
+      staffId: emp.id,
+      staffName: emp.name,
+      serviceId: srv.id,
+      serviceName: srv.name,
+      price: srv.price,
+      commission: calcCommission(srv, srv.price),
+      duration: srv.duration || 0,
+      timerId: null
+    }];
+    showCheckoutModal();
+  }
+
+  function openTimerCheckout(timerId) {
+    const t = state.timers.find(item => item.id === timerId);
+    if (!t) return;
+    const srv = state.services.find(s => s.id === t.serviceId);
+    checkoutCart = [{
+      staffId: t.staffId,
+      staffName: t.staffName,
+      serviceId: t.serviceId,
+      serviceName: t.serviceName,
+      price: t.price,
+      commission: calcCommission(srv, t.price),
+      duration: t.durationMins || 0,
+      timerId: t.id
+    }];
+    showCheckoutModal();
+  }
+
+  function openMergedCheckout() {
+    const selected = state.timers.filter(t => t.checked);
+    if (!selected.length) return;
+    checkoutCart = selected.map(t => {
       const srv = state.services.find(s => s.id === t.serviceId);
-      checkoutCart = [{
+      return {
         staffId: t.staffId,
         staffName: t.staffName,
         serviceId: t.serviceId,
@@ -1473,502 +1999,559 @@
         commission: calcCommission(srv, t.price),
         duration: t.durationMins || 0,
         timerId: t.id
-      }];
-      showCheckoutModal();
-    }
-
-    function openMergedCheckout() {
-      const selected = state.timers.filter(t => t.checked);
-      if (!selected.length) return;
-      checkoutCart = selected.map(t => {
-        const srv = state.services.find(s => s.id === t.serviceId);
-        return {
-          staffId: t.staffId,
-          staffName: t.staffName,
-          serviceId: t.serviceId,
-          serviceName: t.serviceName,
-          price: t.price,
-          commission: calcCommission(srv, t.price),
-          duration: t.durationMins || 0,
-          timerId: t.id
-        };
-      });
-      showCheckoutModal();
-    }
-
-    function showCheckoutModal() {
-      const total = checkoutCart.reduce((sum, item) => sum + Number(item.price || 0), 0);
-      document.getElementById('checkoutItemsList').innerHTML = checkoutCart.map(item =>
-        `<div style="padding:4px 0; border-bottom:1px dashed var(--border);">${item.staffName} · ${item.serviceName} — <strong>$${Number(item.price).toFixed(2)}</strong></div>`
-      ).join('');
-      document.getElementById('checkoutTotalInfo').textContent = `合计应收：$${total.toFixed(2)}`;
-      document.getElementById('checkoutModal').classList.add('open');
-    }
-
-    function completeCheckout(payMethod) {
-      const dateVal = document.getElementById('entryDate').value || todayStr();
-      const finishedTimerIds = new Set();
-
-      checkoutCart.forEach(item => {
-        state.orders.push({
-          id: 'ord_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-          date: dateVal,
-          staffId: item.staffId,
-          staffName: item.staffName,
-          serviceId: item.serviceId,
-          serviceName: item.serviceName,
-          price: Number(item.price || 0),
-          commission: Number(item.commission || 0),
-          duration: Number(item.duration || 0),
-          payMethod
-        });
-        if (item.timerId) finishedTimerIds.add(item.timerId);
-      });
-
-      if (finishedTimerIds.size) {
-        state.timers = state.timers.filter(t => !finishedTimerIds.has(t.id));
-      }
-
-      checkoutCart = [];
-      closeModal('checkoutModal');
-      saveState();
-      renderAll();
-    }
-
-    function setTipType(type) {
-      state.tipType = type;
-      document.getElementById('tipCardBtn').className = type === '银行卡小费' ? 'btn-primary btn-sm' : 'btn-outline btn-sm';
-      document.getElementById('tipCashBtn').className = type === '现金小费' ? 'btn-primary btn-sm' : 'btn-outline btn-sm';
-    }
-
-    function addQuickTip() {
-      const val = parseFloat(document.getElementById('newQuickTip').value);
-      if (!val || val <= 0) return;
-      if (!state.quickTips.includes(val)) state.quickTips.push(val);
-      document.getElementById('newQuickTip').value = '';
-      saveState();
-      renderQuickTips();
-    }
-
-    function addTip(presetAmount = null) {
-      if (!state.selectedStaffId) return alert('请先选择「当前技师」');
-      const emp = state.employees.find(e => e.id === state.selectedStaffId);
-      if (!emp) return;
-      const amount = presetAmount !== null ? presetAmount : parseFloat(document.getElementById('tipAmount').value);
-      if (!amount || amount <= 0) return alert('请输入有效小费金额');
-      const note = document.getElementById('tipNote').value.trim();
-
-      state.tips.push({
-        id: 'tip_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
-        date: document.getElementById('entryDate').value || todayStr(),
-        staffId: emp.id,
-        staffName: emp.name,
-        type: state.tipType,
-        amount: +amount.toFixed(2),
-        note
-      });
-
-      document.getElementById('tipAmount').value = '';
-      document.getElementById('tipNote').value = '';
-      saveState();
-      renderAll();
-    }
-
-    function setSfPay(method) {
-      state.sfPayMethod = method;
-      document.querySelectorAll('.sf-pay-btn').forEach(btn => {
-        btn.className = btn.dataset.pay === method ? 'btn-primary btn-sm sf-pay-btn' : 'btn-outline btn-sm sf-pay-btn';
-      });
-    }
-
-    function addServiceFee() {
-      const amount = parseFloat(document.getElementById('sfAmount').value);
-      if (!amount || amount <= 0) return alert('请输入有效服务费金额');
-      const note = document.getElementById('sfNote').value.trim();
-      state.serviceFees.push({
-        id: 'sf_' + Date.now(),
-        date: document.getElementById('entryDate').value || todayStr(),
-        payMethod: state.sfPayMethod,
-        amount: +amount.toFixed(2),
-        note
-      });
-      document.getElementById('sfAmount').value = '';
-      document.getElementById('sfNote').value = '';
-      saveState();
-      renderAll();
-    }
-
-    function setPeriod(p) {
-      state.period = p;
-      document.querySelectorAll('.period-btn').forEach(btn => {
-        btn.className = btn.dataset.p === p ? 'btn-primary btn-sm period-btn' : 'btn-outline btn-sm period-btn';
-      });
-      document.getElementById('statDate').style.display = p === 'range' ? 'none' : '';
-      document.getElementById('statStart').style.display = p === 'range' ? '' : 'none';
-      document.getElementById('statEnd').style.display = p === 'range' ? '' : 'none';
-      renderAll();
-    }
-
-    function matchPeriod(dateStr) {
-      if (!dateStr) return false;
-      const refDate = document.getElementById('statDate').value || todayStr();
-      if (state.period === 'day') return dateStr === refDate;
-      if (state.period === 'month') return dateStr.slice(0, 7) === refDate.slice(0, 7);
-      if (state.period === 'year') return dateStr.slice(0, 4) === refDate.slice(0, 4);
-      const start = document.getElementById('statStart').value;
-      const end = document.getElementById('statEnd').value;
-      if (start && dateStr < start) return false;
-      if (end && dateStr > end) return false;
-      return true;
-    }
-
-    function clearStaffFilter() {
-      if (state.role === 'therapist') return;
-      state.filterStaffId = null;
-      renderAll();
-    }
-
-    function renderQuickTips() {
-      document.getElementById('quickTipButtons').innerHTML = state.quickTips.map(v =>
-        `<button class="btn-outline btn-sm" onclick="addTip(${v})">$${v}</button>`
-      ).join('');
-    }
-
-    function renderTimers() {
-      const now = Date.now();
-      let bellNeeded = false;
-
-      const html = state.timers.map(t => {
-        const remMs = t.endTime - now;
-        const isDone = remMs <= 0;
-        if (isDone && !t.bellPlayed) {
-          t.bellPlayed = true;
-          t.status = 'done';
-          bellNeeded = true;
-        }
-        const remSecs = Math.max(0, Math.floor(remMs / 1000));
-        const mm = String(Math.floor(remSecs / 60)).padStart(2, '0');
-        const ss = String(remSecs % 60).padStart(2, '0');
-        const boxClass = ['timer-box', t.checked ? 'checked' : '', isDone ? 'done' : (remSecs <= 300 ? 'warning' : '')].filter(Boolean).join(' ');
-
-        return `
-          <div class="${boxClass}">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <label style="font-weight:700; cursor:pointer;">
-                <input type="checkbox" ${t.checked ? 'checked' : ''} onchange="toggleTimerCheck('${t.id}')" />
-                ${t.staffName} · ${t.serviceName}
-              </label>
-              <span class="tag ${isDone ? 'tag-green' : 'tag-blue'}">${isDone ? '已到点' : '计时中'}</span>
-            </div>
-            <div class="timer-clock">${mm}:${ss}</div>
-            <div class="inline-inputs">
-              <button class="btn-outline btn-sm" onclick="extendTimer('${t.id}', 15)">+15分</button>
-              <button class="btn-success btn-sm" onclick="openTimerCheckout('${t.id}')">结账</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      document.getElementById('timerGrid').innerHTML = html || '<div style="color:var(--muted);">当前没有进行中的计时</div>';
-      document.getElementById('activeTimerCount').textContent = `${state.timers.length} 进行中`;
-
-      const checkedItems = state.timers.filter(t => t.checked);
-      const checkedSum = checkedItems.reduce((s, t) => s + Number(t.price || 0), 0);
-      document.getElementById('mergeSummary').textContent = `已选 ${checkedItems.length} 项 · 原价 $${checkedSum.toFixed(2)}`;
-      const mergeBtn = document.getElementById('mergeCheckoutBtn');
-      mergeBtn.disabled = checkedItems.length === 0;
-      mergeBtn.textContent = `🧾 合并结账 (已选 ${checkedItems.length} 项)`;
-
-      if (bellNeeded) {
-        saveState();
-        playBell();
-      }
-    }
-
-    function renderAll() {
-      renderQuickTips();
-      renderTimers();
-
-      const selectedEmp = state.employees.find(e => e.id === state.selectedStaffId);
-      document.getElementById('selectedStaffBadge').textContent = selectedEmp ? `当前技师：${selectedEmp.name}` : '未选技师';
-      document.getElementById('tipStaffBadge').textContent = selectedEmp ? `当前技师：${selectedEmp.name}` : '未选技师';
-
-      document.getElementById('quickStaffBar').innerHTML = state.employees.map(emp =>
-        `<button class="staff-pill ${emp.id === state.selectedStaffId ? 'selected' : ''}" onclick="state.selectedStaffId='${emp.id}'; saveState(); renderAll();">${emp.name}</button>`
-      ).join('') || '<span style="color:var(--muted);">请先在下方添加技师</span>';
-
-      document.getElementById('serviceGrid').innerHTML = state.services.map(srv =>
-        `<div class="service-item-btn">
-          <div class="service-main-click" onclick="openDirectServiceCheckout('${srv.id}')">
-            <span>${srv.name}</span>
-            <span>$${Number(srv.price).toFixed(2)}</span>
-          </div>
-          <button class="time-badge" onclick="startServiceTimer('${srv.id}')">⏱️ 开钟 (${srv.duration || 60}分)</button>
-        </div>`
-      ).join('') || '<div style="color:var(--muted);">请先在下方添加服务项目</div>';
-
-      const orders = state.orders.filter(o => matchPeriod(o.date));
-      const tips = state.tips.filter(t => matchPeriod(t.date));
-      const fees = state.serviceFees.filter(f => matchPeriod(f.date));
-
-      const serviceRev = orders.reduce((s, o) => s + Number(o.price || 0), 0);
-      const feeRev = fees.reduce((s, f) => s + Number(f.amount || 0), 0);
-      const totalRev = serviceRev + feeRev;
-      const totalComm = orders.reduce((s, o) => s + Number(o.commission || 0), 0);
-      const totalTips = tips.reduce((s, t) => s + Number(t.amount || 0), 0);
-
-      document.getElementById('statSummaryGrid').innerHTML = `
-        <div class="stat-box"><div class="stat-label">门店总营收</div><div class="stat-val">$${totalRev.toFixed(2)}</div></div>
-        <div class="stat-box"><div class="stat-label">项目营业额</div><div class="stat-val">$${serviceRev.toFixed(2)}</div></div>
-        <div class="stat-box"><div class="stat-label">服务费收入</div><div class="stat-val">$${feeRev.toFixed(2)}</div></div>
-        <div class="stat-box"><div class="stat-label">技师总提成</div><div class="stat-val">$${totalComm.toFixed(2)}</div></div>
-        <div class="stat-box"><div class="stat-label">技师总小费</div><div class="stat-val">$${totalTips.toFixed(2)}</div></div>
-      `;
-
-      document.getElementById('staffSummaryBody').innerHTML = state.employees.map(emp => {
-        const eOrders = orders.filter(o => o.staffId === emp.id);
-        const eTips = tips.filter(t => t.staffId === emp.id);
-        const rev = eOrders.reduce((s, o) => s + Number(o.price || 0), 0);
-        const mins = eOrders.reduce((s, o) => s + Number(o.duration || 0), 0);
-        const comm = eOrders.reduce((s, o) => s + Number(o.commission || 0), 0);
-        const cardTip = eTips.filter(t => t.type === '银行卡小费').reduce((s, t) => s + Number(t.amount || 0), 0);
-        const cashTip = eTips.filter(t => t.type === '现金小费').reduce((s, t) => s + Number(t.amount || 0), 0);
-        const base = Number(emp.base || 0);
-        const tax = Number(emp.tax || 0);
-        const netPay = base + comm + cardTip + cashTip - tax;
-
-        return `
-          <tr>
-            <td><a href="javascript:void(0)" onclick="state.filterStaffId='${emp.id}'; renderAll();"><strong>${emp.name}</strong></a></td>
-            <td>${emp.role}</td>
-            <td>${eOrders.length}</td>
-            <td>${(mins / 60).toFixed(1)}h</td>
-            <td>$${rev.toFixed(2)}</td>
-            <td>$${base.toFixed(2)}</td>
-            <td>$${comm.toFixed(2)}</td>
-            <td>$${cardTip.toFixed(2)}</td>
-            <td>$${cashTip.toFixed(2)}</td>
-            <td>$${tax.toFixed(2)}</td>
-            <td><strong>$${netPay.toFixed(2)}</strong></td>
-          </tr>
-        `;
-      }).join('') || '<tr><td colspan="11">暂无技师数据</td></tr>';
-
-      const filteredOrders = state.filterStaffId ? orders.filter(o => o.staffId === state.filterStaffId) : orders;
-      const filteredTips = state.filterStaffId ? tips.filter(t => t.staffId === state.filterStaffId) : tips;
-      const filterEmp = state.employees.find(e => e.id === state.filterStaffId);
-
-      document.getElementById('filterTag').textContent = filterEmp ? filterEmp.name : '全部技师';
-      document.getElementById('orderCountTag').textContent = `${filteredOrders.length} 笔`;
-
-      document.getElementById('orderDetailBody').innerHTML = filteredOrders.map(o => `
-        <tr>
-          <td>${o.staffName}</td>
-          <td>${o.serviceName}</td>
-          <td>$${Number(o.price).toFixed(2)}</td>
-          <td><span class="tag tag-blue">${o.payMethod}</span></td>
-          <td>$${Number(o.commission).toFixed(2)}</td>
-          <td>${o.date}</td>
-          <td><button class="btn-danger btn-sm" onclick="deleteOrder('${o.id}')">删</button></td>
-        </tr>
-      `).join('') || '<tr><td colspan="7">暂无订单记录</td></tr>';
-
-      const cardSum = filteredTips.filter(t => t.type === '银行卡小费').reduce((s, t) => s + Number(t.amount || 0), 0);
-      const cashSum = filteredTips.filter(t => t.type === '现金小费').reduce((s, t) => s + Number(t.amount || 0), 0);
-      document.getElementById('tipTotalTag').textContent = `卡$${cardSum.toFixed(0)} | 现$${cashSum.toFixed(0)}`;
-
-      document.getElementById('tipDetailBody').innerHTML = filteredTips.map(t => `
-        <tr>
-          <td>${t.staffName}</td>
-          <td>${t.type}</td>
-          <td>$${Number(t.amount).toFixed(2)}</td>
-          <td>${t.date}${t.note ? ' · ' + t.note : ''}</td>
-          <td><button class="btn-danger btn-sm" onclick="deleteTip('${t.id}')">删</button></td>
-        </tr>
-      `).join('') || '<tr><td colspan="5">暂无小费记录</td></tr>';
-
-      document.getElementById('sfDetailBody').innerHTML = fees.map(f => `
-        <tr>
-          <td>服务费 (${f.payMethod})</td>
-          <td>$${Number(f.amount).toFixed(2)}</td>
-          <td>${f.date}${f.note ? ' · ' + f.note : ''}</td>
-          <td><button class="btn-danger btn-sm" onclick="deleteServiceFee('${f.id}')">删</button></td>
-        </tr>
-      `).join('') || '<tr><td colspan="4">暂无服务费记录</td></tr>';
-
-      document.getElementById('empTableBody').innerHTML = state.employees.map(emp => `
-        <tr>
-          <td>${emp.name}</td>
-          <td>${emp.role}</td>
-          <td>$${Number(emp.base || 0).toFixed(2)}</td>
-          <td>$${Number(emp.tax || 0).toFixed(2)}</td>
-          <td>${emp.pin || '-'}</td>
-          <td>
-            <button class="btn-outline btn-sm" onclick="editEmployee('${emp.id}')">编辑</button>
-            <button class="btn-danger btn-sm" onclick="deleteEmployee('${emp.id}')">删除</button>
-          </td>
-        </tr>
-      `).join('') || '<tr><td colspan="6">暂无员工</td></tr>';
-
-      document.getElementById('srvTableBody').innerHTML = state.services.map(srv => `
-        <tr>
-          <td>${srv.name}</td>
-          <td>$${Number(srv.price).toFixed(2)}</td>
-          <td>${srv.commType === 'percent' ? srv.commVal + '%' : '$' + Number(srv.commVal).toFixed(2)}</td>
-          <td>${srv.duration || 0} 分钟</td>
-          <td>
-            <button class="btn-outline btn-sm" onclick="editService('${srv.id}')">编辑</button>
-            <button class="btn-danger btn-sm" onclick="deleteService('${srv.id}')">删除</button>
-          </td>
-        </tr>
-      `).join('') || '<tr><td colspan="5">暂无服务项目</td></tr>';
-    }
-
-    function deleteOrder(id) {
-      if (state.role !== 'boss') return alert('仅店长可删除账单');
-      state.orders = state.orders.filter(o => o.id !== id);
-      addAudit('删除订单', id);
-      saveState();
-      renderAll();
-    }
-
-    function deleteTip(id) {
-      if (state.role !== 'boss') return alert('仅店长可删除小费');
-      state.tips = state.tips.filter(t => t.id !== id);
-      addAudit('删除小费', id);
-      saveState();
-      renderAll();
-    }
-
-    function deleteServiceFee(id) {
-      if (state.role !== 'boss') return alert('仅店长可删除服务费');
-      state.serviceFees = state.serviceFees.filter(f => f.id !== id);
-      addAudit('删除服务费', id);
-      saveState();
-      renderAll();
-    }
-
-    function openPayslipModal() {
-      window.print();
-    }
-
-    function exportCSV() {
-      const rows = [['Date', 'Staff', 'Service', 'Price', 'Commission', 'Payment']];
-      state.orders.forEach(o => rows.push([o.date, o.staffName, o.serviceName, o.price, o.commission, o.payMethod]));
-      const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
-      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `pos_orders_${todayStr()}.csv`;
-      a.click();
-    }
-
-    function exportJSON() {
-      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `pos_backup_${todayStr()}.json`;
-      a.click();
-    }
-
-    function importJSON(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const imported = JSON.parse(reader.result);
-          mergeStateData(imported);
-          addAudit('导入备份', file.name);
-          saveState();
-          applyAppearance();
-          applyRoleVisibility();
-          renderAll();
-          alert('数据已恢复！');
-        } catch (err) {
-          alert('无效的 JSON 文件');
-        }
       };
-      reader.readAsText(file);
-    }
+    });
+    showCheckoutModal();
+  }
 
-    function openResetModal() {
-      document.getElementById('resetModal').classList.add('open');
-    }
+  function showCheckoutModal() {
+    const total = checkoutCart.reduce((sum, item) => sum + Number(item.price || 0), 0);
+    document.getElementById('checkoutItemsList').innerHTML = checkoutCart.map(item =>
+      `<div style="padding:4px 0; border-bottom:1px dashed var(--border);">${item.staffName} · ${item.serviceName} — <strong>$${Number(item.price).toFixed(2)}</strong></div>`
+    ).join('');
+    document.getElementById('checkoutTotalInfo').textContent = `合计应收：$${total.toFixed(2)}`;
+    document.getElementById('checkoutModal').classList.add('open');
+  }
 
-    function resetData(mode) {
-      if (state.role !== 'boss') return alert('仅店长可清空数据');
-      if (mode === 'orders') {
-        state.orders = [];
-        state.tips = [];
-        state.serviceFees = [];
-        state.timers = [];
-        addAudit('清空流水账单', '保留员工与服务项目');
-      } else {
-        state.employees = [];
-        state.services = [];
-        state.orders = [];
-        state.tips = [];
-        state.serviceFees = [];
-        state.timers = [];
-        state.selectedStaffId = null;
-        state.filterStaffId = null;
-        addAudit('全部清空账本', '重置为空白账本');
-      }
-      saveState();
-      closeModal('resetModal');
-      renderAll();
-    }
+  function completeCheckout(payMethod) {
+    const dateVal = document.getElementById('entryDate').value || todayStr();
+    const finishedTimerIds = new Set();
 
-    // Expose inline onclick handlers to module scope
-    Object.assign(window, {
-      toggleLang,
-      openRoleModal,
-      closeModal,
-      toggleSound,
-      playBell,
-      toggleTouch,
-      changeScale,
-      toggleTheme,
-      openPayslipModal,
-      exportCSV,
-      exportJSON,
-      importJSON,
-      openAuditModal,
-      openResetModal,
-      toggleSelectAllTimers,
-      openMergedCheckout,
-      setTipType,
-      addTip,
-      addQuickTip,
-      setSfPay,
-      addServiceFee,
-      setPeriod,
-      clearStaffFilter,
-      saveEmployee,
-      editEmployee,
-      deleteEmployee,
-      updateCommLabel,
-      saveService,
-      editService,
-      deleteService,
-      toggleRoleSelectExtras,
-      verifyRoleSwitch,
-      saveRolePasswords,
-      completeCheckout,
-      resetData,
-      startServiceTimer,
-      extendTimer,
-      toggleTimerCheck,
-      openDirectServiceCheckout,
-      openTimerCheckout,
-      deleteOrder,
-      deleteTip,
-      deleteServiceFee
+    checkoutCart.forEach(item => {
+      state.orders.push({
+        id: 'ord_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        date: dateVal,
+        staffId: item.staffId,
+        staffName: item.staffName,
+        serviceId: item.serviceId,
+        serviceName: item.serviceName,
+        price: Number(item.price || 0),
+        commission: Number(item.commission || 0),
+        duration: Number(item.duration || 0),
+        payMethod
+      });
+      if (item.timerId) finishedTimerIds.add(item.timerId);
     });
 
-    setInterval(renderTimers, 1000);
-    loadState();
-  </script>
+    if (finishedTimerIds.size) {
+      state.timers = state.timers.filter(t => !finishedTimerIds.has(t.id));
+    }
+
+    checkoutCart = [];
+    closeModal('checkoutModal');
+    saveState();
+    renderAll();
+  }
+
+  function setTipType(type) {
+    state.tipType = type;
+    document.getElementById('tipCardBtn').className = type === '银行卡小费' ? 'btn-primary btn-sm' : 'btn-outline btn-sm';
+    document.getElementById('tipCashBtn').className = type === '现金小费' ? 'btn-primary btn-sm' : 'btn-outline btn-sm';
+  }
+
+  function addQuickTip() {
+    const val = parseFloat(document.getElementById('newQuickTip').value);
+    if (!val || val <= 0) return;
+    if (!state.quickTips.includes(val)) state.quickTips.push(val);
+    document.getElementById('newQuickTip').value = '';
+    saveState();
+    renderQuickTips();
+  }
+
+  function addTip(presetAmount = null) {
+    if (!state.selectedStaffId) return alert('请先选择「当前技师」');
+    const emp = state.employees.find(e => e.id === state.selectedStaffId);
+    if (!emp) return;
+    const amount = presetAmount !== null ? presetAmount : parseFloat(document.getElementById('tipAmount').value);
+    if (!amount || amount <= 0) return alert('请输入有效小费金额');
+    const note = document.getElementById('tipNote').value.trim();
+
+    state.tips.push({
+      id: 'tip_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+      date: document.getElementById('entryDate').value || todayStr(),
+      staffId: emp.id,
+      staffName: emp.name,
+      type: state.tipType,
+      amount: +amount.toFixed(2),
+      note
+    });
+
+    document.getElementById('tipAmount').value = '';
+    document.getElementById('tipNote').value = '';
+    saveState();
+    renderAll();
+  }
+
+  function setSfPay(method) {
+    state.sfPayMethod = method;
+    document.querySelectorAll('.sf-pay-btn').forEach(btn => {
+      btn.className = btn.dataset.pay === method ? 'btn-primary btn-sm sf-pay-btn' : 'btn-outline btn-sm sf-pay-btn';
+    });
+  }
+
+  function addServiceFee() {
+    const amount = parseFloat(document.getElementById('sfAmount').value);
+    if (!amount || amount <= 0) return alert('请输入有效服务费金额');
+    const note = document.getElementById('sfNote').value.trim();
+    state.serviceFees.push({
+      id: 'sf_' + Date.now(),
+      date: document.getElementById('entryDate').value || todayStr(),
+      payMethod: state.sfPayMethod,
+      amount: +amount.toFixed(2),
+      note
+    });
+    document.getElementById('sfAmount').value = '';
+    document.getElementById('sfNote').value = '';
+    saveState();
+    renderAll();
+  }
+
+  function setPeriod(p) {
+    state.period = p;
+    document.querySelectorAll('.period-btn').forEach(btn => {
+      btn.className = btn.dataset.p === p ? 'btn-primary btn-sm period-btn' : 'btn-outline btn-sm period-btn';
+    });
+    document.getElementById('statDate').style.display = p === 'range' ? 'none' : '';
+    document.getElementById('statStart').style.display = p === 'range' ? '' : 'none';
+    document.getElementById('statEnd').style.display = p === 'range' ? '' : 'none';
+    renderAll();
+  }
+
+  function matchPeriod(dateStr) {
+    if (!dateStr) return false;
+    const refDate = document.getElementById('statDate').value || todayStr();
+    if (state.period === 'day') return dateStr === refDate;
+    if (state.period === 'month') return dateStr.slice(0, 7) === refDate.slice(0, 7);
+    if (state.period === 'year') return dateStr.slice(0, 4) === refDate.slice(0, 4);
+    const start = document.getElementById('statStart').value;
+    const end = document.getElementById('statEnd').value;
+    if (start && dateStr < start) return false;
+    if (end && dateStr > end) return false;
+    return true;
+  }
+
+  function clearStaffFilter() {
+    if (state.role === 'therapist') return;
+    state.filterStaffId = null;
+    renderAll();
+  }
+
+  function renderQuickTips() {
+    document.getElementById('quickTipButtons').innerHTML = state.quickTips.map(v =>
+      `<button class="btn-outline btn-sm" onclick="addTip(${v})">$${v}</button>`
+    ).join('');
+  }
+
+  function renderTimers() {
+    const now = Date.now();
+    let bellNeeded = false;
+
+    const html = state.timers.map(t => {
+      const remMs = t.endTime - now;
+      const isDone = remMs <= 0;
+      if (isDone && !t.bellPlayed) {
+        t.bellPlayed = true;
+        t.status = 'done';
+        bellNeeded = true;
+      }
+      const remSecs = Math.max(0, Math.floor(remMs / 1000));
+      const mm = String(Math.floor(remSecs / 60)).padStart(2, '0');
+      const ss = String(remSecs % 60).padStart(2, '0');
+      const boxClass = ['timer-box', t.checked ? 'checked' : '', isDone ? 'done' : (remSecs <= 300 ? 'warning' : '')].filter(Boolean).join(' ');
+
+      return `
+        <div class="${boxClass}">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label style="font-weight:700; cursor:pointer;">
+              <input type="checkbox" ${t.checked ? 'checked' : ''} onchange="toggleTimerCheck('${t.id}')" />
+              ${escapeHTML(t.staffName)} · ${escapeHTML(t.serviceName)}
+            </label>
+            <span class="tag ${isDone ? 'tag-green' : 'tag-blue'}">${isDone ? '已到点' : '计时中'}</span>
+          </div>
+          <div class="timer-clock">${mm}:${ss}</div>
+          <div class="inline-inputs">
+            <button class="btn-outline btn-sm" onclick="extendTimer('${t.id}', 15)">+15分</button>
+            <button class="btn-success btn-sm" onclick="openTimerCheckout('${t.id}')">结账</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    document.getElementById('timerGrid').innerHTML = html || '<div style="color:var(--muted);">当前没有进行中的计时</div>';
+    document.getElementById('activeTimerCount').textContent = `${state.timers.length} 进行中`;
+
+    const checkedItems = state.timers.filter(t => t.checked);
+    const checkedSum = checkedItems.reduce((s, t) => s + Number(t.price || 0), 0);
+    document.getElementById('mergeSummary').textContent = `已选 ${checkedItems.length} 项 · 原价 $${checkedSum.toFixed(2)}`;
+    const mergeBtn = document.getElementById('mergeCheckoutBtn');
+    mergeBtn.disabled = checkedItems.length === 0;
+    mergeBtn.textContent = `🧾 合并结账 (已选 ${checkedItems.length} 项)`;
+
+    if (bellNeeded) {
+      saveState();
+      playBell();
+    }
+  }
+
+  function renderAll() {
+    renderQuickTips();
+    renderTimers();
+
+    const selectedEmp = state.employees.find(e => e.id === state.selectedStaffId);
+    document.getElementById('selectedStaffBadge').textContent = selectedEmp ? `当前技师：${selectedEmp.name}` : '未选技师';
+    document.getElementById('tipStaffBadge').textContent = selectedEmp ? `当前技师：${selectedEmp.name}` : '未选技师';
+
+    document.getElementById('quickStaffBar').innerHTML = state.employees.map(emp =>
+      `<button class="staff-pill ${emp.id === state.selectedStaffId ? 'selected' : ''}" onclick="state.selectedStaffId='${emp.id}'; saveState(); renderAll();">${escapeHTML(emp.name)}</button>`
+    ).join('') || '<span style="color:var(--muted);">请先在下方添加技师</span>';
+
+    document.getElementById('serviceGrid').innerHTML = state.services.map(srv =>
+      `<div class="service-item-btn">
+        <div class="service-main-click" onclick="openDirectServiceCheckout('${srv.id}')">
+          <span>${escapeHTML(srv.name)}</span>
+          <span>$${Number(srv.price).toFixed(2)}</span>
+        </div>
+        <button class="time-badge" onclick="startServiceTimer('${srv.id}')">⏱️ 开钟 (${srv.duration || 60}分)</button>
+      </div>`
+    ).join('') || '<div style="color:var(--muted);">请先在下方添加服务项目</div>';
+
+    const orders = state.orders.filter(o => matchPeriod(o.date));
+    const tips = state.tips.filter(t => matchPeriod(t.date));
+    const fees = state.serviceFees.filter(f => matchPeriod(f.date));
+
+    const serviceRev = orders.reduce((s, o) => s + Number(o.price || 0), 0);
+    const feeRev = fees.reduce((s, f) => s + Number(f.amount || 0), 0);
+    const totalRev = serviceRev + feeRev;
+    const totalComm = orders.reduce((s, o) => s + Number(o.commission || 0), 0);
+    const totalTips = tips.reduce((s, t) => s + Number(t.amount || 0), 0);
+
+    document.getElementById('statSummaryGrid').innerHTML = `
+      <div class="stat-box"><div class="stat-label">门店总营收</div><div class="stat-val">$${totalRev.toFixed(2)}</div></div>
+      <div class="stat-box"><div class="stat-label">项目营业额</div><div class="stat-val">$${serviceRev.toFixed(2)}</div></div>
+      <div class="stat-box"><div class="stat-label">服务费收入</div><div class="stat-val">$${feeRev.toFixed(2)}</div></div>
+      <div class="stat-box"><div class="stat-label">技师总提成</div><div class="stat-val">$${totalComm.toFixed(2)}</div></div>
+      <div class="stat-box"><div class="stat-label">技师总小费</div><div class="stat-val">$${totalTips.toFixed(2)}</div></div>
+    `;
+
+    document.getElementById('staffSummaryBody').innerHTML = state.employees.map(emp => {
+      const eOrders = orders.filter(o => o.staffId === emp.id);
+      const eTips = tips.filter(t => t.staffId === emp.id);
+      const rev = eOrders.reduce((s, o) => s + Number(o.price || 0), 0);
+      const mins = eOrders.reduce((s, o) => s + Number(o.duration || 0), 0);
+      const comm = eOrders.reduce((s, o) => s + Number(o.commission || 0), 0);
+      const cardTip = eTips.filter(t => t.type === '银行卡小费').reduce((s, t) => s + Number(t.amount || 0), 0);
+      const cashTip = eTips.filter(t => t.type === '现金小费').reduce((s, t) => s + Number(t.amount || 0), 0);
+      const base = Number(emp.base || 0);
+      const tax = Number(emp.tax || 0);
+      const netPay = base + comm + cardTip + cashTip - tax;
+
+      return `
+        <tr>
+          <td><a href="javascript:void(0)" onclick="state.filterStaffId='${emp.id}'; renderAll();"><strong>${escapeHTML(emp.name)}</strong></a></td>
+          <td>${escapeHTML(emp.role)}</td>
+          <td>${eOrders.length}</td>
+          <td>${(mins / 60).toFixed(1)}h</td>
+          <td>$${rev.toFixed(2)}</td>
+          <td>$${base.toFixed(2)}</td>
+          <td>$${comm.toFixed(2)}</td>
+          <td>$${cardTip.toFixed(2)}</td>
+          <td>$${cashTip.toFixed(2)}</td>
+          <td>$${tax.toFixed(2)}</td>
+          <td><strong>$${netPay.toFixed(2)}</strong></td>
+        </tr>
+      `;
+    }).join('') || '<tr><td colspan="11">暂无技师数据</td></tr>';
+
+    const filteredOrders = state.filterStaffId ? orders.filter(o => o.staffId === state.filterStaffId) : orders;
+    const filteredTips = state.filterStaffId ? tips.filter(t => t.staffId === state.filterStaffId) : tips;
+    const filterEmp = state.employees.find(e => e.id === state.filterStaffId);
+
+    document.getElementById('filterTag').textContent = filterEmp ? filterEmp.name : '全部技师';
+    document.getElementById('orderCountTag').textContent = `${filteredOrders.length} 笔`;
+
+    document.getElementById('orderDetailBody').innerHTML = filteredOrders.map(o => `
+      <tr>
+        <td>${escapeHTML(o.staffName)}</td>
+        <td>${escapeHTML(o.serviceName)}</td>
+        <td>$${Number(o.price).toFixed(2)}</td>
+        <td><span class="tag tag-blue">${o.payMethod}</span></td>
+        <td>$${Number(o.commission).toFixed(2)}</td>
+        <td>${escapeHTML(o.date)}</td>
+        <td><button class="btn-danger btn-sm" onclick="deleteOrder('${o.id}')">删</button></td>
+      </tr>
+    `).join('') || '<tr><td colspan="7">暂无订单记录</td></tr>';
+
+    const cardSum = filteredTips.filter(t => t.type === '银行卡小费').reduce((s, t) => s + Number(t.amount || 0), 0);
+    const cashSum = filteredTips.filter(t => t.type === '现金小费').reduce((s, t) => s + Number(t.amount || 0), 0);
+    document.getElementById('tipTotalTag').textContent = `卡$${cardSum.toFixed(0)} | 现$${cashSum.toFixed(0)}`;
+
+    document.getElementById('tipDetailBody').innerHTML = filteredTips.map(t => `
+      <tr>
+        <td>${escapeHTML(t.staffName)}</td>
+        <td>${escapeHTML(t.type)}</td>
+        <td>$${Number(t.amount).toFixed(2)}</td>
+        <td>${escapeHTML(t.date)}${t.note ? ' · ' + escapeHTML(t.note) : ''}</td>
+        <td><button class="btn-danger btn-sm" onclick="deleteTip('${t.id}')">删</button></td>
+      </tr>
+    `).join('') || '<tr><td colspan="5">暂无小费记录</td></tr>';
+
+    document.getElementById('sfDetailBody').innerHTML = fees.map(f => `
+      <tr>
+        <td>服务费 (${escapeHTML(f.payMethod)})</td>
+        <td>$${Number(f.amount).toFixed(2)}</td>
+        <td>${escapeHTML(f.date)}${f.note ? ' · ' + escapeHTML(f.note) : ''}</td>
+        <td><button class="btn-danger btn-sm" onclick="deleteServiceFee('${f.id}')">删</button></td>
+      </tr>
+    `).join('') || '<tr><td colspan="4">暂无服务费记录</td></tr>';
+
+    document.getElementById('empTableBody').innerHTML = state.employees.map(emp => `
+      <tr>
+        <td>${escapeHTML(emp.name)}</td>
+        <td>${escapeHTML(emp.role)}</td>
+        <td>$${Number(emp.base || 0).toFixed(2)}</td>
+        <td>$${Number(emp.tax || 0).toFixed(2)}</td>
+        <td>
+          <button class="btn-outline btn-sm" onclick="editEmployee('${emp.id}')">编辑</button>
+          <button class="btn-danger btn-sm" onclick="deleteEmployee('${emp.id}')">删除</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="5">暂无员工</td></tr>';
+
+    document.getElementById('srvTableBody').innerHTML = state.services.map(srv => `
+      <tr>
+        <td>${escapeHTML(srv.name)}</td>
+        <td>$${Number(srv.price).toFixed(2)}</td>
+        <td>${srv.commType === 'percent' ? srv.commVal + '%' : '$' + Number(srv.commVal).toFixed(2)}</td>
+        <td>${srv.duration || 0} 分钟</td>
+        <td>
+          <button class="btn-outline btn-sm" onclick="editService('${srv.id}')">编辑</button>
+          <button class="btn-danger btn-sm" onclick="deleteService('${srv.id}')">删除</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="5">暂无服务项目</td></tr>';
+  }
+
+  function deleteOrder(id) {
+    if (state.role !== 'boss') return alert('仅店长可删除账单');
+    state.orders = state.orders.filter(o => o.id !== id);
+    addAudit('删除订单', id);
+    saveState();
+    renderAll();
+  }
+
+  function deleteTip(id) {
+    if (state.role !== 'boss') return alert('仅店长可删除小费');
+    state.tips = state.tips.filter(t => t.id !== id);
+    addAudit('删除小费', id);
+    saveState();
+    renderAll();
+  }
+
+  function deleteServiceFee(id) {
+    if (state.role !== 'boss') return alert('仅店长可删除服务费');
+    state.serviceFees = state.serviceFees.filter(f => f.id !== id);
+    addAudit('删除服务费', id);
+    saveState();
+    renderAll();
+  }
+
+  function openPayslipModal() {
+    window.print();
+  }
+
+  function exportCSV() {
+    const rows = [['Date', 'Staff', 'Service', 'Price', 'Commission', 'Payment']];
+    state.orders.forEach(o => rows.push([o.date, o.staffName, o.serviceName, o.price, o.commission, o.payMethod]));
+    const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `pos_orders_${todayStr()}.csv`;
+    a.click();
+  }
+
+  function exportJSON() {
+    if (!currentUser || currentUser.uid !== ADMIN_UID) {
+      return;
+    }
+
+    const backup = sanitizeStateData(state);
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `pos_backup_${todayStr()}.json`;
+    link.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
+  }
+
+  async function importJSON(event) {
+    if (
+      !currentUser ||
+      currentUser.uid !== ADMIN_UID ||
+      !initialCloudLoaded ||
+      saveFailed
+    ) {
+      return alert('Cloud access is unavailable.');
+    }
+
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!confirm(
+      'Restoring this backup may replace your ' +
+      'existing cloud records.\n\nContinue?'
+    )) {
+      event.target.value = '';
+      return;
+    }
+
+    try {
+      const raw = await file.text();
+      const imported = JSON.parse(raw);
+
+      if (!imported || typeof imported !== 'object' || Array.isArray(imported)) {
+        throw new Error('Invalid backup format');
+      }
+
+      const arrayFields = [
+        'employees',
+        'services',
+        'orders',
+        'tips',
+        'serviceFees',
+        'timers',
+        'appointments',
+        'members',
+        'auditLogs',
+        'quickTips'
+      ];
+
+      for (const field of arrayFields) {
+        if (imported[field] !== undefined && !Array.isArray(imported[field])) {
+          throw new Error('Invalid backup field: ' + field);
+        }
+      }
+
+      const sessionAtImport = sessionVersion;
+
+      exportJSON();
+
+      if (!confirm('Confirm your current backup was downloaded.')) {
+        return;
+      }
+
+      if (sessionAtImport !== sessionVersion || !currentUser) {
+        return;
+      }
+
+      mergeStateData(imported);
+      addAudit('导入备份', file.name);
+      applyAppearance();
+      applyRoleVisibility();
+      renderAll();
+
+      const saved = await saveState();
+
+      if (saved) {
+        alert('数据已恢复并同步云端 / Backup restored and synced.');
+      } else {
+        alert('Backup loaded, but cloud save was not confirmed.');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Invalid JSON backup: ' + error.message);
+    } finally {
+      event.target.value = '';
+    }
+  }
+
+  function openResetModal() {
+    document.getElementById('resetModal').classList.add('open');
+  }
+
+  function resetData(mode) {
+    if (state.role !== 'boss') return alert('仅店长可清空数据');
+    if (mode === 'orders') {
+      state.orders = [];
+      state.tips = [];
+      state.serviceFees = [];
+      state.timers = [];
+      addAudit('清空流水账单', '保留员工与服务项目');
+    } else {
+      state.employees = [];
+      state.services = [];
+      state.orders = [];
+      state.tips = [];
+      state.serviceFees = [];
+      state.timers = [];
+      state.selectedStaffId = null;
+      state.filterStaffId = null;
+      addAudit('全部清空账本', '重置为空白账本');
+    }
+    saveState();
+    closeModal('resetModal');
+    renderAll();
+  }
+
+  Object.assign(window, {
+    logout,
+    toggleLang,
+    closeModal,
+    toggleSound,
+    playBell,
+    toggleTouch,
+    changeScale,
+    toggleTheme,
+    openPayslipModal,
+    exportCSV,
+    exportJSON,
+    importJSON,
+    openAuditModal,
+    openResetModal,
+    toggleSelectAllTimers,
+    openMergedCheckout,
+    setTipType,
+    addTip,
+    addQuickTip,
+    setSfPay,
+    addServiceFee,
+    setPeriod,
+    clearStaffFilter,
+    saveEmployee,
+    editEmployee,
+    deleteEmployee,
+    updateCommLabel,
+    saveService,
+    editService,
+    deleteService,
+    completeCheckout,
+    resetData,
+    startServiceTimer,
+    extendTimer,
+    toggleTimerCheck,
+    openDirectServiceCheckout,
+    openTimerCheckout,
+    deleteOrder,
+    deleteTip,
+    deleteServiceFee
+  });
+
+  setInterval(() => {
+    if (
+      currentUser &&
+      currentUser.uid === ADMIN_UID &&
+      initialCloudLoaded &&
+      cloudEnabled &&
+      !saveFailed
+    ) {
+      renderTimers();
+    }
+  }, 1000);
+
+  initFirebaseSync();
+</script>
 </body>
 </html>
