@@ -358,6 +358,7 @@
 #checkoutModal .member-highlight {background:#f8fafc;border-color:#e2e8f0;margin-top:12px;}
 #checkoutModal .split-box {background:white;border-color:#e2e8f0;}
 @media(max-width:480px){#checkoutModal .modal{padding:16px;} #checkoutModal .pay-btn{font-size:.85em;} }
+#staffPortalContainer{max-width:650px;padding-bottom:100px;background:#f5f7fb;min-height:100vh}.staff-hero{background:#172554;color:white;border-radius:18px;padding:22px;margin:12px 0;display:grid;gap:12px}.staff-clock{font-size:38px;font-variant-numeric:tabular-nums}.staff-hero progress{width:100%;height:12px;accent-color:#60a5fa}.staff-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,650px);display:flex;background:white;padding:8px 8px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -3px 18px #0001;z-index:20}.staff-nav button{flex:1;border:0;display:grid;gap:4px;color:#64748b;font-size:12px}.staff-nav b{font-size:22px}.staff-nav .active{color:#2563eb;background:#eff6ff}.staff-line{padding:12px 0;border-bottom:1px solid #e2e8f0}.staff-period{display:flex;gap:8px;margin:12px 0}#staffPortalContainer .stat-grid{grid-template-columns:1fr 1fr}#staffPortalContainer .stat-box{background:white;padding:16px;border-radius:14px}
 </style>
 </head>
 <body>
@@ -392,10 +393,10 @@
       <form id="staffLoginForm" hidden onsubmit="loginAsEmployeePhone(event)">
         <div class="login-field">
           <label for="staffPhoneInput">员工注册手机号 / Phone Number</label>
-          <input type="tel" id="staffPhoneInput" placeholder="请输入登记的手机号" required />
+          <input type="tel" id="staffPhoneInput" placeholder="+1 831 555 0123" required />
         </div>
-        <button type="submit" class="login-submit" style="background:var(--purple);">📱 查看个人排班与工作状态</button>
-      </form>
+        <button type="submit" class="login-submit" style="background:var(--purple);">发送短信验证码</button>
+      <div id="staffCaptcha"></div><div id="staffOtpRow" hidden class="login-field"><label>短信验证码</label><input id="staffOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" /></div><label><input type="checkbox" id="staffRemember" checked /> 记住此设备</label></form>
 
       <div id="loginError" class="login-error" role="status">正在加载 / Loading Firebase...</div>
       <div class="login-footer">🔒 Authorized Personnel Only · 仅限授权人员使用</div>
@@ -657,7 +658,7 @@
     <div class="grid-2 boss-only">
       <div class="card">
         <div class="card-title">
-          <span>👥 员工管理、排班休息与隐私档案</span>
+          <span>👥 员工管理、排班休息与隐私档案</span><button onclick="syncStaffAccounts()">同步员工账号</button><div id="staffAccountList"></div>
           <div class="inline-inputs">
             <button class="btn-warning btn-sm" id="unlockSensitiveBtn" onclick="toggleSensitiveStaffLock()">🔐 解锁敏感档案</button>
             <button class="btn-outline btn-sm" onclick="changeSensitivePassword()">🔑 改档案密码</button>
@@ -1024,8 +1025,8 @@
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js';
-  import { doc, setDoc, getDocFromServer, onSnapshot, serverTimestamp, initializeFirestore } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
-  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js';
+  import { doc, setDoc, getDocFromServer, collection, getDocsFromServer, writeBatch, onSnapshot, serverTimestamp, initializeFirestore } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence, browserLocalPersistence, RecaptchaVerifier, signInWithPhoneNumber, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js';
 
   const FIREBASE_CONFIG = {
     apiKey: 'AIzaSyCwcwtECiFjZYiny6RruwV0qt7D6kGPcjU',
@@ -1038,7 +1039,7 @@
 
   const ADMIN_UID = '8qzT5mvmg6SX9MkEhywAb5iVB8u2';
   const FIRESTORE_DOC_PATH = ['pos_systems', 'default_store'];
-  const todayStr = () => new Date().toISOString().slice(0, 10);
+  const todayStr = () => new Intl.DateTimeFormat("en-CA", {timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
   const nowStr = () => new Date().toLocaleString();
 
   let state = {
@@ -1174,7 +1175,7 @@
       .then(async () => {
         if (activeSession !== sessionVersion || !currentUser || saveFailed) return false;
         try {
-          await setDoc(targetDoc, payload);
+          await publishLedger(targetDoc, payload);
           if (activeSession === sessionVersion) setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green');
           return true;
         } catch (error) {
@@ -1264,7 +1265,7 @@
       onAuthStateChanged(auth, async user => {
         clearSessionData();
         if (!user) { showLogin(); return; }
-        if (user.uid !== ADMIN_UID) { await signOut(auth); showLogin('无访问权限 / Access denied'); return; }
+        if (user.uid !== ADMIN_UID) { currentUser = user; await startStaffPortal(user); return; }
         currentUser = user;
         await startCloudSync(user);
       });
@@ -1290,6 +1291,7 @@
   }
 
   function clearSessionData() {
+    staffView = null; loggedInStaffId = null;
     timerMarkupKey = null;
     document.getElementById('timerGrid').replaceChildren();
     sessionVersion++;
@@ -1315,110 +1317,97 @@
   }
 
   /* 第11项：员工手机号自助登录查看自己的排班、状态与业绩 */
+  let staffView = null, staffTab = 'home', staffPeriod = 'today', smsConfirmation = null, captcha = null;
+  function normalizePhone(value) {
+    const raw = String(value || '').trim(), digits = raw.replace(/\D/g,'');
+    if (raw.startsWith('+') && digits.length >= 8 && digits.length <= 15) return '+'+digits;
+    if (digits.length === 10) return '+1'+digits;
+    if (digits.length === 11 && digits.startsWith('1')) return '+'+digits;
+    return '';
+  }
+  // Only explicit allowlisted fields leave the administrator ledger.
+  async function publishLedger(target, payload) {
+    const existing = await getDocsFromServer(collection(db,'staff_portals'));
+    const batch = writeBatch(db), keep = new Set();
+    const employees = payload.employees || [];
+    for (const e of employees) {
+      const phone = normalizePhone(e.phone);
+      if (!phone || e.portalDisabled || employees.filter(x=>normalizePhone(x.phone)===phone).length!==1) continue;
+      keep.add(phone);
+      const own = key => (payload[key]||[]).filter(x=>x.staffId===e.id);
+      const clean = (arr, fields) => arr.map(x=>Object.fromEntries(fields.filter(k=>x[k]!==undefined).map(k=>[k,x[k]])));
+      batch.set(doc(db,'staff_portals',phone), {
+        employeeId:e.id, name:e.name, role:e.role||'技师',
+        timers:clean(own('timers'),['id','serviceName','startTime','endTime','durationMins','status','earlyEndedAt']),
+        orders:clean(own('orders'),['id','date','duration','commission','payMethod']),
+        tips:clean(own('tips'),['date','amount','type']),
+        appointments:clean(own('appointments'),['date','time','serviceName','status']),
+        leaves:clean(e.leaves||[],['date','start','end']), updatedAt:serverTimestamp()
+      });
+    }
+    existing.forEach(d=>{if(!keep.has(d.id)) batch.delete(d.ref)});
+    batch.set(target,payload); await batch.commit();
+  }
+  async function syncStaffAccounts(){ if(await saveState()) alert('员工账号及个人数据已同步'); }
+  function toggleStaffAccess(id){ const e=state.employees.find(x=>x.id===id); if(!e||currentUser?.uid!==ADMIN_UID)return; e.portalDisabled=!e.portalDisabled; addAudit('员工账号权限',e.name); saveState(); renderAll(); }
   async function loginAsEmployeePhone(event) {
-    event.preventDefault();
-    const rawPhone = document.getElementById('staffPhoneInput').value.replace(/\D/g, '');
-    const errorBox = document.getElementById('loginError');
-    if (!rawPhone) { errorBox.textContent = '请输入有效的手机号'; return; }
-
+    event.preventDefault(); if(!auth)return;
+    const errorBox=document.getElementById('loginError'), btn=event.target.querySelector('button'); btn.disabled=true;
     try {
-      errorBox.textContent = '正在查询员工档案...';
-      const targetDoc = doc(db, FIRESTORE_DOC_PATH[0], FIRESTORE_DOC_PATH[1]);
-      const snap = await getDocFromServer(targetDoc);
-      if (!snap.exists()) { errorBox.textContent = '系统暂无门店数据，请联系店长'; return; }
-      const data = snap.data();
-      const employees = Array.isArray(data.employees) ? data.employees : [];
-      const emp = employees.find(e => String(e.phone || '').replace(/\D/g, '') === rawPhone);
-      if (!emp) {
-        errorBox.textContent = '未找到该手机号对应的员工账号，请核对或联系管理员';
-        return;
+      if(smsConfirmation){ await smsConfirmation.confirm(document.getElementById('staffOtp').value.trim()); smsConfirmation=null; document.getElementById('staffOtpRow').hidden=true; btn.textContent='发送短信验证码'; }
+      else {
+        const phone=normalizePhone(document.getElementById('staffPhoneInput').value); if(!phone)throw Error('请输入有效手机号及国家区号');
+        await setPersistence(auth,document.getElementById('staffRemember').checked?browserLocalPersistence:browserSessionPersistence);
+        if(captcha)captcha.clear(); captcha=new RecaptchaVerifier(auth,'staffCaptcha',{size:'invisible'});
+        smsConfirmation=await signInWithPhoneNumber(auth,phone,captcha);
+        document.getElementById('staffOtpRow').hidden=false; btn.textContent='验证并登录'; errorBox.textContent='验证码已发送';
       }
-
-      mergeStateData(data);
-      loggedInStaffId = emp.id;
-      errorBox.textContent = '';
-      document.getElementById('loginScreen').hidden = true;
-      document.getElementById('appContainer').hidden = true;
-      document.getElementById('staffPortalContainer').hidden = false;
-      refreshStaffPortal();
-    } catch (err) {
-      errorBox.textContent = '查询失败：' + (err.message || err.code);
-    }
+    } catch(e){errorBox.textContent=e.message; if(!smsConfirmation&&captcha){captcha.clear();captcha=null;}} finally{btn.disabled=false;}
   }
-
-  async function refreshStaffPortal() {
-    if (!loggedInStaffId) return;
-    try {
-      const targetDoc = doc(db, FIRESTORE_DOC_PATH[0], FIRESTORE_DOC_PATH[1]);
-      const snap = await getDocFromServer(targetDoc);
-      if (snap.exists()) mergeStateData(snap.data());
-    } catch (e) {}
-
-    const emp = state.employees.find(e => e.id === loggedInStaffId);
-    if (!emp) return logoutStaffPortal();
-
-    const today = todayStr();
-    const activeTimer = state.timers.find(t => t.staffId === emp.id && t.endTime > Date.now());
-    const todayLeaves = (emp.leaves || []).filter(l => l.date === today);
-    let statusBadge = '<span class="tag tag-green">🟢 当前空闲 / 可接单</span>';
-    if (activeTimer) {
-      const remMins = Math.max(1, Math.ceil((activeTimer.endTime - Date.now()) / 60000));
-      statusBadge = `<span class="tag tag-blue">⏱️ 服务中：${escapeHTML(activeTimer.serviceName)}（剩余约 ${remMins} 分钟）</span>`;
-    } else if (todayLeaves.length) {
-      statusBadge = `<span class="tag tag-amber">🏖️ 今日排班休息：${todayLeaves.map(l => `${l.start}-${l.end}`).join(', ')}</span>`;
-    }
-
-    const myOrders = state.orders.filter(o => o.staffId === emp.id && o.date === today);
-    const myTips = state.tips.filter(t => t.staffId === emp.id && t.date === today);
-    const myAppts = state.appointments.filter(a => a.staffId === emp.id && a.date >= today);
-
-    const todayComm = myOrders.reduce((s, o) => s + Number(o.commission || 0), 0);
-    const todayTip = myTips.reduce((s, t) => s + Number(t.amount || 0), 0);
-
-    document.getElementById('staffPortalBadge').textContent = `👤 ${emp.name} (${emp.role})`;
-    document.getElementById('staffPortalBody').innerHTML = `
-      <div class="card">
-        <div class="card-title">
-          <span>📍 我的实时工作状态 (${today})</span>
-          ${statusBadge}
-        </div>
-        <div class="stat-grid">
-          <div class="stat-box"><div class="stat-label">今日完成单数</div><div class="stat-val">${myOrders.length} 单</div></div>
-          <div class="stat-box"><div class="stat-label">今日项目提成</div><div class="stat-val">$${todayComm.toFixed(2)}</div></div>
-          <div class="stat-box"><div class="stat-label">今日小费合计</div><div class="stat-val">$${todayTip.toFixed(2)}</div></div>
-          <div class="stat-box"><div class="stat-label">绑定手机号</div><div class="stat-val" style="font-size:1em;">${escapeHTML(emp.phone || '')}</div></div>
-        </div>
-      </div>
-
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-title"><span>📅 我的即将到来预约排班</span></div>
-          <table>
-            <thead><tr><th>日期时间</th><th>客人</th><th>项目</th><th>状态</th></tr></thead>
-            <tbody>
-              ${myAppts.map(a => `<tr><td>${escapeHTML(a.date)} ${escapeHTML(a.time)}</td><td>${escapeHTML(a.custName)}</td><td>${escapeHTML(a.serviceName)}</td><td><span class="tag tag-blue">${escapeHTML(a.status || '已预约')}</span></td></tr>`).join('') || '<tr><td colspan="4">暂无后续预约</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-
-        <div class="card">
-          <div class="card-title"><span>🏖️ 我的排班休息记录</span></div>
-          <table>
-            <thead><tr><th>休息日期</th><th>时段</th><th>备注</th></tr></thead>
-            <tbody>
-              ${(emp.leaves || []).map(l => `<tr><td>${escapeHTML(l.date)}</td><td>${escapeHTML(l.start)} - ${escapeHTML(l.end)}</td><td>${escapeHTML(l.reason || '休息')}</td></tr>`).join('') || '<tr><td colspan="3">暂无休息排班记录</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
+  async function startStaffPortal(user){
+    const phone=normalizePhone(user.phoneNumber), version=sessionVersion;
+    if(!phone){await signOut(auth);return;}
+    const ref=doc(db,'staff_portals',phone);
+    try{
+      const snap=await getDocFromServer(ref); if(version!==sessionVersion)return;
+      if(!snap.exists())throw Error('账号未激活或已停用，请联系店长');
+      document.getElementById('loginScreen').hidden=true; document.getElementById('appContainer').hidden=true; document.getElementById('staffPortalContainer').hidden=false;
+      unsubscribeCloud=onSnapshot(ref,{includeMetadataChanges:true},snap=>{
+        if(version!==sessionVersion)return;
+        if(snap.metadata.fromCache){staffView=null;renderStaffPortal();return;}
+        if(!snap.exists()){logoutStaffPortal();return;}
+        staffView=snap.data();loggedInStaffId=staffView.employeeId;renderStaffPortal();
+      },()=>{staffView=null;renderStaffPortal();});
+    }catch(e){await signOut(auth);showLogin(e.message);}
   }
-
-  function logoutStaffPortal() {
-    loggedInStaffId = null;
-    clearSessionData();
-    showLogin('已退出员工工作台');
+  function refreshStaffPortal(){renderStaffPortal();}
+  function setStaffTab(t){staffTab=t;renderStaffPortal();}
+  function setStaffPeriod(t){staffPeriod=t;renderStaffPortal();}
+  function renderStaffPortal(){
+    const root=document.getElementById('staffPortalBody'); if(!staffView){root.textContent='正在连接云端，暂时无法显示个人数据';return;}
+    const e=staffView, h=escapeHTML, today=todayStr(), money=n=>'$'+Number(n||0).toFixed(2), sum=(a,k)=>a.reduce((v,x)=>v+Number(x[k]||0),0);
+    const cutoff=new Date(today+'T12:00:00Z');cutoff.setUTCDate(cutoff.getUTCDate()-6);
+    const filter=x=>staffPeriod==='today'?x.date===today:staffPeriod==='week'?x.date>=cutoff.toISOString().slice(0,10)&&x.date<=today:x.date?.slice(0,7)===today.slice(0,7)&&x.date<=today;
+    const orders=e.orders.filter(staffTab==='home'?x=>x.date===today:filter),tips=e.tips.filter(staffTab==='home'?x=>x.date===today:filter);
+    const comm=sum(orders,'commission'),tip=sum(tips,'amount');
+    const stats=`<div class="stat-grid">${[['已结账记录',orders.length],['项目提成',money(comm)],['小费',money(tip)],['提成与小费',money(comm+tip)]].map(([k,v])=>`<div class="stat-box"><div class="stat-label">${k}</div><div class="stat-val">${v}</div></div>`).join('')}</div>`;
+    const appts=e.appointments.filter(a=>a.date>=today&&!['已取消','已完成','已开钟'].includes(a.status)).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+    const appt=a=>`<div class="staff-line"><strong>${h(a.date)} ${h(a.time)}</strong><div>${h(a.serviceName)} · ${h(a.status||'已预约')}</div></div>`;
+    const timer=t=>{const sec=Math.max(0,Math.ceil((t.endTime-Date.now())/1000)), done=sec===0||t.earlyEndedAt;return `<div class="staff-hero"><div>${done?'待结账':'服务中'} · ${h(t.serviceName)}</div><strong class="staff-clock">${done?'已结束':Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')}</strong><progress max="100" value="${Math.max(0,Math.min(100,100*(Date.now()-t.startTime)/Math.max(1,t.endTime-t.startTime)))}"></progress><div>计划 ${Number(t.durationMins||0)} 分钟</div></div>`};
+    const localTime=new Intl.DateTimeFormat('en-GB',{timeZone:'America/Los_Angeles',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
+    const resting=e.leaves.some(l=>l.date===today&&l.start<=localTime&&l.end>localTime);
+    let body='';
+    if(staffTab==='home')body=`<h2>你好，${h(e.name)}</h2>${e.timers.map(timer).join('')||`<div class="staff-hero">${resting?'休息中':'当前空闲 / 可接单'}</div>`}<h3>今日业绩</h3>${stats}<div class="card"><h3>下一位预约</h3>${appts.length?appt(appts[0]):'暂无预约'}</div>`;
+    if(staffTab==='schedule')body=`<h2>我的预约与排班</h2><div class="card">${appts.map(appt).join('')||'暂无预约'}</div><div class="card"><h3>休息安排</h3>${e.leaves.map(l=>`<div class="staff-line">${h(l.date)} · ${h(l.start)}–${h(l.end)}</div>`).join('')||'暂无安排'}</div>`;
+    const periods=`<div class="staff-period">${[['today','今日'],['week','近7天'],['month','本月']].map(([v,k])=>`<button class="${staffPeriod===v?'btn-primary':''}" onclick="setStaffPeriod('${v}')">${k}</button>`).join('')}</div>`;
+    if(staffTab==='earnings')body=`<h2>我的收入</h2>${periods}${stats}<div class="card">${[...new Set(tips.map(t=>t.type||'其他'))].map(k=>`<div class="staff-line">${h(k)}：${money(sum(tips.filter(t=>(t.type||'其他')===k),'amount'))}</div>`).join('')}<small>未含底薪、扣税；不代表实发工资。</small></div>`;
+    if(staffTab==='records')body=`<h2>我的结账记录</h2>${periods}<div class="card">${orders.slice().reverse().map(o=>`<div class="staff-line">${h(o.date)} · ${Number(o.duration||0)} 分钟<div>提成 ${money(o.commission)} · ${h(o.payMethod||'')}</div></div>`).join('')||'暂无记录'}<small>拆分支付可能产生多条记录。</small></div>`;
+    if(staffTab==='profile')body=`<h2>个人中心</h2><div class="card"><h3>${h(e.name)}</h3>${h(e.role)}<p>手机号已验证</p><button onclick="logoutStaffPortal()">退出登录</button></div>`;
+    root.innerHTML=body+`<nav class="staff-nav">${[['home','⌂','首页'],['schedule','▦','排班'],['earnings','$','收入'],['records','≡','记录'],['profile','○','我的']].map(([v,i,k])=>`<button class="${staffTab===v?'active':''}" onclick="setStaffTab('${v}')"><b>${i}</b>${k}</button>`).join('')}</nav>`;
+    document.getElementById('staffPortalBadge').textContent=e.name;
   }
+  async function logoutStaffPortal(){await signOut(auth);showLogin('已退出员工工作台');}
+  setInterval(()=>{if(staffView&&staffTab==='home')renderStaffPortal()},1000);
 
   async function login(event) {
     event.preventDefault();
@@ -2240,7 +2229,7 @@
       payments: payments.map(p => ({ ...p, amount: +(p.amount + cardFeeFor(p)).toFixed(2) })),
       memberInfo: memberSummaryText
     };
-    if (cardFee > 0) receiptPayload.items.push({ name: '银行卡手续费 / Card fee', amount: +cardFee.toFixed(2) });
+    if (cardFee > 0) receiptPayload.items.push({ name: '银行卡手续费 / Service fee', amount: +cardFee.toFixed(2) });
     state.receipts.unshift(receiptPayload);
     if (state.receipts.length > 100) state.receipts.pop();
 
@@ -2699,6 +2688,7 @@
     const ssn = document.getElementById('empSSN').value.trim();
     const emergency = document.getElementById('empEmergency').value.trim();
     const editId = document.getElementById('editEmpId').value;
+    if(phone && (!normalizePhone(phone)||state.employees.some(e=>e.id!==editId&&normalizePhone(e.phone)===normalizePhone(phone)))) return alert("手机号无效或已被其他员工使用");
 
     if (editId) {
       const emp = state.employees.find(e => e.id === editId);
@@ -2996,6 +2986,7 @@
   }
 
   function renderAll() {
+    document.getElementById("staffAccountList").innerHTML=state.employees.map(e=>`<div>${escapeHTML(e.name)} · ${e.portalDisabled?"已停用":normalizePhone(e.phone)?"允许验证登录":"未登记手机号"} <button class="btn-sm" onclick="toggleStaffAccess('${escapeHTML(e.id)}')">${e.portalDisabled?"启用":"停用"}</button></div>`).join("");
     renderQuickTips();
     renderTimers();
 
@@ -3271,7 +3262,7 @@
   }
 
   Object.assign(window, {
-    switchLoginTab, loginAsEmployeePhone, refreshStaffPortal, logoutStaffPortal,
+    switchLoginTab, loginAsEmployeePhone, refreshStaffPortal, logoutStaffPortal, setStaffTab, setStaffPeriod, syncStaffAccounts, toggleStaffAccess,
     logout, toggleLang, closeModal, toggleSound, playBell, toggleTouch, changeScale, toggleTheme,
     openPayslipModal, exportCSV, exportJSON, importJSON, openAuditModal, openResetModal,
     toggleSelectAllTimers, openMergedCheckout, setTipType, addTip, addQuickTip,
