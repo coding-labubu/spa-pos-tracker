@@ -42,11 +42,7 @@
       line-height: 1.45;
     }
 
-    .container {
-      max-width: 1480px;
-      margin: 0 auto;
-      padding: 14px;
-    }
+    .container { max-width: 1480px; margin: 0 auto; padding: 14px; }
 
     .topbar {
       display: flex;
@@ -71,12 +67,7 @@
       flex-wrap: wrap;
     }
 
-    .toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 7px;
-      align-items: center;
-    }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
 
     button, select, input, textarea {
       font-family: inherit;
@@ -115,16 +106,8 @@
       border-color: var(--primary) !important;
     }
 
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin-bottom: 14px;
-    }
-
-    @media (max-width: 1024px) {
-      .grid-2 { grid-template-columns: 1fr; }
-    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    @media (max-width: 1024px) { .grid-2 { grid-template-columns: 1fr; } }
 
     .card {
       background: var(--card);
@@ -148,12 +131,7 @@
       padding-bottom: 8px;
     }
 
-    .inline-inputs {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
+    .inline-inputs { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
     .merge-bar {
       display: flex;
@@ -170,7 +148,7 @@
 
     .timer-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
       gap: 12px;
     }
 
@@ -181,33 +159,17 @@
       padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 7px;
     }
 
-    .timer-box.checked {
-      border-color: var(--purple);
-      box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
-    }
-
+    .timer-box.checked { border-color: var(--purple); box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2); }
     .timer-box.warning { border-color: #fb923c; background: #fff7ed; }
     .timer-box.done { border-color: #22c55e; background: #f0fdf4; }
 
-    .timer-clock {
-      font-size: 1.5em;
-      font-weight: 800;
-      font-variant-numeric: tabular-nums;
-      color: #1d4ed8;
-    }
-
+    .timer-clock { font-size: 1.5em; font-weight: 800; font-variant-numeric: tabular-nums; color: #1d4ed8; }
     .timer-box.done .timer-clock { color: #15803d; }
 
-    .staff-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 7px;
-      align-items: center;
-    }
-
+    .staff-pills { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
     .staff-pill {
       padding: 6px 13px;
       border-radius: 999px;
@@ -216,19 +178,9 @@
       cursor: pointer;
       font-weight: 600;
     }
+    .staff-pill.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
 
-    .staff-pill.selected {
-      background: var(--primary);
-      color: #fff;
-      border-color: var(--primary);
-    }
-
-    .service-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
-      gap: 10px;
-    }
-
+    .service-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)); gap: 10px; }
     .service-item-btn {
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -238,7 +190,6 @@
       flex-direction: column;
       gap: 6px;
     }
-
     .service-main-click {
       cursor: pointer;
       font-weight: 700;
@@ -247,7 +198,6 @@
       justify-content: space-between;
       align-items: center;
     }
-
     .service-main-click:hover { color: var(--primary); }
 
     .time-badge {
@@ -262,66 +212,29 @@
       width: 100%;
     }
 
-    .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 9px;
-      margin-bottom: 12px;
-    }
-
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 9px; margin-bottom: 12px; }
     .stat-box {
       background: #f8fafc;
       border: 1px solid var(--border);
       border-radius: 9px;
-      padding: 10px 12px;
-      transition: all 0.15s;
+      padding: 9px 11px;
+      transition: transform 0.12s, border-color 0.12s;
     }
+    .stat-box.clickable { cursor: pointer; }
+    .stat-box.clickable:hover { border-color: var(--primary); background: #eff6ff; transform: translateY(-1px); }
+    .stat-label { font-size: 0.8em; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+    .stat-val { font-size: 1.2em; font-weight: 800; margin-top: 2px; }
 
-    .stat-box.clickable {
-      cursor: pointer;
-      border-color: #93c5fd;
-    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+    th, td { padding: 7px 9px; border-bottom: 1px solid var(--border); text-align: left; }
+    th { background: #f8fafc; font-weight: 700; color: var(--muted); }
 
-    .stat-box.clickable:hover {
-      background: #eff6ff;
-      transform: translateY(-1px);
-    }
-
-    .stat-label { font-size: 0.82em; color: var(--muted); }
-    .stat-val { font-size: 1.24em; font-weight: 800; margin-top: 2px; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9em;
-    }
-
-    th, td {
-      padding: 7px 9px;
-      border-bottom: 1px solid var(--border);
-      text-align: left;
-    }
-
-    th {
-      background: #f8fafc;
-      font-weight: 700;
-      color: var(--muted);
-    }
-
-    .tag {
-      display: inline-block;
-      padding: 2px 7px;
-      border-radius: 5px;
-      font-size: 0.8em;
-      font-weight: 600;
-      background: #e2e8f0;
-      color: #334155;
-    }
-
+    .tag { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 0.8em; font-weight: 600; background: #e2e8f0; color: #334155; }
     .tag-blue { background: #dbeafe; color: #1e40af; }
     .tag-green { background: #dcfce7; color: #166534; }
     .tag-purple { background: #f3e8ff; color: #6b21a8; }
     .tag-amber { background: #fef3c7; color: #92400e; }
+    .tag-red { background: #fee2e2; color: #991b1b; }
 
     .modal-backdrop {
       position: fixed;
@@ -333,13 +246,11 @@
       z-index: 1000;
       padding: 14px;
     }
-
     .modal-backdrop.open { display: flex; }
-
     .modal {
       background: #fff;
       border-radius: 14px;
-      max-width: 760px;
+      max-width: 780px;
       width: 100%;
       padding: 20px;
       max-height: 92vh;
@@ -347,59 +258,9 @@
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
     }
 
-    .pay-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 9px;
-      margin: 12px 0;
-    }
-
-    .pay-btn {
-      padding: 13px 8px;
-      font-size: 0.98em;
-      border: 2px solid var(--border);
-      background: #f8fafc;
-    }
-
-    .pay-btn:hover {
-      border-color: var(--primary);
-      background: #eff6ff;
-    }
-
-    .rev-panel {
-      background: #f8fafc;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px;
-      margin-top: 10px;
-    }
-
-    .rev-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-      gap: 9px;
-    }
-
-    .rev-item {
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 9px 11px;
-    }
-
-    @media print {
-      body * { visibility: hidden; }
-      #printArea, #printArea * { visibility: visible; }
-      #printArea {
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 100%;
-        padding: 20px;
-        background: #fff;
-      }
-      .no-print { display: none !important; }
-    }
+    .pay-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin: 12px 0; }
+    .pay-btn { padding: 13px 8px; font-size: 0.98em; border: 2px solid var(--border); background: #f8fafc; }
+    .pay-btn:hover { border-color: var(--primary); background: #eff6ff; }
 
     [hidden] { display: none !important; }
 
@@ -413,119 +274,90 @@
       background: #f4f6f9;
       padding: 24px;
       z-index: 9999;
+      overflow-y: auto;
     }
-
     .login-card {
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 20px;
-      padding: 32px;
+      padding: 28px;
       box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
     }
-
     .login-logo {
-      width: 64px;
-      height: 64px;
-      background: #eff6ff;
-      border-radius: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 32px;
-      margin: 0 auto 18px;
+      width: 60px; height: 60px; background: #eff6ff; border-radius: 18px;
+      display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 14px;
+    }
+    .login-title { font-size: 22px; text-align: center; margin: 0 0 6px; font-weight: 800; color: #1e293b; }
+    .login-subtitle { text-align: center; color: #64748b; font-size: 13px; margin-bottom: 20px; }
+    .login-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; background: #f1f5f9; padding: 4px; border-radius: 10px; }
+    .login-tab { padding: 8px; border: none; border-radius: 8px; background: transparent; color: #475569; font-weight: 700; }
+    .login-tab.active { background: #ffffff; color: #2563eb; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .login-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .login-field label { font-size: 13px; font-weight: 600; color: #475569; }
+    .login-field input { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 9px; font-size: 15px; }
+    .login-submit { width: 100%; min-height: 44px; background: #2563eb; color: white; border: none; border-radius: 9px; font-size: 15px; font-weight: 700; }
+    .login-error { color: #dc2626; font-size: 13px; text-align: center; margin-top: 10px; overflow-wrap: anywhere; }
+    .login-footer { text-align: center; font-size: 12px; color: #64748b; margin-top: 16px; }
+    .login-reset { display: block; margin: 10px auto 0; color: #2563eb; background: transparent; border: none; }
+    .logout-btn { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
+
+    .member-highlight {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      padding: 10px 12px;
+      border-radius: 9px;
+      margin-bottom: 10px;
     }
 
-    .login-title {
-      font-size: 24px;
-      text-align: center;
-      margin: 0 0 8px;
-      font-weight: 800;
-      color: #1e293b;
-    }
-
-    .login-subtitle {
-      text-align: center;
-      color: #64748b;
-      font-size: 13px;
-      margin-bottom: 26px;
-    }
-
-    .login-field {
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
-      margin-bottom: 16px;
-    }
-
-    .login-field label {
-      font-size: 13px;
-      font-weight: 600;
-      color: #475569;
-    }
-
-    .login-field input {
-      width: 100%;
-      min-height: 46px;
-      padding: 12px;
-      background: #ffffff;
+    .split-box {
+      background: #f8fafc;
       border: 1px solid #cbd5e1;
       border-radius: 9px;
-      font-size: 15px;
+      padding: 10px 12px;
+      margin-top: 10px;
     }
 
-    .login-submit {
-      width: 100%;
-      min-height: 46px;
-      background: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 9px;
-      font-size: 15px;
-      font-weight: 700;
-    }
-
-    .login-error {
-      color: #dc2626;
+    .receipt-paper {
+      font-family: "Courier New", Courier, monospace;
+      background: #fff;
+      border: 1px dashed #94a3b8;
+      padding: 18px;
+      max-width: 380px;
+      margin: 0 auto;
+      color: #0f172a;
       font-size: 13px;
-      text-align: center;
-      margin-top: 12px;
-      overflow-wrap: anywhere;
     }
 
-    .login-footer {
-      text-align: center;
-      font-size: 12px;
-      color: #64748b;
-      margin-top: 20px;
-    }
-
-    .login-reset {
-      display: block;
-      margin: 12px auto;
-      color: #2563eb;
-      background: transparent;
-      border: none;
-    }
-
-    .logout-btn {
-      color: #dc2626;
-      border-color: #fecaca;
-      background: #fef2f2;
+    @media print {
+      body * { visibility: hidden; }
+      #receiptPrintArea, #receiptPrintArea * { visibility: visible; }
+      #receiptPrintArea {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        border: none;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- Firebase Authentication Login -->
+  <!-- Login Screen (Admin Email + Staff Phone Self-Service) -->
   <div id="loginScreen" class="login-screen">
     <div class="login-card">
       <div class="login-logo">💆</div>
       <h1 class="login-title">Spa POS System</h1>
-      <div class="login-subtitle">
-        门店收银与技师提成管理系统<br>Secure Administrator Access
+      <div class="login-subtitle">门店收银与技师提成管理系统</div>
+
+      <div class="login-tabs">
+        <button type="button" class="login-tab active" id="tabAdminLogin" onclick="switchLoginTab('admin')">👑 管理员登录</button>
+        <button type="button" class="login-tab" id="tabStaffLogin" onclick="switchLoginTab('staff')">📱 员工手机号登录</button>
       </div>
+
+      <!-- 管理员登录表单 -->
       <form id="loginForm">
         <div class="login-field">
           <label for="loginEmail">邮箱 / Email</label>
@@ -536,14 +368,39 @@
           <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password" required />
         </div>
         <button type="submit" id="loginSubmitBtn" class="login-submit" disabled>登录 / Sign In</button>
+        <button type="button" id="resetPasswordBtn" class="login-reset" disabled>忘记密码 / Forgot Password?</button>
       </form>
-      <button type="button" id="resetPasswordBtn" class="login-reset" disabled>忘记密码 / Forgot Password?</button>
+
+      <!-- 员工手机号自助登录表单 (第11项) -->
+      <form id="staffLoginForm" hidden onsubmit="loginAsEmployeePhone(event)">
+        <div class="login-field">
+          <label for="staffPhoneInput">员工注册手机号 / Phone Number</label>
+          <input type="tel" id="staffPhoneInput" placeholder="请输入登记的手机号" required />
+        </div>
+        <button type="submit" class="login-submit" style="background:var(--purple);">📱 查看个人排班与工作状态</button>
+      </form>
+
       <div id="loginError" class="login-error" role="status">正在加载 / Loading Firebase...</div>
-      <div class="login-footer">🔒 Authorized Personnel Only<br>仅限授权人员使用</div>
+      <div class="login-footer">🔒 Authorized Personnel Only · 仅限授权人员使用</div>
     </div>
   </div>
 
-  <!-- POS Dashboard -->
+  <!-- 员工手机号自助看板 (第11项) -->
+  <div class="container" id="staffPortalContainer" hidden>
+    <div class="topbar">
+      <h1>
+        <span>📱 员工个人工作台</span>
+        <span class="tag tag-purple" id="staffPortalBadge">员工账号</span>
+      </h1>
+      <div class="toolbar">
+        <button class="btn-outline btn-sm" onclick="refreshStaffPortal()">🔄 刷新状态</button>
+        <button class="btn-sm logout-btn" onclick="logoutStaffPortal()">🚪 退出账号</button>
+      </div>
+    </div>
+    <div id="staffPortalBody"></div>
+  </div>
+
+  <!-- Main Admin POS Dashboard -->
   <div class="container" id="appContainer" hidden>
     <div class="topbar">
       <h1>
@@ -554,8 +411,11 @@
       </h1>
       <div class="toolbar">
         <span id="currentUserEmail" class="tag tag-blue"></span>
-        <button class="btn-purple btn-sm" onclick="openMemberModal()">👑 年费会员 / 充值卡与积分</button>
-        <button class="btn-sm logout-btn" onclick="logout()">🚪 退出登录 / Sign Out</button>
+        <button class="btn-sm logout-btn" onclick="logout()">🚪 退出登录</button>
+        <button class="btn-purple btn-sm" onclick="openMemberModal()">👑 年费会员 & 充值卡</button>
+        <button class="btn-primary btn-sm" onclick="openAppointmentModal()">📅 预约排班</button>
+        <button class="btn-warning btn-sm" onclick="openExpenseModal()">💸 门店支出</button>
+        <button class="btn-outline btn-sm" onclick="openCardCouponModal()">🎁 礼卡/优惠券设置</button>
         <button class="btn-outline btn-sm" id="soundToggleBtn" onclick="toggleSound()">🔔 铃声:开</button>
         <button class="btn-outline btn-sm" onclick="playBell()">🔊 试听</button>
         <button class="btn-outline btn-sm" id="touchBtn" onclick="toggleTouch()">👆 触控</button>
@@ -580,18 +440,21 @@
       <div class="inline-inputs" style="justify-content:space-between;">
         <div class="inline-inputs">
           <strong data-i18n="entryDate">📅 记账日期：</strong>
-          <input type="date" id="entryDate" />
-          <strong style="margin-left:8px;" data-i18n="curTech">👤 当前技师（点击跳转筛选明细）：</strong>
+          <input type="date" id="entryDate" onchange="renderAll()" />
+          <strong style="margin-left:8px;" data-i18n="curTech">👤 当前技师：</strong>
           <div class="staff-pills" id="quickStaffBar"></div>
+          <button class="btn-outline btn-sm" onclick="openStaffDetailModal(state.selectedStaffId)" id="viewCurStaffBtn">📋 查看该技师详情</button>
         </div>
-        <span id="therapistLockBanner" class="tag tag-amber" style="display:none;">🔒 技师只读模式</span>
+        <div class="inline-inputs">
+          <button class="btn-outline btn-sm" onclick="openAppointmentModal()">📅 今日预约 (<span id="todayApptBadge">0</span>)</button>
+        </div>
       </div>
     </div>
 
     <!-- 服务计时看板 -->
     <div class="card non-therapist">
       <div class="card-title">
-        <span data-i18n="timerBoardTitle">⏱️ 服务计时看板（任意加时 & 任意加钱 & 多选合并结账）</span>
+        <span data-i18n="timerBoardTitle">⏱️ 服务计时看板（支持任意分钟加钟 & 任意加钱 & 多选合并结账）</span>
         <span class="tag tag-blue" id="activeTimerCount">0 进行中</span>
       </div>
       <div class="merge-bar">
@@ -609,7 +472,10 @@
     <div class="card non-therapist">
       <div class="card-title">
         <span data-i18n="orderEntryTitle">📋 录入订单（点项目结账 / 点时间开钟）</span>
-        <span class="tag tag-green" id="selectedStaffBadge">未选技师</span>
+        <div class="inline-inputs">
+          <button class="btn-purple btn-sm" onclick="openMemberModal()">👑 办卡/充值/查会员</button>
+          <span class="tag tag-green" id="selectedStaffBadge">未选技师</span>
+        </div>
       </div>
       <div class="service-grid" id="serviceGrid"></div>
     </div>
@@ -618,19 +484,15 @@
     <div class="grid-2 non-therapist">
       <div class="card">
         <div class="card-title">
-          <span data-i18n="tipEntryTitle">💵 小费录入（银行卡 / 现金 / Venmo / 会员充值卡扣小费）</span>
+          <span data-i18n="tipEntryTitle">💵 小费录入（卡 / Venmo / 现金）</span>
           <span class="tag tag-blue" id="tipStaffBadge">未选技师</span>
         </div>
         <div class="inline-inputs" style="margin-bottom:8px;">
           <button class="btn-primary btn-sm tip-type-btn" data-type="银行卡小费" onclick="setTipType('银行卡小费')">💳 银行卡小费</button>
-          <button class="btn-outline btn-sm tip-type-btn" data-type="现金小费" onclick="setTipType('现金小费')">💵 现金小费</button>
           <button class="btn-outline btn-sm tip-type-btn" data-type="Venmo小费" onclick="setTipType('Venmo小费')">📱 Venmo小费</button>
-          <button class="btn-outline btn-sm tip-type-btn" data-type="会员卡扣小费" onclick="setTipType('会员卡扣小费')">👑 会员卡扣小费</button>
-        </div>
-        <div class="inline-inputs" style="margin-bottom:8px;">
-          <select id="tipMemberSelect" style="display:none; min-width:170px;"></select>
-          <input type="number" id="tipAmount" step="0.01" placeholder="金额 ($)" style="width:110px;" />
-          <input type="text" id="tipNote" placeholder="备注（可选）" style="flex:1; min-width:110px;" />
+          <button class="btn-outline btn-sm tip-type-btn" data-type="现金小费" onclick="setTipType('现金小费')">💵 现金小费</button>
+          <input type="number" id="tipAmount" step="0.01" placeholder="金额 ($)" style="width:105px;" />
+          <input type="text" id="tipNote" placeholder="备注（可选）" style="flex:1; min-width:100px;" />
           <button class="btn-success btn-sm" onclick="addTip()">+ 添加小费</button>
         </div>
         <div class="inline-inputs">
@@ -643,30 +505,29 @@
 
       <div class="card">
         <div class="card-title">
-          <span data-i18n="sfEntryTitle">🛎️ 每日收入 - 服务费 / 销售礼卡录入</span>
-          <span class="tag tag-amber">支持营收分类统计</span>
+          <span data-i18n="sfEntryTitle">🛎️ 每日收入 - 服务费 / 礼卡 / 优惠券销售</span>
+          <button class="btn-warning btn-sm" onclick="openExpenseModal()">💸 录入支出项</button>
         </div>
         <div class="inline-inputs" style="margin-bottom:8px;">
           <select id="sfCategory">
-            <option value="服务费">🛎️ 服务费收入</option>
+            <option value="服务费">🛎️ 服务费</option>
             <option value="销售礼卡">🎁 销售礼卡</option>
+            <option value="销售优惠券">🎟️ 销售优惠券</option>
           </select>
           <button class="btn-primary btn-sm sf-pay-btn" data-pay="现金" onclick="setSfPay('现金')">💵 现金</button>
           <button class="btn-outline btn-sm sf-pay-btn" data-pay="银行卡" onclick="setSfPay('银行卡')">💳 银行卡</button>
           <button class="btn-outline btn-sm sf-pay-btn" data-pay="Venmo" onclick="setSfPay('Venmo')">📱 Venmo</button>
-        </div>
-        <div class="inline-inputs">
-          <input type="number" id="sfAmount" step="0.01" placeholder="金额 ($)" style="width:110px;" />
-          <input type="text" id="sfNote" placeholder="备注（可选）" style="flex:1; min-width:110px;" />
-          <button class="btn-success btn-sm" onclick="addServiceFee()">+ 添加入账</button>
+          <input type="number" id="sfAmount" step="0.01" placeholder="金额 ($)" style="width:105px;" />
+          <input type="text" id="sfNote" placeholder="备注" style="flex:1; min-width:100px;" />
+          <button class="btn-success btn-sm" onclick="addServiceFee()">+ 入账</button>
         </div>
       </div>
     </div>
 
-    <!-- 营收与提成统计看板 -->
+    <!-- 营收、项目统计与门店净利润统计看板 (第5、6、7项) -->
     <div class="card">
       <div class="card-title">
-        <span>📈 营收与提成统计看板</span>
+        <span>📈 营收、项目与门店净利润看板（点击卡片查看分项明细）</span>
         <div class="inline-inputs">
           <button class="btn-primary btn-sm period-btn" data-p="day" onclick="setPeriod('day')">按日</button>
           <button class="btn-outline btn-sm period-btn" data-p="month" onclick="setPeriod('month')">按月</button>
@@ -678,21 +539,12 @@
         </div>
       </div>
       <div class="stat-grid" id="statSummaryGrid"></div>
-
-      <!-- 第5项：点击门店总营收展开的收入分类与开关面板 -->
-      <div id="revenueBreakdownPanel" class="rev-panel" style="display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
-          <strong>📊 门店总营收构成明细（可独立设置礼卡与优惠券是否计入总营收）</strong>
-          <button class="btn-outline btn-sm" onclick="toggleRevenueBreakdown(false)">收起 ▲</button>
-        </div>
-        <div class="rev-grid" id="revenueBreakdownGrid"></div>
-      </div>
     </div>
 
     <!-- 技师业绩与实发汇总 -->
     <div class="card">
       <div class="card-title">
-        <span>👩‍⚕️ 技师业绩与实发汇总（点击技师姓名打开详情 & 筛选明细）</span>
+        <span>👩‍⚕️ 技师业绩与实发汇总（点击技师姓名打开详情并筛选明细）</span>
         <button class="btn-outline btn-sm" onclick="clearStaffFilter()">显示全部技师</button>
       </div>
       <div style="overflow-x:auto;">
@@ -701,15 +553,15 @@
             <tr>
               <th>技师姓名</th>
               <th>职级</th>
+              <th>当前状态</th>
               <th>单数</th>
               <th>工时</th>
               <th>项目营业额</th>
               <th>底薪</th>
               <th>项目提成</th>
               <th>银行卡小费</th>
-              <th>现金小费</th>
               <th>Venmo小费</th>
-              <th>会员卡小费</th>
+              <th>现金小费</th>
               <th>税费扣除</th>
               <th>实发总计</th>
             </tr>
@@ -720,7 +572,7 @@
     </div>
 
     <!-- 明细区域 -->
-    <div class="grid-2" id="detailsSection">
+    <div class="grid-2" id="detailSection">
       <div class="card">
         <div class="card-title">
           <span>🧾 项目提成明细 <span class="tag tag-blue" id="filterTag">全部技师</span></span>
@@ -732,10 +584,10 @@
               <tr>
                 <th>当前技师</th>
                 <th>项目名称</th>
-                <th>实收金额</th>
+                <th>实收</th>
                 <th>收款方式</th>
                 <th>提成</th>
-                <th>日期/备注</th>
+                <th>日期</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -746,8 +598,8 @@
 
       <div class="card">
         <div class="card-title">
-          <span>💰 小费与服务费/会员/礼卡入账明细</span>
-          <span class="tag tag-green" id="tipTotalTag">卡$0 | V$0 | 现$0 | 会员$0</span>
+          <span>💰 小费、入账与支出明细</span>
+          <span class="tag tag-green" id="tipTotalTag">卡$0 | V$0 | 现$0</span>
         </div>
         <div style="overflow-x:auto; margin-bottom:12px;">
           <table>
@@ -764,13 +616,13 @@
           </table>
         </div>
         <div class="card-title">
-          <span>🛎️ 服务费 / 销售礼卡 / 会员办卡与充值入账明细</span>
+          <span>🛎️ 服务费、会员费、礼卡入账 & 💸 门店支出明细</span>
         </div>
         <div style="overflow-x:auto;">
           <table>
             <thead>
               <tr>
-                <th>类别/渠道</th>
+                <th>类型/渠道</th>
                 <th>金额</th>
                 <th>日期/备注</th>
                 <th>操作</th>
@@ -786,24 +638,36 @@
     <div class="grid-2 boss-only">
       <div class="card">
         <div class="card-title">
-          <span>👥 员工管理 / Employee Management</span>
+          <span>👥 员工管理、排班休息与隐私档案</span>
+          <div class="inline-inputs">
+            <button class="btn-warning btn-sm" id="unlockSensitiveBtn" onclick="toggleSensitiveStaffLock()">🔐 解锁敏感档案</button>
+            <button class="btn-outline btn-sm" onclick="changeSensitivePassword()">🔑 改档案密码</button>
+          </div>
         </div>
         <input type="hidden" id="editEmpId" />
+        <div class="inline-inputs" style="margin-bottom:8px;">
+          <input type="text" id="empName" placeholder="技师姓名 *" style="width:110px;" />
+          <input type="text" id="empRole" placeholder="职级" value="按摩师" style="width:95px;" />
+          <input type="number" id="empBase" step="0.01" placeholder="底薪 ($)" value="0" style="width:85px;" />
+          <input type="number" id="empTax" step="0.01" placeholder="税费 ($)" style="width:85px;" />
+          <input type="tel" id="empPhone" placeholder="员工手机号(可登录)" style="width:145px;" />
+        </div>
+        <div class="inline-inputs" id="sensitiveInputRow" style="margin-bottom:10px; display:none; background:#fffbeb; padding:8px; border-radius:8px; border:1px solid #fde68a;">
+          <input type="text" id="empAddress" placeholder="家庭地址" style="flex:1; min-width:140px;" />
+          <input type="text" id="empSSN" placeholder="社安卡号 (SSN)" style="width:135px;" />
+          <input type="text" id="empEmergency" placeholder="紧急联系人及电话" style="width:165px;" />
+        </div>
         <div class="inline-inputs" style="margin-bottom:10px;">
-          <input type="text" id="empName" placeholder="技师姓名" style="width:120px;" />
-          <input type="text" id="empRole" placeholder="职级 (如: 按摩师)" value="按摩师" style="width:120px;" />
-          <input type="number" id="empBase" step="0.01" placeholder="底薪 ($)" value="0" style="width:95px;" />
-          <input type="number" id="empTax" step="0.01" placeholder="税费 ($)" style="width:95px;" />
-          <button class="btn-primary btn-sm" onclick="saveEmployee()">+ 添加/保存</button>
+          <button class="btn-primary btn-sm" onclick="saveEmployee()">+ 添加/保存员工</button>
         </div>
         <div style="overflow-x:auto;">
           <table>
             <thead>
               <tr>
-                <th>姓名</th>
-                <th>职级</th>
-                <th>底薪</th>
-                <th>税费</th>
+                <th>姓名 / 手机</th>
+                <th>排班休息</th>
+                <th>隐私档案 (需密码)</th>
+                <th>底薪/税费</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -814,7 +678,7 @@
 
       <div class="card">
         <div class="card-title">
-          <span>🛠️ 新增业务项目、提成与积分规则</span>
+          <span>🛠️ 新增业务项目与提成/积分规则</span>
         </div>
         <input type="hidden" id="editSrvId" />
         <div class="inline-inputs" style="margin-bottom:10px;">
@@ -822,17 +686,17 @@
           <input type="number" id="srvPrice" step="0.01" placeholder="单价 ($)" style="width:90px;" />
           <select id="srvCommType" onchange="updateCommLabel()">
             <option value="fixed">固定提成 ($)</option>
-            <option value="percent">百分比 (%)</option>
+            <option value="percent">比例提成 (%)</option>
           </select>
-          <input type="number" id="srvCommVal" step="0.01" placeholder="提成数值" style="width:85px;" />
+          <input type="number" id="srvCommVal" step="0.01" placeholder="提成值" style="width:80px;" />
           <input type="number" id="srvDuration" placeholder="时长(分)" style="width:80px;" />
-          <select id="srvPointMode" onchange="updateSrvPointInput()">
-            <option value="by_price">积分:按价格</option>
-            <option value="fixed">积分:指定单项积分</option>
-            <option value="none">积分:本项目不加积分</option>
+          <select id="srvPointsMode">
+            <option value="price">积分:按消费额</option>
+            <option value="fixed">积分:固定分值</option>
+            <option value="none">不加积分</option>
           </select>
-          <input type="number" id="srvFixedPoints" placeholder="单项积分" style="width:85px; display:none;" />
-          <button class="btn-primary btn-sm" onclick="saveService()">+ 添加/保存项目</button>
+          <input type="number" id="srvFixedPoints" placeholder="固定积分" style="width:85px;" />
+          <button class="btn-primary btn-sm" onclick="saveService()">+ 添加/保存</button>
         </div>
         <div style="overflow-x:auto;">
           <table>
@@ -853,97 +717,69 @@
     </div>
   </div>
 
-  <!-- 技师业绩详情弹窗（第1项） -->
+  <!-- 1. 技师详情弹窗 -->
   <div class="modal-backdrop" id="staffDetailModal">
     <div class="modal">
       <div class="card-title">
-        <span id="staffModalTitle">👩‍⚕️ 技师业绩与明细详情</span>
+        <span id="staffDetailTitle">👩‍⚕️ 技师业绩与明细详情</span>
         <button class="btn-outline btn-sm" onclick="closeModal('staffDetailModal')">✕</button>
       </div>
-      <div id="staffModalSummary" class="stat-grid"></div>
-      <h4 style="margin:8px 0;">📋 周期内项目明细</h4>
-      <div style="overflow-x:auto; margin-bottom:10px;">
-        <table>
-          <thead><tr><th>日期</th><th>项目</th><th>实收</th><th>支付</th><th>提成</th></tr></thead>
-          <tbody id="staffModalOrders"></tbody>
-        </table>
-      </div>
-      <h4 style="margin:8px 0;">💵 周期内小费明细</h4>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead><tr><th>日期</th><th>类型</th><th>金额</th><th>备注</th></tr></thead>
-          <tbody id="staffModalTips"></tbody>
-        </table>
-      </div>
+      <div id="staffDetailContent"></div>
     </div>
   </div>
 
-  <!-- 年费会员 / 充值卡与积分管理弹窗（第4项） -->
+  <!-- 4. 年费会员 & 充值卡 & 积分模态框 -->
   <div class="modal-backdrop" id="memberModal">
-    <div class="modal">
+    <div class="modal" style="max-width:860px;">
       <div class="card-title">
-        <span>👑 年费会员 / 充值卡 / 小费与积分规则中心</span>
+        <span>👑 年费会员 & 充值卡 & 积分中心</span>
         <button class="btn-outline btn-sm" onclick="closeModal('memberModal')">✕</button>
       </div>
-
-      <div class="rev-panel" style="margin-bottom:12px;">
-        <strong>⚙️ 会员优惠幅度与积分全局设置</strong>
-        <div class="inline-inputs" style="margin-top:8px;">
-          <label>单人年费($): <input type="number" id="cfgSinglePrice" step="0.01" style="width:85px;" /></label>
-          <label>默认优惠幅度(%): <input type="number" id="cfgSingleDisc" step="1" placeholder="如10即9折" style="width:95px;" /></label>
-          <label>消费 $1 得积分: <input type="number" id="cfgPointsPerDollar" step="0.1" value="1" style="width:80px;" /></label>
-          <button class="btn-primary btn-sm" onclick="saveMemberSettings()">保存规则</button>
+      <div class="member-highlight">
+        <div style="font-weight:700; margin-bottom:6px;">⚙️ 年费价格、优惠幅度与积分规则设置</div>
+        <div class="inline-inputs">
+          <label>单人年费($): <input type="number" id="cfgSinglePrice" style="width:75px;" /></label>
+          <label>单人优惠(%): <input type="number" id="cfgSingleDisc" style="width:70px;" /></label>
+          <label>双人年费($): <input type="number" id="cfgDoublePrice" style="width:75px;" /></label>
+          <label>双人优惠(%): <input type="number" id="cfgDoubleDisc" style="width:70px;" /></label>
+          <label>每消费$1得积分: <input type="number" id="cfgPointsPerDollar" step="0.1" value="1" style="width:65px;" /></label>
+          <button class="btn-primary btn-sm" onclick="saveMemberConfig()">💾 保存规则</button>
         </div>
       </div>
-
-      <div class="rev-panel" style="margin-bottom:12px;">
-        <strong>➕ 办理年费会员 / 开充值卡</strong>
-        <div class="inline-inputs" style="margin-top:8px;">
-          <input type="text" id="memName" placeholder="会员姓名" style="width:110px;" />
-          <input type="text" id="memPhone" placeholder="手机号/卡号" style="width:120px;" />
+      <div class="card" style="padding:10px; margin-bottom:10px;">
+        <div style="font-weight:700; margin-bottom:6px;">➕ 开通新会员 / 年费办卡（自动生成可打印收据）</div>
+        <div class="inline-inputs">
+          <input type="text" id="memName" placeholder="会员姓名" style="width:115px;" />
+          <input type="text" id="memPhone" placeholder="手机号/卡号" style="width:125px;" />
           <select id="memTier">
-            <option value="单人年费会员">单人年费会员</option>
-            <option value="双人年费会员">双人年费会员</option>
-            <option value="储值卡会员">普通储值卡会员</option>
+            <option value="single">单人年费会员</option>
+            <option value="double">双人年费会员</option>
+            <option value="prepaid">普通充值储值卡</option>
           </select>
-          <input type="number" id="memDiscount" step="1" placeholder="专属优惠(%)" style="width:105px;" />
-          <input type="number" id="memFeePaid" step="0.01" placeholder="年费实收($)" style="width:100px;" />
-          <input type="number" id="memInitBalance" step="0.01" placeholder="首充卡金($)" style="width:100px;" />
+          <input type="number" id="memCustomDisc" step="1" placeholder="专属优惠% (可选)" style="width:130px;" />
+          <input type="number" id="memInitBalance" step="0.01" placeholder="初始充值($)" style="width:110px;" />
           <select id="memPayMethod">
-            <option value="银行卡">银行卡</option>
-            <option value="现金">现金</option>
-            <option value="Venmo">Venmo</option>
+            <option value="银行卡">💳 银行卡</option>
+            <option value="现金">💵 现金</option>
+            <option value="Venmo">📱 Venmo</option>
           </select>
-          <button class="btn-success btn-sm" onclick="createMember()">确认办卡</button>
+          <button class="btn-success btn-sm" onclick="createMember()">✅ 立即办卡并打印收据</button>
         </div>
       </div>
-
-      <div class="rev-panel" style="margin-bottom:12px;">
-        <strong>💳 会员卡充值 & 充值小费 & 优惠调整</strong>
-        <div class="inline-inputs" style="margin-top:8px;">
-          <select id="topupMemberId" style="min-width:160px;"></select>
-          <input type="number" id="topupAmount" step="0.01" placeholder="充值金额($)" style="width:105px;" />
-          <input type="number" id="topupTipAmount" step="0.01" placeholder="附带充值小费($)" style="width:120px;" />
-          <select id="topupPayMethod">
-            <option value="银行卡">银行卡</option>
-            <option value="现金">现金</option>
-            <option value="Venmo">Venmo</option>
-          </select>
-          <input type="number" id="topupNewDiscount" step="1" placeholder="新优惠(%可选)" style="width:115px;" />
-          <button class="btn-primary btn-sm" onclick="topupMemberCard()">确认充值</button>
-        </div>
+      <div class="inline-inputs" style="margin-bottom:8px;">
+        <input type="text" id="memberSearchInput" placeholder="搜索会员姓名或手机号..." oninput="renderMembers()" style="flex:1;" />
       </div>
-
       <div style="overflow-x:auto;">
         <table>
           <thead>
             <tr>
-              <th>会员/卡号</th>
-              <th>等级</th>
+              <th>会员姓名</th>
+              <th>卡号/手机</th>
+              <th>类型</th>
               <th>优惠幅度</th>
               <th>充值卡余额</th>
-              <th>累计积分</th>
-              <th>操作</th>
+              <th>当前积分</th>
+              <th>操作（充值 / 扣小费 / 调优惠）</th>
             </tr>
           </thead>
           <tbody id="memberTableBody"></tbody>
@@ -952,26 +788,197 @@
     </div>
   </div>
 
-  <!-- 项目统计弹窗（第6项） -->
-  <div class="modal-backdrop" id="serviceStatsModal">
+  <!-- 5. 门店总营收分项明细弹窗 -->
+  <div class="modal-backdrop" id="revenueBreakdownModal">
     <div class="modal">
       <div class="card-title">
-        <span>📊 项目统计明细（各项目成交个数与喜好度排行）</span>
-        <button class="btn-outline btn-sm" onclick="closeModal('serviceStatsModal')">✕</button>
+        <span>💰 门店总营收分项统计（当前筛选周期）</span>
+        <button class="btn-outline btn-sm" onclick="closeModal('revenueBreakdownModal')">✕</button>
+      </div>
+      <div id="revenueBreakdownBody"></div>
+    </div>
+  </div>
+
+  <!-- 5. 礼卡与优惠券收入计入设置弹窗 -->
+  <div class="modal-backdrop" id="cardCouponModal">
+    <div class="modal">
+      <div class="card-title">
+        <span>🎁 礼卡与优惠券营收计入设置</span>
+        <button class="btn-outline btn-sm" onclick="closeModal('cardCouponModal')">✕</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px;">
+        <label><input type="checkbox" id="cfgCountGiftCardSale" /> 🎁 <strong>销售礼卡</strong> 计入门店总营收</label>
+        <label><input type="checkbox" id="cfgCountGiftCardUse" /> 🛍️ <strong>使用礼卡消费</strong> 计入门店总营收</label>
+        <label><input type="checkbox" id="cfgCountCouponSale" /> 🎟️ <strong>销售优惠券</strong> 计入门店总营收</label>
+        <label><input type="checkbox" id="cfgCountCouponUse" /> 🏷️ <strong>使用优惠券消费</strong> 计入门店总营收</label>
+      </div>
+      <button class="btn-primary btn-sm" onclick="saveRevenueRuleConfig()">💾 保存设置</button>
+    </div>
+  </div>
+
+  <!-- 6. 项目统计明细弹窗 -->
+  <div class="modal-backdrop" id="projectStatsModal">
+    <div class="modal">
+      <div class="card-title">
+        <span>📊 项目统计明细（各项目成交数量与营收）</span>
+        <button class="btn-outline btn-sm" onclick="closeModal('projectStatsModal')">✕</button>
+      </div>
+      <div id="projectStatsBody"></div>
+    </div>
+  </div>
+
+  <!-- 7. 门店净利润明细弹窗 -->
+  <div class="modal-backdrop" id="netProfitModal">
+    <div class="modal">
+      <div class="card-title">
+        <span>🏦 门店净利润核算明细（收入 - 工资提成小费 - 水电购物等一切支出）</span>
+        <button class="btn-outline btn-sm" onclick="closeModal('netProfitModal')">✕</button>
+      </div>
+      <div id="netProfitBody"></div>
+    </div>
+  </div>
+
+  <!-- 8. 任意支出录入弹窗 -->
+  <div class="modal-backdrop" id="expenseModal">
+    <div class="modal">
+      <div class="card-title">
+        <span>💸 门店日常支出录入（水电 / 购物耗材 / 房租 / 任意支出项）</span>
+        <button class="btn-outline btn-sm" onclick="closeModal('expenseModal')">✕</button>
+      </div>
+      <div class="inline-inputs" style="margin-bottom:12px;">
+        <input type="text" id="expCategoryInput" list="expCategoryPresets" placeholder="支出项目名称（可自定义）" style="width:185px;" />
+        <datalist id="expCategoryPresets">
+          <option value="水电燃气费"></option>
+          <option value="门店购物/耗材精油"></option>
+          <option value="房租物业费"></option>
+          <option value="洗衣/布草费"></option>
+          <option value="广告推广费"></option>
+          <option value="设备维修费"></option>
+        </datalist>
+        <input type="number" id="expAmountInput" step="0.01" placeholder="支出金额 ($)" style="width:120px;" />
+        <select id="expPayMethod">
+          <option value="银行卡">💳 银行卡</option>
+          <option value="现金">💵 现金</option>
+          <option value="Venmo">📱 Venmo</option>
+        </select>
+        <input type="text" id="expNoteInput" placeholder="备注说明" style="flex:1; min-width:120px;" />
+        <button class="btn-danger btn-sm" onclick="addExpense()">+ 记录支出</button>
       </div>
       <div style="overflow-x:auto;">
         <table>
-          <thead>
-            <tr>
-              <th>排名</th>
-              <th>项目名称</th>
-              <th>完成数量 (个)</th>
-              <th>数量占比</th>
-              <th>总营业额</th>
-            </tr>
-          </thead>
-          <tbody id="serviceStatsBody"></tbody>
+          <thead><tr><th>日期</th><th>支出项目</th><th>金额</th><th>支付方式</th><th>备注</th><th>操作</th></tr></thead>
+          <tbody id="expenseTableBody"></tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. 预约排班弹窗 -->
+  <div class="modal-backdrop" id="appointmentModal">
+    <div class="modal" style="max-width:860px;">
+      <div class="card-title">
+        <span>📅 客户预约排班中心</span>
+        <button class="btn-outline btn-sm" onclick="closeModal('appointmentModal')">✕</button>
+      </div>
+      <div class="inline-inputs" style="margin-bottom:12px;">
+        <input type="date" id="apptDate" />
+        <input type="time" id="apptTime" value="10:00" />
+        <input type="text" id="apptCustName" placeholder="客人姓名" style="width:110px;" />
+        <input type="tel" id="apptCustPhone" placeholder="客人电话" style="width:120px;" />
+        <select id="apptStaffId"></select>
+        <select id="apptServiceId"></select>
+        <input type="text" id="apptNote" placeholder="备注" style="width:110px;" />
+        <button class="btn-primary btn-sm" onclick="addAppointment()">+ 添加预约</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>日期时间</th><th>客人</th><th>指定技师</th><th>预约项目</th><th>状态</th><th>快捷操作</th></tr></thead>
+          <tbody id="appointmentTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11. 员工排班休息设置弹窗 -->
+  <div class="modal-backdrop" id="staffLeaveModal">
+    <div class="modal">
+      <div class="card-title">
+        <span id="staffLeaveTitle">🗓️ 员工排班休息设置</span>
+        <button class="btn-outline btn-sm" onclick="closeModal('staffLeaveModal')">✕</button>
+      </div>
+      <input type="hidden" id="leaveEmpId" />
+      <div class="inline-inputs" style="margin-bottom:12px;">
+        <input type="date" id="leaveDate" />
+        <input type="time" id="leaveStart" value="09:00" />
+        <span>至</span>
+        <input type="time" id="leaveEnd" value="21:00" />
+        <input type="text" id="leaveReason" placeholder="休息原因（如轮休/请假）" style="flex:1;" />
+        <button class="btn-primary btn-sm" onclick="addStaffLeave()">+ 添加休息排班</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>休息日期</th><th>时间段</th><th>原因</th><th>操作</th></tr></thead>
+          <tbody id="staffLeaveTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. 结账模态框（含合并结账、会员卡扣款、拆分结账、打印收据） -->
+  <div class="modal-backdrop" id="checkoutModal">
+    <div class="modal">
+      <div class="card-title">
+        <span>🧾 收款结账（支持合并结账、会员扣款、拆分结账与打印收据）</span>
+        <button class="btn-outline btn-sm" onclick="closeModal('checkoutModal')">✕</button>
+      </div>
+      <div id="checkoutItemsList" style="margin-bottom:10px;"></div>
+
+      <div class="member-highlight">
+        <div class="inline-inputs">
+          <label>👑 关联会员（可选）：</label>
+          <select id="checkoutMemberSelect" onchange="updateCheckoutTotalDisplay()" style="flex:1;"></select>
+        </div>
+        <div id="checkoutMemberHint" style="font-size:0.86em; color:#166534; margin-top:4px;"></div>
+      </div>
+
+      <div id="checkoutTotalInfo" style="font-weight:700; font-size:1.1em; margin-bottom:10px;"></div>
+
+      <div style="font-weight:600; font-size:0.9em; color:var(--muted);">方式一：单渠道全额结账</div>
+      <div class="pay-grid">
+        <button class="pay-btn" onclick="completeCheckout('现金')">1. 💵 现金</button>
+        <button class="pay-btn" onclick="completeCheckout('银行卡')">2. 💳 银行卡</button>
+        <button class="pay-btn" onclick="completeCheckout('Venmo')">3. 📱 Venmo</button>
+        <button class="pay-btn" onclick="completeCheckout('会员充值卡')" id="payMemberCardBtn">4. 👑 会员充值卡扣款</button>
+        <button class="pay-btn" onclick="completeCheckout('礼品卡')">5. 🎁 使用礼卡消费</button>
+        <button class="pay-btn" onclick="completeCheckout('优惠券')">6. 🎟️ 使用优惠券消费</button>
+      </div>
+
+      <!-- 第10项：拆分结账 -->
+      <div class="split-box">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <strong>🔀 方式二：拆分结账（多种支付方式组合收款）</strong>
+          <button class="btn-outline btn-sm" onclick="addSplitRow()">+ 增加一笔支付</button>
+        </div>
+        <div id="splitRowsContainer"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+          <span id="splitRemainHint" style="font-size:0.88em; font-weight:700;"></span>
+          <button class="btn-success btn-sm" onclick="completeSplitCheckout()">✅ 确认拆分结账并打印收据</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12. 通用打印收据模态框 -->
+  <div class="modal-backdrop" id="receiptModal">
+    <div class="modal" style="max-width:440px;">
+      <div class="card-title">
+        <span>🧾 消费与充值收据预览</span>
+        <button class="btn-outline btn-sm" onclick="closeModal('receiptModal')">✕</button>
+      </div>
+      <div id="receiptPrintArea" class="receipt-paper"></div>
+      <div class="inline-inputs" style="justify-content:center; margin-top:14px;">
+        <button class="btn-primary" onclick="window.print()">🖨️ 立即打印收据</button>
+        <button class="btn-outline" onclick="closeModal('receiptModal')">关闭</button>
       </div>
     </div>
   </div>
@@ -985,38 +992,9 @@
       </div>
       <div style="overflow-x:auto;">
         <table>
-          <thead>
-            <tr><th>操作时间</th><th>操作角色</th><th>操作类型</th><th>详细内容</th></tr>
-          </thead>
+          <thead><tr><th>操作时间</th><th>操作角色</th><th>操作类型</th><th>详细内容</th></tr></thead>
           <tbody id="auditTableBody"></tbody>
         </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- 结账模态框（支持合并结账 + 会员充值卡扣款 + 积分计算） -->
-  <div class="modal-backdrop" id="checkoutModal">
-    <div class="modal">
-      <div class="card-title">
-        <span>🧾 收款结账（支持多单合并 & 会员卡折扣扣款与自动积分）</span>
-        <button class="btn-outline btn-sm" onclick="closeModal('checkoutModal')">✕</button>
-      </div>
-      <div class="rev-panel" style="margin-bottom:10px;">
-        <div class="inline-inputs">
-          <strong>👑 关联会员（可选）：</strong>
-          <select id="checkoutMemberSelect" onchange="updateCheckoutPreview()" style="min-width:220px;"></select>
-          <span id="checkoutMemberInfo" class="tag tag-purple"></span>
-        </div>
-      </div>
-      <div id="checkoutItemsList" style="margin-bottom:10px;"></div>
-      <div id="checkoutTotalInfo" style="font-weight:700; margin-bottom:12px;"></div>
-      <div class="pay-grid">
-        <button class="pay-btn" onclick="completeCheckout('现金')">1. 💵 现金</button>
-        <button class="pay-btn" onclick="completeCheckout('银行卡')">2. 💳 银行卡</button>
-        <button class="pay-btn" onclick="completeCheckout('Venmo')">3. 📱 Venmo</button>
-        <button class="pay-btn" id="memberCardPayBtn" onclick="completeCheckout('会员充值卡')" style="border-color:#7c3aed; background:#f5f3ff;">4. 👑 会员充值卡扣款</button>
-        <button class="pay-btn" onclick="completeCheckout('礼卡消费')">5. 🎁 礼卡消费</button>
-        <button class="pay-btn" onclick="completeCheckout('优惠券')">6. 🎟️ 优惠券</button>
       </div>
     </div>
   </div>
@@ -1030,7 +1008,7 @@
       </div>
       <p>请选择要重置的范围（操作将记入审计日志）：</p>
       <div class="inline-inputs">
-        <button class="btn-warning btn-sm" onclick="resetData('orders')">🧹 仅清空流水账单（保留技师、项目与会员）</button>
+        <button class="btn-warning btn-sm" onclick="resetData('orders')">🧹 仅清空流水账单（保留技师与项目）</button>
         <button class="btn-danger btn-sm" onclick="resetData('all')">💥 全部清空（彻底重置为空白账本）</button>
       </div>
     </div>
@@ -1038,13 +1016,8 @@
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js';
-  import {
-    doc, setDoc, getDocFromServer, onSnapshot, serverTimestamp, initializeFirestore
-  } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
-  import {
-    getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
-    setPersistence, browserSessionPersistence, sendPasswordResetEmail
-  } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js';
+  import { doc, setDoc, getDocFromServer, onSnapshot, serverTimestamp, initializeFirestore } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js';
 
   const FIREBASE_CONFIG = {
     apiKey: 'AIzaSyCwcwtECiFjZYiny6RruwV0qt7D6kGPcjU',
@@ -1069,20 +1042,25 @@
     orders: [],
     tips: [],
     serviceFees: [],
+    expenses: [],
     timers: [],
     appointments: [],
     members: [],
+    receipts: [],
+    sensitivePassword: '123456',
     memberCfg: {
-      singlePrice: 199,
+      singlePrice: 99,
       singleDisc: 10,
+      doublePrice: 169,
+      doubleDisc: 15,
       pointsPerDollar: 1
     },
-    revenueCfg: {
-      includeGiftCardSale: true,
-      includeGiftCardRedeem: false,
-      includeCoupon: false
+    revenueRules: {
+      countGiftCardSale: true,
+      countGiftCardUse: false,
+      countCouponSale: true,
+      countCouponUse: false
     },
-    showRevenueBreakdown: false,
     auditLogs: [],
     quickTips: [5, 10, 20],
     selectedStaffId: null,
@@ -1099,6 +1077,8 @@
   const EMPTY_STATE = structuredClone(state);
 
   let checkoutCart = [];
+  let sensitiveUnlocked = false;
+  let loggedInStaffId = null;
   let db = null;
   let auth = null;
   let currentUser = null;
@@ -1112,7 +1092,7 @@
   let sessionVersion = 0;
 
   function isFirebaseConfigured() {
-    return Boolean(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId);
+    return Boolean(FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsWith('YOUR_') && FIREBASE_CONFIG.projectId);
   }
 
   function setCloudBadge(text, cls = 'tag-amber') {
@@ -1129,13 +1109,6 @@
     delete clean.updatedAt;
     delete clean.role;
     delete clean.therapistViewId;
-    if (Array.isArray(clean.employees)) {
-      clean.employees = clean.employees.map(emp => {
-        const safeEmployee = { ...emp };
-        delete safeEmployee.pin;
-        return safeEmployee;
-      });
-    }
     return clean;
   }
 
@@ -1145,10 +1118,12 @@
       ...state,
       ...clean,
       memberCfg: { ...state.memberCfg, ...(clean.memberCfg || {}) },
-      revenueCfg: { ...state.revenueCfg, ...(clean.revenueCfg || {}) },
+      revenueRules: { ...state.revenueRules, ...(clean.revenueRules || {}) },
+      expenses: Array.isArray(clean.expenses) ? clean.expenses : state.expenses,
+      appointments: Array.isArray(clean.appointments) ? clean.appointments : state.appointments,
+      receipts: Array.isArray(clean.receipts) ? clean.receipts : state.receipts,
       quickTips: Array.isArray(clean.quickTips) ? clean.quickTips : state.quickTips,
-      role: currentUser?.uid === ADMIN_UID ? 'boss' : null,
-      therapistViewId: null
+      role: currentUser?.uid === ADMIN_UID ? 'boss' : null
     };
   }
 
@@ -1162,15 +1137,10 @@
     dashboard.querySelectorAll('button, input, select, textarea').forEach(el => {
       if (el !== logoutButton) el.disabled = locked;
     });
-    document.querySelectorAll('.modal').forEach(modal => {
-      modal.querySelectorAll('button, input, select, textarea').forEach(el => {
-        el.disabled = locked;
-      });
-    });
   }
 
   function addAudit(action, detail) {
-    const roleName = state.role === 'boss' ? '店长(Boss)' : '前台(Front)';
+    const roleName = state.role === 'boss' ? '店长(Boss)' : '员工';
     state.auditLogs.unshift({ time: nowStr(), role: roleName, action, detail });
     if (state.auditLogs.length > 300) state.auditLogs.pop();
   }
@@ -1191,12 +1161,10 @@
     saveQueue = saveQueue
       .catch(err => console.error('Previous save failed:', err))
       .then(async () => {
-        if (activeSession !== sessionVersion || !currentUser || currentUser.uid !== ADMIN_UID || saveFailed) return false;
+        if (activeSession !== sessionVersion || !currentUser || saveFailed) return false;
         try {
           await setDoc(targetDoc, payload);
-          if (activeSession === sessionVersion) {
-            setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green');
-          }
+          if (activeSession === sessionVersion) setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green');
           return true;
         } catch (error) {
           console.error('Firestore write failed:', error.code, error.message);
@@ -1204,7 +1172,7 @@
             saveFailed = true;
             setCloudBadge('⚠️ 保存失败 / Save failed', 'tag-amber');
             setDashboardLocked(true);
-            alert('Cloud save failed. Please export backup.\n\n' + error.code);
+            alert('Cloud save failed. Please export JSON backup.\n\n' + error.code);
           }
           return false;
         }
@@ -1230,10 +1198,7 @@
         state.role = 'boss';
       } else {
         const confirmed = confirm('No cloud ledger was found. Create a new empty store ledger?');
-        if (!confirmed) {
-          await signOut(auth);
-          return;
-        }
+        if (!confirmed) { await signOut(auth); return; }
         state = structuredClone(EMPTY_STATE);
         state.role = 'boss';
         await setDoc(targetDoc, getCloudPayload());
@@ -1246,46 +1211,24 @@
       initializeDashboard();
       setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green');
 
-      unsubscribeCloud = onSnapshot(
-        targetDoc,
-        { includeMetadataChanges: true },
-        snap => {
-          if (activeSession !== sessionVersion || !currentUser || currentUser.uid !== ADMIN_UID) return;
-          if (snap.metadata.hasPendingWrites) {
-            setCloudBadge('☁️ 等待同步 / Sync pending', 'tag-blue');
-            return;
-          }
-          if (snap.metadata.fromCache) {
-            if (!navigator.onLine) {
-              setCloudBadge('⚠️ 离线 / Offline', 'tag-amber');
-              setDashboardLocked(true);
-            } else {
-              setCloudBadge('☁️ 同步中 / Syncing...', 'tag-blue');
-            }
-            return;
-          }
-          if (!snap.exists()) {
-            cloudEnabled = false;
-            setDashboardLocked(true);
-            setCloudBadge('⚠️ 云端账本不存在', 'tag-amber');
-            return;
-          }
-          if (!saveFailed) {
-            setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green');
-            setDashboardLocked(false);
-            renderAll();
-          }
-        },
-        error => {
-          console.error('Firestore listener error:', error.code, error.message);
-          cloudEnabled = false;
-          setCloudBadge('⚠️ 连接异常 / Connection error', 'tag-amber');
-          setDashboardLocked(true);
-          if (error.code === 'permission-denied') signOut(auth).catch(console.error);
+      unsubscribeCloud = onSnapshot(targetDoc, { includeMetadataChanges: true }, snap => {
+        if (activeSession !== sessionVersion || !currentUser) return;
+        if (snap.metadata.hasPendingWrites) { setCloudBadge('☁️ 等待同步 / Sync pending', 'tag-blue'); return; }
+        if (snap.metadata.fromCache) {
+          if (!navigator.onLine) { setCloudBadge('⚠️ 离线 / Offline', 'tag-amber'); setDashboardLocked(true); }
+          else { setCloudBadge('☁️ 同步中 / Syncing...', 'tag-blue'); }
+          return;
         }
-      );
+        if (!snap.exists()) { cloudEnabled = false; setDashboardLocked(true); setCloudBadge('⚠️ 云端账本不存在', 'tag-amber'); return; }
+        if (!saveFailed) { setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green'); setDashboardLocked(false); renderAll(); }
+      }, error => {
+        console.error('Firestore listener error:', error.code);
+        cloudEnabled = false;
+        setCloudBadge('⚠️ 连接异常 / Connection error', 'tag-amber');
+        setDashboardLocked(true);
+      });
     } catch (error) {
-      console.error('Cloud initialization failed:', error.code, error.message);
+      console.error('Cloud initialization failed:', error);
       cloudEnabled = false;
       initialCloudLoaded = false;
       if (auth.currentUser) await signOut(auth).catch(console.error);
@@ -1309,26 +1252,19 @@
 
       onAuthStateChanged(auth, async user => {
         clearSessionData();
-        if (!user) {
-          showLogin();
-          return;
-        }
-        if (user.uid !== ADMIN_UID) {
-          await signOut(auth);
-          showLogin('无访问权限 / Access denied');
-          return;
-        }
+        if (!user) { showLogin(); return; }
+        if (user.uid !== ADMIN_UID) { await signOut(auth); showLogin('无访问权限 / Access denied'); return; }
         currentUser = user;
         await startCloudSync(user);
       });
     } catch (error) {
-      console.error('Firebase initialization failed:', error);
       showLogin('Firebase configuration error: ' + error.message);
     }
   }
 
   function showLogin(message = '') {
     document.getElementById('appContainer').hidden = true;
+    document.getElementById('staffPortalContainer').hidden = true;
     document.getElementById('loginScreen').hidden = false;
     document.getElementById('loginError').textContent = message;
     document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
@@ -1336,6 +1272,7 @@
 
   function showDashboard() {
     document.getElementById('loginScreen').hidden = true;
+    document.getElementById('staffPortalContainer').hidden = true;
     document.getElementById('appContainer').hidden = false;
     document.getElementById('currentUserEmail').textContent = currentUser?.email || '';
     document.getElementById('loginPassword').value = '';
@@ -1343,10 +1280,7 @@
 
   function clearSessionData() {
     sessionVersion++;
-    if (unsubscribeCloud) {
-      unsubscribeCloud();
-      unsubscribeCloud = null;
-    }
+    if (unsubscribeCloud) { unsubscribeCloud(); unsubscribeCloud = null; }
     cloudEnabled = false;
     initialCloudLoaded = false;
     isApplyingRemote = false;
@@ -1354,9 +1288,123 @@
     currentUser = null;
     cloudDocRef = null;
     checkoutCart = [];
+    sensitiveUnlocked = false;
     saveQueue = Promise.resolve();
     state = structuredClone(EMPTY_STATE);
-    document.getElementById('currentUserEmail').textContent = '';
+  }
+
+  function switchLoginTab(tab) {
+    document.getElementById('tabAdminLogin').classList.toggle('active', tab === 'admin');
+    document.getElementById('tabStaffLogin').classList.toggle('active', tab === 'staff');
+    document.getElementById('loginForm').hidden = tab !== 'admin';
+    document.getElementById('staffLoginForm').hidden = tab !== 'staff';
+    document.getElementById('loginError').textContent = '';
+  }
+
+  /* 第11项：员工手机号自助登录查看自己的排班、状态与业绩 */
+  async function loginAsEmployeePhone(event) {
+    event.preventDefault();
+    const rawPhone = document.getElementById('staffPhoneInput').value.replace(/\D/g, '');
+    const errorBox = document.getElementById('loginError');
+    if (!rawPhone) { errorBox.textContent = '请输入有效的手机号'; return; }
+
+    try {
+      errorBox.textContent = '正在查询员工档案...';
+      const targetDoc = doc(db, FIRESTORE_DOC_PATH[0], FIRESTORE_DOC_PATH[1]);
+      const snap = await getDocFromServer(targetDoc);
+      if (!snap.exists()) { errorBox.textContent = '系统暂无门店数据，请联系店长'; return; }
+      const data = snap.data();
+      const employees = Array.isArray(data.employees) ? data.employees : [];
+      const emp = employees.find(e => String(e.phone || '').replace(/\D/g, '') === rawPhone);
+      if (!emp) {
+        errorBox.textContent = '未找到该手机号对应的员工账号，请核对或联系管理员';
+        return;
+      }
+
+      mergeStateData(data);
+      loggedInStaffId = emp.id;
+      errorBox.textContent = '';
+      document.getElementById('loginScreen').hidden = true;
+      document.getElementById('appContainer').hidden = true;
+      document.getElementById('staffPortalContainer').hidden = false;
+      refreshStaffPortal();
+    } catch (err) {
+      errorBox.textContent = '查询失败：' + (err.message || err.code);
+    }
+  }
+
+  async function refreshStaffPortal() {
+    if (!loggedInStaffId) return;
+    try {
+      const targetDoc = doc(db, FIRESTORE_DOC_PATH[0], FIRESTORE_DOC_PATH[1]);
+      const snap = await getDocFromServer(targetDoc);
+      if (snap.exists()) mergeStateData(snap.data());
+    } catch (e) {}
+
+    const emp = state.employees.find(e => e.id === loggedInStaffId);
+    if (!emp) return logoutStaffPortal();
+
+    const today = todayStr();
+    const activeTimer = state.timers.find(t => t.staffId === emp.id && t.endTime > Date.now());
+    const todayLeaves = (emp.leaves || []).filter(l => l.date === today);
+    let statusBadge = '<span class="tag tag-green">🟢 当前空闲 / 可接单</span>';
+    if (activeTimer) {
+      const remMins = Math.max(1, Math.ceil((activeTimer.endTime - Date.now()) / 60000));
+      statusBadge = `<span class="tag tag-blue">⏱️ 服务中：${escapeHTML(activeTimer.serviceName)}（剩余约 ${remMins} 分钟）</span>`;
+    } else if (todayLeaves.length) {
+      statusBadge = `<span class="tag tag-amber">🏖️ 今日排班休息：${todayLeaves.map(l => `${l.start}-${l.end}`).join(', ')}</span>`;
+    }
+
+    const myOrders = state.orders.filter(o => o.staffId === emp.id && o.date === today);
+    const myTips = state.tips.filter(t => t.staffId === emp.id && t.date === today);
+    const myAppts = state.appointments.filter(a => a.staffId === emp.id && a.date >= today);
+
+    const todayComm = myOrders.reduce((s, o) => s + Number(o.commission || 0), 0);
+    const todayTip = myTips.reduce((s, t) => s + Number(t.amount || 0), 0);
+
+    document.getElementById('staffPortalBadge').textContent = `👤 ${emp.name} (${emp.role})`;
+    document.getElementById('staffPortalBody').innerHTML = `
+      <div class="card">
+        <div class="card-title">
+          <span>📍 我的实时工作状态 (${today})</span>
+          ${statusBadge}
+        </div>
+        <div class="stat-grid">
+          <div class="stat-box"><div class="stat-label">今日完成单数</div><div class="stat-val">${myOrders.length} 单</div></div>
+          <div class="stat-box"><div class="stat-label">今日项目提成</div><div class="stat-val">$${todayComm.toFixed(2)}</div></div>
+          <div class="stat-box"><div class="stat-label">今日小费合计</div><div class="stat-val">$${todayTip.toFixed(2)}</div></div>
+          <div class="stat-box"><div class="stat-label">绑定手机号</div><div class="stat-val" style="font-size:1em;">${escapeHTML(emp.phone || '')}</div></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><span>📅 我的即将到来预约排班</span></div>
+          <table>
+            <thead><tr><th>日期时间</th><th>客人</th><th>项目</th><th>状态</th></tr></thead>
+            <tbody>
+              ${myAppts.map(a => `<tr><td>${escapeHTML(a.date)} ${escapeHTML(a.time)}</td><td>${escapeHTML(a.custName)}</td><td>${escapeHTML(a.serviceName)}</td><td><span class="tag tag-blue">${escapeHTML(a.status || '已预约')}</span></td></tr>`).join('') || '<tr><td colspan="4">暂无后续预约</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>🏖️ 我的排班休息记录</span></div>
+          <table>
+            <thead><tr><th>休息日期</th><th>时段</th><th>备注</th></tr></thead>
+            <tbody>
+              ${(emp.leaves || []).map(l => `<tr><td>${escapeHTML(l.date)}</td><td>${escapeHTML(l.start)} - ${escapeHTML(l.end)}</td><td>${escapeHTML(l.reason || '休息')}</td></tr>`).join('') || '<tr><td colspan="3">暂无休息排班记录</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  function logoutStaffPortal() {
+    loggedInStaffId = null;
+    clearSessionData();
+    showLogin('已退出员工工作台');
   }
 
   async function login(event) {
@@ -1366,11 +1414,9 @@
     const password = document.getElementById('loginPassword').value;
     const button = document.getElementById('loginSubmitBtn');
     const errorBox = document.getElementById('loginError');
-
     button.disabled = true;
     button.textContent = '登录中 / Signing in...';
     errorBox.textContent = '';
-
     try {
       await signInWithEmailAndPassword(auth, email, password);
       document.getElementById('loginPassword').value = '';
@@ -1393,7 +1439,7 @@
       location.reload();
     } catch (error) {
       alert('Sign-out failed.');
-      if (!saveFailed) setDashboardLocked(false);
+      setDashboardLocked(false);
     }
   }
 
@@ -1401,13 +1447,10 @@
     if (!auth) return;
     const email = document.getElementById('loginEmail').value.trim();
     const errorBox = document.getElementById('loginError');
-    if (!email) {
-      errorBox.textContent = '请先输入邮箱 / Enter your email first';
-      return;
-    }
+    if (!email) { errorBox.textContent = '请先输入邮箱 / Enter your email first'; return; }
     try {
       await sendPasswordResetEmail(auth, email);
-      errorBox.textContent = '如果账户存在，您将收到密码重置邮件。';
+      errorBox.textContent = '重置邮件已发送 / Reset email sent.';
     } catch (error) {
       errorBox.textContent = '无法发送重置邮件 / Unable to send reset email.';
     }
@@ -1415,7 +1458,7 @@
 
   function initializeDashboard() {
     const today = todayStr();
-    ['entryDate', 'statDate', 'statStart', 'statEnd'].forEach(id => {
+    ['entryDate', 'statDate', 'statStart', 'statEnd', 'apptDate', 'leaveDate'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = today;
     });
@@ -1428,31 +1471,44 @@
 
   function escapeHTML(value) {
     return String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
-  function toggleLang() {
-    state.lang = state.lang === 'zh' ? 'en' : 'zh';
-    saveState();
-    applyAppearance();
-    renderAll();
-  }
+  const I18N = {
+    zh: {
+      appTitle: '💆 门店收银与技师提成系统',
+      entryDate: '📅 记账日期：',
+      curTech: '👤 当前技师：',
+      timerBoardTitle: '⏱️ 服务计时看板（支持任意分钟加钟 & 任意加钱 & 多选合并结账）',
+      tipEntryTitle: '💵 小费录入（卡 / Venmo / 现金）',
+      sfEntryTitle: '🛎️ 每日收入 - 服务费 / 礼卡 / 优惠券销售',
+      orderEntryTitle: '📋 录入订单（点项目结账 / 点时间开钟）'
+    },
+    en: {
+      appTitle: '💆 Spa POS & Commission System',
+      entryDate: '📅 Date:',
+      curTech: '👤 Therapist:',
+      timerBoardTitle: '⏱️ Active Timers (Custom Extend / Extra Charge / Multi-Merge)',
+      tipEntryTitle: '💵 Tip Entry (Card / Venmo / Cash)',
+      sfEntryTitle: '🛎️ Daily Service Fee / Gift Card Sale',
+      orderEntryTitle: '📋 Order Entry (Click Service to Pay / Time to Start)'
+    }
+  };
 
+  function toggleLang() { state.lang = state.lang === 'zh' ? 'en' : 'zh'; saveState(); applyAppearance(); renderAll(); }
   function applyAppearance() {
-    document.body.className = [
-      state.scale,
-      state.eyeCare ? 'eye-care' : '',
-      state.touchMode ? 'touch-mode' : ''
-    ].filter(Boolean).join(' ');
+    document.body.className = [state.scale, state.eyeCare ? 'eye-care' : '', state.touchMode ? 'touch-mode' : ''].filter(Boolean).join(' ');
     document.getElementById('scaleSelect').value = state.scale || '';
     document.getElementById('soundToggleBtn').textContent = state.soundEnabled ? '🔔 铃声:开' : '🔕 铃声:关';
     document.getElementById('touchBtn').classList.toggle('active-pill', !!state.touchMode);
+    const dict = I18N[state.lang] || I18N.zh;
+    document.getElementById('appTitle').textContent = dict.appTitle;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const k = el.getAttribute('data-i18n');
+      if (dict[k]) el.textContent = dict[k];
+    });
   }
-
   function toggleSound() { state.soundEnabled = !state.soundEnabled; saveState(); applyAppearance(); }
   function toggleTouch() { state.touchMode = !state.touchMode; saveState(); applyAppearance(); }
   function toggleTheme() { state.eyeCare = !state.eyeCare; saveState(); applyAppearance(); }
@@ -1469,8 +1525,7 @@
         osc.frequency.value = freq;
         gain.gain.setValueAtTime(0.18, ctx.currentTime + i * 0.14);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.14 + 0.5);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
+        osc.connect(gain); gain.connect(ctx.destination);
         osc.start(ctx.currentTime + i * 0.14);
         osc.stop(ctx.currentTime + i * 0.14 + 0.52);
       });
@@ -1485,200 +1540,71 @@
     document.querySelectorAll('.non-therapist').forEach(el => { el.style.display = isAdmin ? '' : 'none'; });
   }
 
-  /* ================= 第1项：技师切换跳转 & 详情弹窗 ================= */
-  function selectAndJumpStaff(empId) {
-    state.selectedStaffId = empId;
-    state.filterStaffId = empId;
+  /* =========================================================
+     第1项：点击当前技师名字 & 技师业绩表里的技师名字跳转并打开详情弹窗
+  ========================================================= */
+  function selectAndFocusStaff(staffId, openPopup = false) {
+    if (!staffId) return;
+    state.selectedStaffId = staffId;
+    state.filterStaffId = staffId;
     saveState();
     renderAll();
-    const target = document.getElementById('detailsSection');
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    const detailEl = document.getElementById('detailSection');
+    if (detailEl) detailEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    if (openPopup) openStaffDetailModal(staffId);
   }
 
-  function openStaffDetailModal(empId) {
-    const emp = state.employees.find(e => e.id === empId);
-    if (!emp) return;
-    state.filterStaffId = empId;
-    renderAll();
+  function openStaffDetailModal(staffId) {
+    const emp = state.employees.find(e => e.id === staffId);
+    if (!emp) return alert('请先选择技师');
 
-    const orders = state.orders.filter(o => matchPeriod(o.date) && o.staffId === empId);
-    const tips = state.tips.filter(t => matchPeriod(t.date) && t.staffId === empId);
-    const rev = orders.reduce((s, o) => s + Number(o.price || 0), 0);
-    const comm = orders.reduce((s, o) => s + Number(o.commission || 0), 0);
-    const tipSum = tips.reduce((s, t) => s + Number(t.amount || 0), 0);
-    const netPay = Number(emp.base || 0) + comm + tipSum - Number(emp.tax || 0);
+    const periodOrders = state.orders.filter(o => o.staffId === emp.id && matchPeriod(o.date));
+    const periodTips = state.tips.filter(t => t.staffId === emp.id && matchPeriod(t.date));
 
-    document.getElementById('staffModalTitle').textContent = `👩‍⚕️ ${emp.name} (${emp.role}) — 业绩与明细详情`;
-    document.getElementById('staffModalSummary').innerHTML = `
-      <div class="stat-box"><div class="stat-label">完成单数</div><div class="stat-val">${orders.length} 单</div></div>
-      <div class="stat-box"><div class="stat-label">项目营业额</div><div class="stat-val">$${rev.toFixed(2)}</div></div>
-      <div class="stat-box"><div class="stat-label">项目提成</div><div class="stat-val">$${comm.toFixed(2)}</div></div>
-      <div class="stat-box"><div class="stat-label">小费合计</div><div class="stat-val">$${tipSum.toFixed(2)}</div></div>
-      <div class="stat-box"><div class="stat-label">预计实发</div><div class="stat-val">$${netPay.toFixed(2)}</div></div>
+    const rev = periodOrders.reduce((s, o) => s + Number(o.price || 0), 0);
+    const comm = periodOrders.reduce((s, o) => s + Number(o.commission || 0), 0);
+    const cardTip = periodTips.filter(t => t.type === '银行卡小费').reduce((s, t) => s + Number(t.amount || 0), 0);
+    const venmoTip = periodTips.filter(t => t.type === 'Venmo小费').reduce((s, t) => s + Number(t.amount || 0), 0);
+    const cashTip = periodTips.filter(t => t.type === '现金小费').reduce((s, t) => s + Number(t.amount || 0), 0);
+    const netPay = Number(emp.base || 0) + comm + cardTip + venmoTip + cashTip - Number(emp.tax || 0);
+
+    document.getElementById('staffDetailTitle').textContent = `👩‍⚕️ ${emp.name} (${emp.role}) — 当前周期业绩详情`;
+    document.getElementById('staffDetailContent').innerHTML = `
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-label">完成单数</div><div class="stat-val">${periodOrders.length} 单</div></div>
+        <div class="stat-box"><div class="stat-label">营业额</div><div class="stat-val">$${rev.toFixed(2)}</div></div>
+        <div class="stat-box"><div class="stat-label">项目提成</div><div class="stat-val">$${comm.toFixed(2)}</div></div>
+        <div class="stat-box"><div class="stat-label">小费合计</div><div class="stat-val">$${(cardTip + venmoTip + cashTip).toFixed(2)}</div></div>
+        <div class="stat-box"><div class="stat-label">预计实发</div><div class="stat-val" style="color:var(--success);">$${netPay.toFixed(2)}</div></div>
+      </div>
+      <h4>🧾 本周期服务项目明细</h4>
+      <table>
+        <thead><tr><th>日期</th><th>项目</th><th>实收</th><th>提成</th><th>方式</th></tr></thead>
+        <tbody>
+          ${periodOrders.map(o => `<tr><td>${escapeHTML(o.date)}</td><td>${escapeHTML(o.serviceName)}</td><td>$${Number(o.price).toFixed(2)}</td><td>$${Number(o.commission).toFixed(2)}</td><td>${escapeHTML(o.payMethod)}</td></tr>`).join('') || '<tr><td colspan="5">暂无项目记录</td></tr>'}
+        </tbody>
+      </table>
+      <h4 style="margin-top:12px;">💵 本周期小费明细</h4>
+      <table>
+        <thead><tr><th>日期</th><th>类型</th><th>金额</th><th>备注</th></tr></thead>
+        <tbody>
+          ${periodTips.map(t => `<tr><td>${escapeHTML(t.date)}</td><td>${escapeHTML(t.type)}</td><td>$${Number(t.amount).toFixed(2)}</td><td>${escapeHTML(t.note || '')}</td></tr>`).join('') || '<tr><td colspan="4">暂无小费记录</td></tr>'}
+        </tbody>
+      </table>
     `;
-
-    document.getElementById('staffModalOrders').innerHTML = orders.map(o => `
-      <tr>
-        <td>${escapeHTML(o.date)}</td>
-        <td>${escapeHTML(o.serviceName)}${o.extraNote ? ` (${escapeHTML(o.extraNote)})` : ''}</td>
-        <td>$${Number(o.price).toFixed(2)}</td>
-        <td>${escapeHTML(o.payMethod)}</td>
-        <td>$${Number(o.commission).toFixed(2)}</td>
-      </tr>
-    `).join('') || '<tr><td colspan="5">当前周期无项目记录</td></tr>';
-
-    document.getElementById('staffModalTips').innerHTML = tips.map(t => `
-      <tr>
-        <td>${escapeHTML(t.date)}</td>
-        <td>${escapeHTML(t.type)}</td>
-        <td>$${Number(t.amount).toFixed(2)}</td>
-        <td>${escapeHTML(t.note || '-')}</td>
-      </tr>
-    `).join('') || '<tr><td colspan="4">当前周期无小费记录</td></tr>';
-
     document.getElementById('staffDetailModal').classList.add('open');
   }
 
-  /* ================= 员工管理 ================= */
-  function saveEmployee() {
-    const name = document.getElementById('empName').value.trim();
-    if (!name) return alert('请输入技师姓名');
-    const role = document.getElementById('empRole').value.trim() || '按摩师';
-    const base = parseFloat(document.getElementById('empBase').value) || 0;
-    const tax = parseFloat(document.getElementById('empTax').value) || 0;
-    const editId = document.getElementById('editEmpId').value;
-
-    if (editId) {
-      const emp = state.employees.find(e => e.id === editId);
-      if (emp) {
-        Object.assign(emp, { name, role, base, tax });
-        addAudit('修改技师资料', `${name} (${role})`);
-      }
-    } else {
-      const id = 'emp_' + crypto.randomUUID();
-      state.employees.push({ id, name, role, base, tax });
-      if (!state.selectedStaffId) state.selectedStaffId = id;
-      addAudit('新增技师', `${name} (${role})`);
-    }
-
-    document.getElementById('empName').value = '';
-    document.getElementById('empRole').value = '按摩师';
-    document.getElementById('empBase').value = '0';
-    document.getElementById('empTax').value = '';
-    document.getElementById('editEmpId').value = '';
-    saveState();
-    renderAll();
-  }
-
-  function editEmployee(id) {
-    const emp = state.employees.find(e => e.id === id);
-    if (!emp) return;
-    document.getElementById('empName').value = emp.name;
-    document.getElementById('empRole').value = emp.role;
-    document.getElementById('empBase').value = emp.base;
-    document.getElementById('empTax').value = emp.tax || '';
-    document.getElementById('editEmpId').value = emp.id;
-  }
-
-  function deleteEmployee(id) {
-    const emp = state.employees.find(e => e.id === id);
-    if (!confirm('确定删除该技师？')) return;
-    state.employees = state.employees.filter(e => e.id !== id);
-    if (state.selectedStaffId === id) state.selectedStaffId = state.employees[0]?.id || null;
-    if (state.filterStaffId === id) state.filterStaffId = null;
-    addAudit('删除技师', emp ? emp.name : id);
-    saveState();
-    renderAll();
-  }
-
-  /* ================= 项目与积分规则管理（第4项） ================= */
-  function updateCommLabel() {
-    const type = document.getElementById('srvCommType').value;
-    document.getElementById('srvCommVal').placeholder = type === 'fixed' ? '固定提成 ($)' : '提成比例 (%)';
-  }
-
-  function updateSrvPointInput() {
-    const mode = document.getElementById('srvPointMode').value;
-    document.getElementById('srvFixedPoints').style.display = mode === 'fixed' ? '' : 'none';
-  }
-
-  function calcCommission(srv, totalPrice) {
-    if (!srv) return 0;
-    const val = parseFloat(srv.commVal) || 0;
-    return srv.commType === 'percent' ? +(totalPrice * (val / 100)).toFixed(2) : +val.toFixed(2);
-  }
-
-  function calcItemPoints(srv, paidPrice) {
-    const mode = srv?.pointMode || 'by_price';
-    if (mode === 'none') return 0;
-    if (mode === 'fixed') return Math.max(0, Number(srv.fixedPoints || 0));
-    const rate = Number(state.memberCfg?.pointsPerDollar ?? 1);
-    return Math.round(paidPrice * rate);
-  }
-
-  function saveService() {
-    const name = document.getElementById('srvName').value.trim();
-    if (!name) return alert('请输入项目名称');
-    const price = parseFloat(document.getElementById('srvPrice').value) || 0;
-    const commType = document.getElementById('srvCommType').value;
-    const commVal = parseFloat(document.getElementById('srvCommVal').value) || 0;
-    const duration = parseInt(document.getElementById('srvDuration').value, 10) || 0;
-    const pointMode = document.getElementById('srvPointMode').value || 'by_price';
-    const fixedPoints = parseFloat(document.getElementById('srvFixedPoints').value) || 0;
-    const editId = document.getElementById('editSrvId').value;
-
-    if (editId) {
-      const srv = state.services.find(s => s.id === editId);
-      if (srv) {
-        Object.assign(srv, { name, price, commType, commVal, duration, pointMode, fixedPoints });
-        addAudit('修改项目规则', `${name} $${price}`);
-      }
-    } else {
-      state.services.push({ id: 'srv_' + Date.now(), name, price, commType, commVal, duration, pointMode, fixedPoints });
-      addAudit('新增项目', `${name} $${price}`);
-    }
-
-    document.getElementById('srvName').value = '';
-    document.getElementById('srvPrice').value = '';
-    document.getElementById('srvCommVal').value = '';
-    document.getElementById('srvDuration').value = '';
-    document.getElementById('srvPointMode').value = 'by_price';
-    document.getElementById('srvFixedPoints').value = '';
-    document.getElementById('srvFixedPoints').style.display = 'none';
-    document.getElementById('editSrvId').value = '';
-    saveState();
-    renderAll();
-  }
-
-  function editService(id) {
-    const srv = state.services.find(s => s.id === id);
-    if (!srv) return;
-    document.getElementById('srvName').value = srv.name;
-    document.getElementById('srvPrice').value = srv.price;
-    document.getElementById('srvCommType').value = srv.commType;
-    updateCommLabel();
-    document.getElementById('srvCommVal').value = srv.commVal;
-    document.getElementById('srvDuration').value = srv.duration || '';
-    document.getElementById('srvPointMode').value = srv.pointMode || 'by_price';
-    updateSrvPointInput();
-    document.getElementById('srvFixedPoints').value = srv.fixedPoints || '';
-    document.getElementById('editSrvId').value = srv.id;
-  }
-
-  function deleteService(id) {
-    const srv = state.services.find(s => s.id === id);
-    if (!confirm('确定删除该项目？')) return;
-    state.services = state.services.filter(s => s.id !== id);
-    addAudit('删除项目', srv ? srv.name : id);
-    saveState();
-    renderAll();
-  }
-
-  /* ================= 第2、3项：计时任意加时、任意加钱、合并结账 ================= */
-  function startServiceTimer(serviceId) {
-    if (!state.selectedStaffId) return alert('请先选择「当前技师」');
+  /* =========================================================
+     第2项 & 第3项：计时任意加钟、任意加钱随结账一起结、合并结账
+  ========================================================= */
+  function startServiceTimer(serviceId, overrideStaffId = null) {
+    const targetStaff = overrideStaffId || state.selectedStaffId;
+    if (!targetStaff) return alert('请先选择「当前技师」');
     const srv = state.services.find(s => s.id === serviceId);
-    const emp = state.employees.find(e => e.id === state.selectedStaffId);
+    const emp = state.employees.find(e => e.id === targetStaff);
     if (!srv || !emp) return;
 
     const mins = srv.duration > 0 ? srv.duration : 60;
@@ -1703,35 +1629,30 @@
     renderTimers();
   }
 
-  function applyCustomExtend(timerId) {
+  function extendTimerCustom(timerId) {
     const input = document.getElementById(`extMins_${timerId}`);
     const addMins = parseInt(input?.value, 10);
-    if (!addMins || addMins <= 0) return alert('请输入大于 0 的分钟数');
+    if (!addMins || isNaN(addMins)) return alert('请输入有效的加钟分钟数');
     const t = state.timers.find(item => item.id === timerId);
     if (!t) return;
-    t.durationMins += addMins;
+    t.durationMins = Math.max(1, (t.durationMins || 0) + addMins);
     t.endTime = Math.max(Date.now(), t.endTime) + addMins * 60000;
     t.status = 'running';
     t.bellPlayed = false;
-    input.value = '';
     saveState();
     renderTimers();
   }
 
-  function applyExtraCharge(timerId) {
-    const amtInput = document.getElementById(`extAmt_${timerId}`);
-    const noteInput = document.getElementById(`extNote_${timerId}`);
+  function addTimerExtraCharge(timerId) {
+    const amtInput = document.getElementById(`extraAmt_${timerId}`);
+    const noteInput = document.getElementById(`extraNote_${timerId}`);
     const addAmt = parseFloat(amtInput?.value);
-    if (!addAmt || addAmt <= 0) return alert('请输入有效的加钱金额');
+    if (!addAmt || isNaN(addAmt)) return alert('请输入有效的加钱金额');
     const t = state.timers.find(item => item.id === timerId);
     if (!t) return;
-    t.extraCharge = +(Number(t.extraCharge || 0) + addAmt).toFixed(2);
-    const note = (noteInput?.value || '').trim();
-    if (note) {
-      t.extraNote = t.extraNote ? `${t.extraNote}; ${note}` : note;
-    }
-    amtInput.value = '';
-    if (noteInput) noteInput.value = '';
+    t.extraCharge = +((Number(t.extraCharge || 0) + addAmt).toFixed(2));
+    const noteStr = noteInput?.value.trim();
+    if (noteStr) t.extraNote = t.extraNote ? `${t.extraNote}; ${noteStr}` : noteStr;
     saveState();
     renderTimers();
   }
@@ -1750,37 +1671,21 @@
     renderTimers();
   }
 
-  function buildCartItemFromService(srv, emp) {
-    const basePrice = Number(srv.price || 0);
-    return {
-      staffId: emp.id,
-      staffName: emp.name,
-      serviceId: srv.id,
-      serviceName: srv.name,
-      basePrice,
-      extraCharge: 0,
-      extraNote: '',
-      totalPrice: basePrice,
-      commission: calcCommission(srv, basePrice),
-      duration: srv.duration || 0,
-      timerId: null
-    };
-  }
-
   function buildCartItemFromTimer(t) {
     const srv = state.services.find(s => s.id === t.serviceId);
     const basePrice = Number(t.price || 0);
-    const extraCharge = Number(t.extraCharge || 0);
-    const totalPrice = +(basePrice + extraCharge).toFixed(2);
+    const extra = Number(t.extraCharge || 0);
+    const totalPrice = +(basePrice + extra).toFixed(2);
+    const displayName = extra !== 0
+      ? `${t.serviceName} (+加项$${extra.toFixed(2)}${t.extraNote ? ':' + t.extraNote : ''})`
+      : t.serviceName;
+
     return {
       staffId: t.staffId,
       staffName: t.staffName,
       serviceId: t.serviceId,
-      serviceName: t.serviceName,
-      basePrice,
-      extraCharge,
-      extraNote: t.extraNote || '',
-      totalPrice,
+      serviceName: displayName,
+      price: totalPrice,
       commission: calcCommission(srv, totalPrice),
       duration: t.durationMins || 0,
       timerId: t.id
@@ -1792,7 +1697,17 @@
     const srv = state.services.find(s => s.id === serviceId);
     const emp = state.employees.find(e => e.id === state.selectedStaffId);
     if (!srv || !emp) return;
-    checkoutCart = [buildCartItemFromService(srv, emp)];
+
+    checkoutCart = [{
+      staffId: emp.id,
+      staffName: emp.name,
+      serviceId: srv.id,
+      serviceName: srv.name,
+      price: Number(srv.price || 0),
+      commission: calcCommission(srv, srv.price),
+      duration: srv.duration || 0,
+      timerId: null
+    }];
     showCheckoutModal();
   }
 
@@ -1805,317 +1720,942 @@
 
   function openMergedCheckout() {
     const selected = state.timers.filter(t => t.checked);
-    if (!selected.length) return alert('请先勾选需要合并结账的计时项目');
+    if (!selected.length) return alert('请先勾选需要合并结账的计时订单');
     checkoutCart = selected.map(t => buildCartItemFromTimer(t));
     showCheckoutModal();
   }
 
-  function getCheckoutPricing() {
-    const memId = document.getElementById('checkoutMemberSelect')?.value || '';
-    const member = state.members.find(m => m.id === memId) || null;
-    const discPct = member ? Math.min(100, Math.max(0, Number(member.discountPct || 0))) : 0;
-
-    let rawTotal = 0;
-    let finalTotal = 0;
-    let earnedPoints = 0;
-
-    const pricedItems = checkoutCart.map(item => {
-      const itemRaw = Number(item.totalPrice || 0);
-      const itemFinal = +(itemRaw * (1 - discPct / 100)).toFixed(2);
-      const srv = state.services.find(s => s.id === item.serviceId);
-      const pts = member ? calcItemPoints(srv, itemFinal) : 0;
-      rawTotal += itemRaw;
-      finalTotal += itemFinal;
-      earnedPoints += pts;
-      return { ...item, itemRaw, itemFinal, earnedPoints: pts };
-    });
-
-    return {
-      member,
-      discPct,
-      rawTotal: +rawTotal.toFixed(2),
-      finalTotal: +finalTotal.toFixed(2),
-      earnedPoints,
-      pricedItems
-    };
-  }
-
-  function showCheckoutModal() {
-    const sel = document.getElementById('checkoutMemberSelect');
-    sel.innerHTML = `<option value="">-- 非会员 / 不使用会员卡 --</option>` +
-      state.members.map(m =>
-        `<option value="${m.id}">${escapeHTML(m.name)} (${escapeHTML(m.phone || '无号')}) · 余额 $${Number(m.balance || 0).toFixed(2)} · 优惠 ${Number(m.discountPct || 0)}%</option>`
-      ).join('');
-    updateCheckoutPreview();
-    document.getElementById('checkoutModal').classList.add('open');
-  }
-
-  function updateCheckoutPreview() {
-    const { member, discPct, rawTotal, finalTotal, earnedPoints, pricedItems } = getCheckoutPricing();
-    const infoTag = document.getElementById('checkoutMemberInfo');
-    const cardBtn = document.getElementById('memberCardPayBtn');
-
-    if (member) {
-      infoTag.textContent = `优惠 ${discPct}% · 余额 $${Number(member.balance || 0).toFixed(2)} · 本单可得 ${earnedPoints} 积分`;
-      cardBtn.disabled = Number(member.balance || 0) < finalTotal;
-    } else {
-      infoTag.textContent = '未选择会员';
-      cardBtn.disabled = true;
-    }
-
-    document.getElementById('checkoutItemsList').innerHTML = pricedItems.map((item, idx) => `
-      <div style="padding:6px 0; border-bottom:1px dashed var(--border); display:flex; justify-content:space-between; gap:8px;">
-        <span>
-          <strong>#${idx + 1}</strong> ${escapeHTML(item.staffName)} · ${escapeHTML(item.serviceName)}
-          ${item.extraCharge > 0 ? `<span class="tag tag-amber">+加钱 $${item.extraCharge.toFixed(2)} ${item.extraNote ? `(${escapeHTML(item.extraNote)})` : ''}</span>` : ''}
-        </span>
-        <span>
-          ${discPct > 0 ? `<del style="color:var(--muted);">$${item.itemRaw.toFixed(2)}</del> ` : ''}
-          <strong>$${item.itemFinal.toFixed(2)}</strong>
-        </span>
-      </div>
-    `).join('');
-
-    document.getElementById('checkoutTotalInfo').textContent =
-      `共 ${pricedItems.length} 项 · 原价 $${rawTotal.toFixed(2)} · 折后实收：$${finalTotal.toFixed(2)}`;
-  }
-
-  function completeCheckout(payMethod) {
-    if (!checkoutCart.length) return;
-    const { member, discPct, finalTotal, earnedPoints, pricedItems } = getCheckoutPricing();
-
-    if (payMethod === '会员充值卡') {
-      if (!member) return alert('请先选择要扣款的会员');
-      if (Number(member.balance || 0) < finalTotal) {
-        return alert(`会员卡余额不足！当前余额 $${Number(member.balance || 0).toFixed(2)}，需付 $${finalTotal.toFixed(2)}`);
-      }
-      member.balance = +(Number(member.balance || 0) - finalTotal).toFixed(2);
-    }
-
-    if (member && earnedPoints > 0) {
-      member.points = Number(member.points || 0) + earnedPoints;
-    }
-
-    const dateVal = document.getElementById('entryDate').value || todayStr();
-    const finishedTimerIds = new Set();
-
-    pricedItems.forEach((item, idx) => {
-      const srv = state.services.find(s => s.id === item.serviceId);
-      state.orders.push({
-        id: `ord_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
-        date: dateVal,
-        staffId: item.staffId,
-        staffName: item.staffName,
-        serviceId: item.serviceId,
-        serviceName: item.serviceName,
-        basePrice: item.basePrice,
-        extraCharge: item.extraCharge,
-        extraNote: item.extraNote,
-        price: item.itemFinal,
-        commission: calcCommission(srv, item.itemFinal),
-        duration: Number(item.duration || 0),
-        payMethod,
-        memberId: member ? member.id : null,
-        memberName: member ? member.name : '',
-        discountPct: discPct,
-        pointsEarned: item.earnedPoints
-      });
-      if (item.timerId) finishedTimerIds.add(item.timerId);
-    });
-
-    if (finishedTimerIds.size) {
-      state.timers = state.timers.filter(t => !finishedTimerIds.has(t.id));
-    }
-
-    if (member) {
-      addAudit('会员结账', `${member.name} (${payMethod}) 实收 $${finalTotal.toFixed(2)} +${earnedPoints}积分`);
-    }
-
-    checkoutCart = [];
-    closeModal('checkoutModal');
-    saveState();
-    renderAll();
-  }
-
-  /* ================= 第4项：年费会员 / 充值卡与积分管理 ================= */
+  /* =========================================================
+     第4项 & 第12项：年费会员、充值卡、积分与办卡打印收据
+  ========================================================= */
   function openMemberModal() {
-    document.getElementById('cfgSinglePrice').value = state.memberCfg.singlePrice ?? 199;
+    document.getElementById('cfgSinglePrice').value = state.memberCfg.singlePrice ?? 99;
     document.getElementById('cfgSingleDisc').value = state.memberCfg.singleDisc ?? 10;
+    document.getElementById('cfgDoublePrice').value = state.memberCfg.doublePrice ?? 169;
+    document.getElementById('cfgDoubleDisc').value = state.memberCfg.doubleDisc ?? 15;
     document.getElementById('cfgPointsPerDollar').value = state.memberCfg.pointsPerDollar ?? 1;
-    document.getElementById('memDiscount').value = state.memberCfg.singleDisc ?? 10;
     renderMembers();
     document.getElementById('memberModal').classList.add('open');
   }
 
-  function saveMemberSettings() {
+  function saveMemberConfig() {
     state.memberCfg.singlePrice = parseFloat(document.getElementById('cfgSinglePrice').value) || 0;
     state.memberCfg.singleDisc = parseFloat(document.getElementById('cfgSingleDisc').value) || 0;
-    state.memberCfg.pointsPerDollar = parseFloat(document.getElementById('cfgPointsPerDollar').value) || 0;
-    addAudit('修改会员规则', `默认优惠 ${state.memberCfg.singleDisc}%, $1=${state.memberCfg.pointsPerDollar}分`);
+    state.memberCfg.doublePrice = parseFloat(document.getElementById('cfgDoublePrice').value) || 0;
+    state.memberCfg.doubleDisc = parseFloat(document.getElementById('cfgDoubleDisc').value) || 0;
+    state.memberCfg.pointsPerDollar = parseFloat(document.getElementById('cfgPointsPerDollar').value) || 1;
     saveState();
     alert('会员与积分规则已保存');
   }
 
   function createMember() {
     const name = document.getElementById('memName').value.trim();
-    if (!name) return alert('请输入会员姓名');
     const phone = document.getElementById('memPhone').value.trim();
+    if (!name || !phone) return alert('请输入会员姓名和手机号/卡号');
+
     const tier = document.getElementById('memTier').value;
-    const discountPct = parseFloat(document.getElementById('memDiscount').value) || 0;
-    const feePaid = parseFloat(document.getElementById('memFeePaid').value) || 0;
+    const customDiscRaw = document.getElementById('memCustomDisc').value;
     const initBalance = parseFloat(document.getElementById('memInitBalance').value) || 0;
     const payMethod = document.getElementById('memPayMethod').value;
+
+    let fee = 0, defaultDisc = 0, tierLabel = '储值卡会员';
+    if (tier === 'single') { fee = Number(state.memberCfg.singlePrice || 0); defaultDisc = Number(state.memberCfg.singleDisc || 0); tierLabel = '单人年费会员'; }
+    else if (tier === 'double') { fee = Number(state.memberCfg.doublePrice || 0); defaultDisc = Number(state.memberCfg.doubleDisc || 0); tierLabel = '双人年费会员'; }
+
+    const discount = customDiscRaw !== '' ? (parseFloat(customDiscRaw) || 0) : defaultDisc;
+    const totalCollected = +(fee + initBalance).toFixed(2);
+    const initPoints = Math.round(totalCollected * Number(state.memberCfg.pointsPerDollar || 1));
     const dateVal = document.getElementById('entryDate').value || todayStr();
 
-    const member = {
+    const newMem = {
       id: 'mem_' + Date.now(),
-      name,
-      phone,
-      tier,
-      discountPct,
+      name, phone, tier, tierLabel, discount,
       balance: +initBalance.toFixed(2),
-      points: Math.round((feePaid + initBalance) * Number(state.memberCfg.pointsPerDollar || 1)),
+      points: initPoints,
       createdAt: dateVal
     };
-    state.members.push(member);
+    state.members.unshift(newMem);
 
-    if (feePaid > 0) {
-      state.serviceFees.push({
-        id: 'sf_mem_' + Date.now(),
-        date: dateVal,
-        category: '会员费',
-        payMethod,
-        amount: +feePaid.toFixed(2),
-        note: `${name} (${tier})`
-      });
+    const receiptLines = [];
+    if (fee > 0) {
+      state.serviceFees.push({ id: 'sf_mem_' + Date.now(), date: dateVal, category: '会员费', payMethod, amount: +fee.toFixed(2), note: `开通${tierLabel} - ${name}` });
+      receiptLines.push({ name: `开通${tierLabel}`, amount: fee });
     }
     if (initBalance > 0) {
-      state.serviceFees.push({
-        id: 'sf_topup_' + (Date.now() + 1),
-        date: dateVal,
-        category: '会员卡充值',
-        payMethod,
-        amount: +initBalance.toFixed(2),
-        note: `${name} 首充卡金`
-      });
+      state.serviceFees.push({ id: 'sf_topup_' + (Date.now() + 1), date: dateVal, category: '会员充值', payMethod, amount: +initBalance.toFixed(2), note: `会员初始充值 - ${name}` });
+      receiptLines.push({ name: '会员充值卡充值金额', amount: initBalance });
     }
 
-    addAudit('办理会员/充值卡', `${name} (${tier}) 年费$${feePaid} 首充$${initBalance}`);
     document.getElementById('memName').value = '';
     document.getElementById('memPhone').value = '';
-    document.getElementById('memFeePaid').value = '';
+    document.getElementById('memCustomDisc').value = '';
     document.getElementById('memInitBalance').value = '';
+    addAudit('开通会员/充值卡', `${name} (${tierLabel}, 充值$${initBalance})`);
+    saveState();
+    renderMembers();
+    renderAll();
+
+    showReceiptModal({
+      receiptNo: 'RC-' + Date.now().toString().slice(-6),
+      time: nowStr(),
+      title: '会员办卡与充值收据',
+      items: receiptLines.length ? receiptLines : [{ name: tierLabel, amount: 0 }],
+      totalPaid: totalCollected,
+      payments: [{ method: payMethod, amount: totalCollected }],
+      memberInfo: `${name} (${phone}) · 余额 $${newMem.balance.toFixed(2)} · 积分 ${newMem.points}`
+    });
+  }
+
+  function topupMember(memId) {
+    const m = state.members.find(x => x.id === memId);
+    if (!m) return;
+    const amtStr = prompt(`为会员【${m.name}】充值金额 ($)：`, '100');
+    if (amtStr === null) return;
+    const amt = parseFloat(amtStr);
+    if (!amt || amt <= 0) return alert('请输入有效充值金额');
+
+    const method = prompt('请输入收款方式（银行卡 / 现金 / Venmo）：', '银行卡') || '银行卡';
+    m.balance = +((Number(m.balance || 0) + amt).toFixed(2));
+    const addedPts = Math.round(amt * Number(state.memberCfg.pointsPerDollar || 1));
+    m.points = (Number(m.points || 0) + addedPts);
+
+    state.serviceFees.push({
+      id: 'sf_topup_' + Date.now(),
+      date: document.getElementById('entryDate').value || todayStr(),
+      category: '会员充值',
+      payMethod: method,
+      amount: +amt.toFixed(2),
+      note: `会员续充 - ${m.name} (${m.phone}) +${addedPts}积分`
+    });
+    saveState();
+    renderMembers();
+    renderAll();
+
+    showReceiptModal({
+      receiptNo: 'RC-' + Date.now().toString().slice(-6),
+      time: nowStr(),
+      title: '会员充值卡续充收据',
+      items: [{ name: `会员充值 (${m.name})`, amount: amt }],
+      totalPaid: amt,
+      payments: [{ method, amount: amt }],
+      memberInfo: `${m.name} (${m.phone}) · 充值后余额 $${m.balance.toFixed(2)} · 积分 ${m.points}`
+    });
+  }
+
+  function chargeMemberTip(memId) {
+    const m = state.members.find(x => x.id === memId);
+    if (!m) return;
+    if (!state.selectedStaffId) return alert('请先在主界面选择「当前技师」！');
+    const emp = state.employees.find(e => e.id === state.selectedStaffId);
+    const tipStr = prompt(`从会员【${m.name}】充值卡余额 ($${Number(m.balance).toFixed(2)}) 扣除小费给技师【${emp.name}】：`, '20');
+    if (tipStr === null) return;
+    const tipAmt = parseFloat(tipStr);
+    if (!tipAmt || tipAmt <= 0) return alert('请输入有效金额');
+    if (Number(m.balance) < tipAmt) return alert('会员充值卡余额不足！');
+
+    m.balance = +((Number(m.balance) - tipAmt).toFixed(2));
+    state.tips.push({
+      id: 'tip_mem_' + Date.now(),
+      date: document.getElementById('entryDate').value || todayStr(),
+      staffId: emp.id,
+      staffName: emp.name,
+      type: '银行卡小费',
+      amount: +tipAmt.toFixed(2),
+      note: `会员卡扣小费 (${m.name})`
+    });
     saveState();
     renderMembers();
     renderAll();
   }
 
-  function topupMemberCard() {
-    const memId = document.getElementById('topupMemberId').value;
-    const member = state.members.find(m => m.id === memId);
-    if (!member) return alert('请先选择会员');
-
-    const amount = parseFloat(document.getElementById('topupAmount').value) || 0;
-    const tipAmt = parseFloat(document.getElementById('topupTipAmount').value) || 0;
-    const payMethod = document.getElementById('topupPayMethod').value;
-    const newDiscRaw = document.getElementById('topupNewDiscount').value;
-    const dateVal = document.getElementById('entryDate').value || todayStr();
-
-    if (amount <= 0 && tipAmt <= 0 && newDiscRaw === '') {
-      return alert('请输入充值金额、充值小费或新优惠幅度');
-    }
-
-    if (amount > 0) {
-      member.balance = +(Number(member.balance || 0) + amount).toFixed(2);
-      member.points = Number(member.points || 0) + Math.round(amount * Number(state.memberCfg.pointsPerDollar || 1));
-      state.serviceFees.push({
-        id: 'sf_topup_' + Date.now(),
-        date: dateVal,
-        category: '会员卡充值',
-        payMethod,
-        amount: +amount.toFixed(2),
-        note: `${member.name} 充值`
-      });
-    }
-
-    if (tipAmt > 0) {
-      if (!state.selectedStaffId) {
-        alert('提示：未在主界面选中「当前技师」，附带小费将暂不分配技师，请先选择技师后再录小费。');
-      } else {
-        const emp = state.employees.find(e => e.id === state.selectedStaffId);
-        if (emp) {
-          state.tips.push({
-            id: 'tip_' + Date.now(),
-            date: dateVal,
-            staffId: emp.id,
-            staffName: emp.name,
-            type: payMethod === '现金' ? '现金小费' : (payMethod === 'Venmo' ? 'Venmo小费' : '银行卡小费'),
-            amount: +tipAmt.toFixed(2),
-            note: `会员 ${member.name} 充值附带小费`
-          });
-        }
-      }
-    }
-
-    if (newDiscRaw !== '') {
-      member.discountPct = Math.max(0, Math.min(100, parseFloat(newDiscRaw) || 0));
-    }
-
-    addAudit('会员卡充值/调优', `${member.name} 充值$${amount} 小费$${tipAmt} 优惠${member.discountPct}%`);
-    document.getElementById('topupAmount').value = '';
-    document.getElementById('topupTipAmount').value = '';
-    document.getElementById('topupNewDiscount').value = '';
+  function editMemberDiscount(memId) {
+    const m = state.members.find(x => x.id === memId);
+    if (!m) return;
+    const newDisc = prompt(`调整会员【${m.name}】的专属优惠幅度 (%)：`, m.discount ?? 0);
+    if (newDisc === null) return;
+    m.discount = Math.max(0, Math.min(100, parseFloat(newDisc) || 0));
     saveState();
     renderMembers();
-    renderAll();
-  }
-
-  function deleteMember(id) {
-    if (!confirm('确定删除该会员档案？')) return;
-    state.members = state.members.filter(m => m.id !== id);
-    saveState();
-    renderMembers();
-    renderAll();
   }
 
   function renderMembers() {
-    const topupSel = document.getElementById('topupMemberId');
-    if (topupSel) {
-      topupSel.innerHTML = state.members.map(m =>
-        `<option value="${m.id}">${escapeHTML(m.name)} (${escapeHTML(m.phone || '无号')}) · 余额 $${Number(m.balance || 0).toFixed(2)}</option>`
-      ).join('') || '<option value="">暂无会员</option>';
-    }
+    const kw = (document.getElementById('memberSearchInput')?.value || '').trim().toLowerCase();
+    const list = state.members.filter(m => !kw || m.name.toLowerCase().includes(kw) || m.phone.toLowerCase().includes(kw));
+    document.getElementById('memberTableBody').innerHTML = list.map(m => `
+      <tr>
+        <td><strong>${escapeHTML(m.name)}</strong></td>
+        <td>${escapeHTML(m.phone)}</td>
+        <td><span class="tag tag-purple">${escapeHTML(m.tierLabel || '会员')}</span></td>
+        <td><strong>${Number(m.discount || 0)}% OFF</strong></td>
+        <td style="color:var(--success); font-weight:700;">$${Number(m.balance || 0).toFixed(2)}</td>
+        <td><span class="tag tag-amber">${Number(m.points || 0)} 分</span></td>
+        <td>
+          <button class="btn-success btn-sm" onclick="topupMember('${m.id}')">💰 充值</button>
+          <button class="btn-primary btn-sm" onclick="chargeMemberTip('${m.id}')">💵 扣小费</button>
+          <button class="btn-outline btn-sm" onclick="editMemberDiscount('${m.id}')">🏷️ 调优惠</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="7">暂无会员记录</td></tr>';
+  }
 
-    const tbody = document.getElementById('memberTableBody');
-    if (tbody) {
-      tbody.innerHTML = state.members.map(m => `
-        <tr>
-          <td><strong>${escapeHTML(m.name)}</strong><br><small style="color:var(--muted);">${escapeHTML(m.phone || '')}</small></td>
-          <td>${escapeHTML(m.tier)}</td>
-          <td><span class="tag tag-purple">减 ${Number(m.discountPct || 0)}%</span></td>
-          <td><strong>$${Number(m.balance || 0).toFixed(2)}</strong></td>
-          <td>${Number(m.points || 0)} 分</td>
-          <td><button class="btn-danger btn-sm" onclick="deleteMember('${m.id}')">删除</button></td>
-        </tr>
-      `).join('') || '<tr><td colspan="6">暂无年费/充值卡会员</td></tr>';
+  function calcCartEarnedPoints(items) {
+    const ppd = Number(state.memberCfg.pointsPerDollar || 1);
+    let points = 0;
+    items.forEach(item => {
+      const srv = state.services.find(s => s.id === item.serviceId);
+      const mode = srv?.pointsMode || 'price';
+      if (mode === 'none') return;
+      if (mode === 'fixed') points += Number(srv?.fixedPoints || 0);
+      else points += Number(item.finalPrice ?? item.price ?? 0) * ppd;
+    });
+    return Math.round(points);
+  }
+
+  /* =========================================================
+     第10项 & 第12项：收款结账（含拆分结账 + 打印收据）
+  ========================================================= */
+  function showCheckoutModal() {
+    const sel = document.getElementById('checkoutMemberSelect');
+    sel.innerHTML = `<option value="">-- 非会员 / 不使用会员卡 --</option>` +
+      state.members.map(m => `<option value="${m.id}">${escapeHTML(m.name)} (${escapeHTML(m.phone)}) · 享${m.discount}%OFF · 余额$${Number(m.balance).toFixed(2)}</option>`).join('');
+
+    document.getElementById('splitRowsContainer').innerHTML = '';
+    addSplitRow();
+    addSplitRow();
+    updateCheckoutTotalDisplay();
+    document.getElementById('checkoutModal').classList.add('open');
+  }
+
+  function addSplitRow() {
+    const container = document.getElementById('splitRowsContainer');
+    const row = document.createElement('div');
+    row.className = 'inline-inputs split-row';
+    row.style.marginBottom = '6px';
+    row.innerHTML = `
+      <select class="split-method" onchange="updateSplitHint()">
+        <option value="现金">💵 现金</option>
+        <option value="银行卡">💳 银行卡</option>
+        <option value="Venmo">📱 Venmo</option>
+        <option value="会员充值卡">👑 会员充值卡</option>
+        <option value="礼品卡">🎁 礼品卡</option>
+        <option value="优惠券">🎟️ 优惠券</option>
+      </select>
+      <input type="number" class="split-amount" step="0.01" placeholder="金额 ($)" oninput="updateSplitHint()" style="width:120px;" />
+      <button type="button" class="btn-outline btn-sm" onclick="this.parentElement.remove(); updateSplitHint();">删</button>
+    `;
+    container.appendChild(row);
+    updateSplitHint();
+  }
+
+  function getCurrentCheckoutPayable() {
+    return checkoutCart.reduce((s, it) => s + Number(it.finalPrice ?? it.price ?? 0), 0);
+  }
+
+  function updateSplitHint() {
+    const target = getCurrentCheckoutPayable();
+    let entered = 0;
+    document.querySelectorAll('.split-amount').forEach(inp => { entered += parseFloat(inp.value) || 0; });
+    const diff = +(target - entered).toFixed(2);
+    const hint = document.getElementById('splitRemainHint');
+    if (!hint) return;
+    if (Math.abs(diff) < 0.01) {
+      hint.style.color = 'var(--success)';
+      hint.textContent = `✓ 已分配 $${entered.toFixed(2)}，金额匹配`;
+    } else {
+      hint.style.color = 'var(--danger)';
+      hint.textContent = `应收 $${target.toFixed(2)} · 已填 $${entered.toFixed(2)} · 差额 $${diff.toFixed(2)}`;
     }
   }
 
-  /* ================= 小费与服务费/礼卡录入 ================= */
+  function updateCheckoutTotalDisplay() {
+    const memId = document.getElementById('checkoutMemberSelect')?.value;
+    const member = state.members.find(m => m.id === memId);
+    const discRate = member ? (Number(member.discount || 0) / 100) : 0;
+
+    let rawTotal = 0;
+    let finalTotal = 0;
+
+    document.getElementById('checkoutItemsList').innerHTML = checkoutCart.map(item => {
+      const raw = Number(item.price || 0);
+      const final = +(raw * (1 - discRate)).toFixed(2);
+      item.finalPrice = final;
+      rawTotal += raw;
+      finalTotal += final;
+      return `<div style="padding:5px 0; border-bottom:1px dashed var(--border); display:flex; justify-content:space-between;">
+        <span>${escapeHTML(item.staffName)} · ${escapeHTML(item.serviceName)}</span>
+        <span>${discRate > 0 ? `<del style="color:var(--muted);">$${raw.toFixed(2)}</del> ` : ''}<strong>$${final.toFixed(2)}</strong></span>
+      </div>`;
+    }).join('');
+
+    const hintEl = document.getElementById('checkoutMemberHint');
+    const cardBtn = document.getElementById('payMemberCardBtn');
+    if (member) {
+      const earnPts = calcCartEarnedPoints(checkoutCart);
+      hintEl.textContent = `会员【${member.name}】享 ${member.discount}% 优惠，卡余额 $${Number(member.balance).toFixed(2)}，预计得 +${earnPts} 积分`;
+      cardBtn.disabled = Number(member.balance) < finalTotal;
+    } else {
+      hintEl.textContent = '选择会员可自动享受对应折扣、从充值卡扣款并累计积分';
+      cardBtn.disabled = true;
+    }
+
+    document.getElementById('checkoutTotalInfo').textContent = discRate > 0
+      ? `原价：$${rawTotal.toFixed(2)} ｜ 折后实收：$${finalTotal.toFixed(2)}`
+      : `合计应收（共 ${checkoutCart.length} 项）：$${finalTotal.toFixed(2)}`;
+    updateSplitHint();
+  }
+
+  function finalizeOrderCheckout(payments) {
+    const dateVal = document.getElementById('entryDate').value || todayStr();
+    const memId = document.getElementById('checkoutMemberSelect')?.value;
+    const member = state.members.find(m => m.id === memId);
+    const totalPayable = getCurrentCheckoutPayable();
+
+    const memberCardCharge = payments.filter(p => p.method === '会员充值卡').reduce((s, p) => s + p.amount, 0);
+    if (memberCardCharge > 0) {
+      if (!member) return alert('使用会员充值卡扣款前，请先选择关联会员！');
+      if (Number(member.balance) < memberCardCharge) return alert('会员充值卡余额不足！');
+      member.balance = +((Number(member.balance) - memberCardCharge).toFixed(2));
+    }
+
+    const finishedTimerIds = new Set();
+    const baseTs = Date.now();
+    const payLabel = payments.length === 1
+      ? payments[0].method
+      : `拆分(${payments.map(p => `${p.method}$${p.amount.toFixed(0)}`).join('+')})`;
+
+    // 若为拆分支付，按各支付方式占比拆分记录到订单中，保证总营收分项(现金/卡/Venmo/礼卡/优惠券)完全精准
+    if (payments.length === 1) {
+      checkoutCart.forEach((item, idx) => {
+        const actualPrice = Number(item.finalPrice ?? item.price ?? 0);
+        state.orders.push({
+          id: `ord_${baseTs}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
+          date: dateVal,
+          staffId: item.staffId,
+          staffName: item.staffName,
+          serviceId: item.serviceId,
+          serviceName: member ? `${item.serviceName} [会员:${member.name}]` : item.serviceName,
+          price: actualPrice,
+          commission: Number(item.commission || 0),
+          duration: Number(item.duration || 0),
+          payMethod: payments[0].method
+        });
+        if (item.timerId) finishedTimerIds.add(item.timerId);
+      });
+    } else {
+      checkoutCart.forEach((item, idx) => {
+        const itemPrice = Number(item.finalPrice ?? item.price ?? 0);
+        const ratio = totalPayable > 0 ? (itemPrice / totalPayable) : (1 / checkoutCart.length);
+        payments.forEach((p, pIdx) => {
+          const partPrice = +(p.amount * ratio).toFixed(2);
+          const partComm = +(Number(item.commission || 0) * ratio).toFixed(2);
+          state.orders.push({
+            id: `ord_${baseTs}_${idx}_${pIdx}_${Math.random().toString(36).slice(2, 6)}`,
+            date: dateVal,
+            staffId: item.staffId,
+            staffName: item.staffName,
+            serviceId: item.serviceId,
+            serviceName: `${item.serviceName} [${payLabel}]`,
+            price: partPrice,
+            commission: partComm,
+            duration: pIdx === 0 ? Number(item.duration || 0) : 0,
+            payMethod: p.method
+          });
+        });
+        if (item.timerId) finishedTimerIds.add(item.timerId);
+      });
+    }
+
+    let memberSummaryText = '';
+    if (member) {
+      const earnedPts = calcCartEarnedPoints(checkoutCart);
+      member.points = Number(member.points || 0) + earnedPts;
+      memberSummaryText = `${member.name} · 剩余余额 $${member.balance.toFixed(2)} · 本次+${earnedPts}分 (总${member.points}分)`;
+    }
+
+    const receiptPayload = {
+      receiptNo: 'RC-' + baseTs.toString().slice(-6),
+      time: nowStr(),
+      title: '门店服务消费收据',
+      items: checkoutCart.map(it => ({ name: `${it.serviceName} (${it.staffName})`, amount: Number(it.finalPrice ?? it.price ?? 0) })),
+      totalPaid: totalPayable,
+      payments,
+      memberInfo: memberSummaryText
+    };
+    state.receipts.unshift(receiptPayload);
+    if (state.receipts.length > 100) state.receipts.pop();
+
+    if (finishedTimerIds.size) {
+      state.timers = state.timers.filter(t => !finishedTimerIds.has(t.id));
+    }
+
+    checkoutCart = [];
+    closeModal('checkoutModal');
+    saveState();
+    renderAll();
+    showReceiptModal(receiptPayload);
+  }
+
+  function completeCheckout(payMethod) {
+    if (!checkoutCart.length) return;
+    const total = getCurrentCheckoutPayable();
+    finalizeOrderCheckout([{ method: payMethod, amount: +total.toFixed(2) }]);
+  }
+
+  function completeSplitCheckout() {
+    if (!checkoutCart.length) return;
+    const target = getCurrentCheckoutPayable();
+    const payments = [];
+    document.querySelectorAll('.split-row').forEach(row => {
+      const method = row.querySelector('.split-method').value;
+      const amount = parseFloat(row.querySelector('.split-amount').value) || 0;
+      if (amount > 0) payments.push({ method, amount: +amount.toFixed(2) });
+    });
+    if (!payments.length) return alert('请填写拆分支付金额');
+    const sum = payments.reduce((s, p) => s + p.amount, 0);
+    if (Math.abs(sum - target) >= 0.02) {
+      return alert(`拆分金额合计 ($${sum.toFixed(2)}) 与应收总额 ($${target.toFixed(2)}) 不一致！`);
+    }
+    finalizeOrderCheckout(payments);
+  }
+
+  function showReceiptModal(rc) {
+    document.getElementById('receiptPrintArea').innerHTML = `
+      <div style="text-align:center; border-bottom:1px dashed #64748b; padding-bottom:8px; margin-bottom:8px;">
+        <div style="font-size:16px; font-weight:800;">💆 SPA & WELLNESS</div>
+        <div>${escapeHTML(rc.title || '消费收据 / RECEIPT')}</div>
+        <div style="font-size:11px; color:#475569;">单号: ${escapeHTML(rc.receiptNo)} · ${escapeHTML(rc.time)}</div>
+      </div>
+      <div style="border-bottom:1px dashed #64748b; padding-bottom:8px; margin-bottom:8px;">
+        ${rc.items.map(it => `<div style="display:flex; justify-content:space-between; margin:4px 0;"><span>${escapeHTML(it.name)}</span><span>$${Number(it.amount).toFixed(2)}</span></div>`).join('')}
+      </div>
+      <div style="display:flex; justify-content:space-between; font-weight:800; font-size:15px; margin-bottom:6px;">
+        <span>实付合计 / TOTAL</span>
+        <span>$${Number(rc.totalPaid).toFixed(2)}</span>
+      </div>
+      <div style="font-size:12px; margin-bottom:8px;">
+        支付明细：${rc.payments.map(p => `${escapeHTML(p.method)} $${Number(p.amount).toFixed(2)}`).join(' ｜ ')}
+      </div>
+      ${rc.memberInfo ? `<div style="background:#f8fafc; padding:6px; border:1px solid #e2e8f0; font-size:12px; margin-bottom:8px;">👑 会员信息：${escapeHTML(rc.memberInfo)}</div>` : ''}
+      <div style="text-align:center; font-size:11px; color:#64748b; margin-top:10px;">感谢光临 · Thank You for Visiting!</div>
+    `;
+    document.getElementById('receiptModal').classList.add('open');
+  }
+
+  function printOrderReceipt(orderId) {
+    const o = state.orders.find(x => x.id === orderId);
+    if (!o) return;
+    showReceiptModal({
+      receiptNo: o.id.slice(-8).toUpperCase(),
+      time: o.date,
+      title: '补打服务消费收据',
+      items: [{ name: `${o.serviceName} (${o.staffName})`, amount: o.price }],
+      totalPaid: o.price,
+      payments: [{ method: o.payMethod, amount: o.price }],
+      memberInfo: ''
+    });
+  }
+
+  /* =========================================================
+     第5、6、7、8项：门店总营收、项目统计、门店净利润与任意支出录入
+  ========================================================= */
+  function openCardCouponModal() {
+    document.getElementById('cfgCountGiftCardSale').checked = !!state.revenueRules.countGiftCardSale;
+    document.getElementById('cfgCountGiftCardUse').checked = !!state.revenueRules.countGiftCardUse;
+    document.getElementById('cfgCountCouponSale').checked = !!state.revenueRules.countCouponSale;
+    document.getElementById('cfgCountCouponUse').checked = !!state.revenueRules.countCouponUse;
+    document.getElementById('cardCouponModal').classList.add('open');
+  }
+
+  function saveRevenueRuleConfig() {
+    state.revenueRules.countGiftCardSale = document.getElementById('cfgCountGiftCardSale').checked;
+    state.revenueRules.countGiftCardUse = document.getElementById('cfgCountGiftCardUse').checked;
+    state.revenueRules.countCouponSale = document.getElementById('cfgCountCouponSale').checked;
+    state.revenueRules.countCouponUse = document.getElementById('cfgCountCouponUse').checked;
+    saveState();
+    closeModal('cardCouponModal');
+    renderAll();
+  }
+
+  function computeRevenueBreakdown(orders, fees) {
+    const r = state.revenueRules;
+    const cashOrders = orders.filter(o => o.payMethod === '现金').reduce((s, o) => s + Number(o.price || 0), 0);
+    const cardOrders = orders.filter(o => o.payMethod === '银行卡').reduce((s, o) => s + Number(o.price || 0), 0);
+    const venmoOrders = orders.filter(o => o.payMethod === 'Venmo').reduce((s, o) => s + Number(o.price || 0), 0);
+    const memberCardUse = orders.filter(o => o.payMethod === '会员充值卡').reduce((s, o) => s + Number(o.price || 0), 0);
+    const giftCardUse = orders.filter(o => o.payMethod === '礼品卡').reduce((s, o) => s + Number(o.price || 0), 0);
+    const couponUse = orders.filter(o => o.payMethod === '优惠券').reduce((s, o) => s + Number(o.price || 0), 0);
+
+    const serviceFeeIncome = fees.filter(f => (f.category || '服务费') === '服务费').reduce((s, f) => s + Number(f.amount || 0), 0);
+    const memberFeeIncome = fees.filter(f => f.category === '会员费' || f.category === '会员充值').reduce((s, f) => s + Number(f.amount || 0), 0);
+    const giftCardSale = fees.filter(f => f.category === '销售礼卡').reduce((s, f) => s + Number(f.amount || 0), 0);
+    const couponSale = fees.filter(f => f.category === '销售优惠券').reduce((s, f) => s + Number(f.amount || 0), 0);
+
+    const countedTotal =
+      cashOrders + cardOrders + venmoOrders + memberCardUse + serviceFeeIncome + memberFeeIncome +
+      (r.countGiftCardSale ? giftCardSale : 0) +
+      (r.countGiftCardUse ? giftCardUse : 0) +
+      (r.countCouponSale ? couponSale : 0) +
+      (r.countCouponUse ? couponUse : 0);
+
+    return {
+      cashOrders, cardOrders, venmoOrders, memberCardUse,
+      memberFeeIncome, serviceFeeIncome,
+      giftCardSale, giftCardUse, couponSale, couponUse,
+      countedTotal
+    };
+  }
+
+  function openRevenueBreakdownModal() {
+    const orders = state.orders.filter(o => matchPeriod(o.date));
+    const fees = state.serviceFees.filter(f => matchPeriod(f.date));
+    const b = computeRevenueBreakdown(orders, fees);
+    const r = state.revenueRules;
+    const badge = (inc) => inc ? '<span class="tag tag-green">已计入总营收</span>' : '<span class="tag tag-amber">不计入总营收</span>';
+
+    document.getElementById('revenueBreakdownBody').innerHTML = `
+      <table>
+        <thead><tr><th>收入项目</th><th>金额</th><th>统计状态</th></tr></thead>
+        <tbody>
+          <tr><td>💵 现金收入（项目）</td><td><strong>$${b.cashOrders.toFixed(2)}</strong></td><td><span class="tag tag-green">计入</span></td></tr>
+          <tr><td>💳 银行卡收入（项目）</td><td><strong>$${b.cardOrders.toFixed(2)}</strong></td><td><span class="tag tag-green">计入</span></td></tr>
+          <tr><td>📱 Venmo 收入（项目）</td><td><strong>$${b.venmoOrders.toFixed(2)}</strong></td><td><span class="tag tag-green">计入</span></td></tr>
+          <tr><td>👑 会员年费 / 充值入账</td><td><strong>$${b.memberFeeIncome.toFixed(2)}</strong></td><td><span class="tag tag-green">计入</span></td></tr>
+          <tr><td>🛎️ 服务费收入</td><td><strong>$${b.serviceFeeIncome.toFixed(2)}</strong></td><td><span class="tag tag-green">计入</span></td></tr>
+          <tr><td>🎁 礼卡收入 — 销售礼卡</td><td><strong>$${b.giftCardSale.toFixed(2)}</strong></td><td>${badge(r.countGiftCardSale)}</td></tr>
+          <tr><td>🛍️ 礼卡收入 — 使用礼卡消费</td><td><strong>$${b.giftCardUse.toFixed(2)}</strong></td><td>${badge(r.countGiftCardUse)}</td></tr>
+          <tr><td>🎟️ 优惠券 — 销售优惠券</td><td><strong>$${b.couponSale.toFixed(2)}</strong></td><td>${badge(r.countCouponSale)}</td></tr>
+          <tr><td>🏷️ 优惠券 — 使用优惠券消费</td><td><strong>$${b.couponUse.toFixed(2)}</strong></td><td>${badge(r.countCouponUse)}</td></tr>
+          <tr style="background:#eff6ff;"><td><strong>门店总营收（按当前规则合计）</strong></td><td colspan="2"><strong style="font-size:1.15em; color:var(--primary);">$${b.countedTotal.toFixed(2)}</strong></td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:10px; text-align:right;">
+        <button class="btn-outline btn-sm" onclick="closeModal('revenueBreakdownModal'); openCardCouponModal();">⚙️ 修改礼卡/优惠券计入规则</button>
+      </div>
+    `;
+    document.getElementById('revenueBreakdownModal').classList.add('open');
+  }
+
+  function openProjectStatsModal() {
+    const orders = state.orders.filter(o => matchPeriod(o.date));
+    const map = {};
+    orders.forEach(o => {
+      const cleanName = o.serviceName.replace(/\s*\[(会员|拆分).*?\]$/, '');
+      if (!map[cleanName]) map[cleanName] = { name: cleanName, count: 0, revenue: 0 };
+      map[cleanName].count += 1;
+      map[cleanName].revenue += Number(o.price || 0);
+    });
+    const rows = Object.values(map).sort((a, b) => b.count - a.count);
+    const totalCount = rows.reduce((s, x) => s + x.count, 0);
+
+    document.getElementById('projectStatsBody').innerHTML = `
+      <div style="margin-bottom:8px; color:var(--muted);">当前周期共完成 <strong>${totalCount}</strong> 个项目：</div>
+      <table>
+        <thead><tr><th>排名</th><th>项目名称</th><th>完成数量</th><th>占比</th><th>累计金额</th></tr></thead>
+        <tbody>
+          ${rows.map((item, idx) => `
+            <tr>
+              <td>#${idx + 1}</td>
+              <td><strong>${escapeHTML(item.name)}</strong></td>
+              <td><span class="tag tag-blue">${item.count} 个</span></td>
+              <td>${totalCount ? ((item.count / totalCount) * 100).toFixed(1) : 0}%</td>
+              <td>$${item.revenue.toFixed(2)}</td>
+            </tr>
+          `).join('') || '<tr><td colspan="5">当前时间段暂无项目消费记录</td></tr>'}
+        </tbody>
+      </table>
+    `;
+    document.getElementById('projectStatsModal').classList.add('open');
+  }
+
+  function calcNetProfitStats(orders, tips, fees, expenses) {
+    const rev = computeRevenueBreakdown(orders, fees).countedTotal;
+    const totalBaseSalary = state.employees.reduce((s, e) => s + Number(e.base || 0), 0);
+    const totalComm = orders.reduce((s, o) => s + Number(o.commission || 0), 0);
+    const totalTips = tips.reduce((s, t) => s + Number(t.amount || 0), 0);
+    const totalExpenses = expenses.reduce((s, ex) => s + Number(ex.amount || 0), 0);
+    const netProfit = +(rev - totalBaseSalary - totalComm - totalTips - totalExpenses).toFixed(2);
+    return { rev, totalBaseSalary, totalComm, totalTips, totalExpenses, netProfit };
+  }
+
+  function openNetProfitModal() {
+    const orders = state.orders.filter(o => matchPeriod(o.date));
+    const tips = state.tips.filter(t => matchPeriod(t.date));
+    const fees = state.serviceFees.filter(f => matchPeriod(f.date));
+    const expenses = state.expenses.filter(ex => matchPeriod(ex.date));
+    const np = calcNetProfitStats(orders, tips, fees, expenses);
+
+    document.getElementById('netProfitBody').innerHTML = `
+      <table>
+        <thead><tr><th>收支科目</th><th>金额</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>📈 门店计入总营收</td><td style="color:var(--success); font-weight:700;">+$${np.rev.toFixed(2)}</td><td>含项目、服务费、会员费等</td></tr>
+          <tr><td>👩‍⚕️ 员工底薪支出</td><td style="color:var(--danger);">-$${np.totalBaseSalary.toFixed(2)}</td><td>在职员工固定底薪合计</td></tr>
+          <tr><td>🧾 技师项目提成</td><td style="color:var(--danger);">-$${np.totalComm.toFixed(2)}</td><td>本周期订单提成合计</td></tr>
+          <tr><td>💵 技师小费支出</td><td style="color:var(--danger);">-$${np.totalTips.toFixed(2)}</td><td>发放给技师的小费合计</td></tr>
+          <tr><td>💸 水电/购物/日常杂费支出</td><td style="color:var(--danger);">-$${np.totalExpenses.toFixed(2)}</td><td>共 ${expenses.length} 笔自定义支出</td></tr>
+          <tr style="background:#f0fdf4;">
+            <td><strong>🏦 门店纯净利润</strong></td>
+            <td colspan="2"><strong style="font-size:1.2em; color:${np.netProfit >= 0 ? 'var(--success)' : 'var(--danger)'};">$${np.netProfit.toFixed(2)}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:10px; text-align:right;">
+        <button class="btn-warning btn-sm" onclick="closeModal('netProfitModal'); openExpenseModal();">💸 添加/管理门店支出</button>
+      </div>
+    `;
+    document.getElementById('netProfitModal').classList.add('open');
+  }
+
+  function openExpenseModal() {
+    renderExpenses();
+    document.getElementById('expenseModal').classList.add('open');
+  }
+
+  function addExpense() {
+    const category = document.getElementById('expCategoryInput').value.trim();
+    const amount = parseFloat(document.getElementById('expAmountInput').value);
+    if (!category) return alert('请输入或选择支出项目名称');
+    if (!amount || amount <= 0) return alert('请输入有效的支出金额');
+    const payMethod = document.getElementById('expPayMethod').value;
+    const note = document.getElementById('expNoteInput').value.trim();
+
+    state.expenses.unshift({
+      id: 'exp_' + Date.now(),
+      date: document.getElementById('entryDate').value || todayStr(),
+      category,
+      amount: +amount.toFixed(2),
+      payMethod,
+      note
+    });
+    document.getElementById('expCategoryInput').value = '';
+    document.getElementById('expAmountInput').value = '';
+    document.getElementById('expNoteInput').value = '';
+    addAudit('录入门店支出', `${category} -$${amount.toFixed(2)}`);
+    saveState();
+    renderExpenses();
+    renderAll();
+  }
+
+  function deleteExpense(id) {
+    state.expenses = state.expenses.filter(x => x.id !== id);
+    addAudit('删除门店支出', id);
+    saveState();
+    renderExpenses();
+    renderAll();
+  }
+
+  function renderExpenses() {
+    const tbody = document.getElementById('expenseTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = state.expenses.map(ex => `
+      <tr>
+        <td>${escapeHTML(ex.date)}</td>
+        <td><strong>${escapeHTML(ex.category)}</strong></td>
+        <td style="color:var(--danger); font-weight:700;">-$${Number(ex.amount).toFixed(2)}</td>
+        <td>${escapeHTML(ex.payMethod)}</td>
+        <td>${escapeHTML(ex.note || '')}</td>
+        <td><button class="btn-danger btn-sm" onclick="deleteExpense('${ex.id}')">删</button></td>
+      </tr>
+    `).join('') || '<tr><td colspan="6">暂无支出记录</td></tr>';
+  }
+
+  /* =========================================================
+     第9项：预约排班程序
+  ========================================================= */
+  function openAppointmentModal() {
+    const staffSel = document.getElementById('apptStaffId');
+    staffSel.innerHTML = `<option value="">-- 不指定技师 --</option>` +
+      state.employees.map(e => `<option value="${e.id}">${escapeHTML(e.name)}</option>`).join('');
+    const srvSel = document.getElementById('apptServiceId');
+    srvSel.innerHTML = state.services.map(s => `<option value="${s.id}">${escapeHTML(s.name)} ($${Number(s.price).toFixed(2)})</option>`).join('');
+    renderAppointments();
+    document.getElementById('appointmentModal').classList.add('open');
+  }
+
+  function addAppointment() {
+    const date = document.getElementById('apptDate').value || todayStr();
+    const time = document.getElementById('apptTime').value || '10:00';
+    const custName = document.getElementById('apptCustName').value.trim();
+    if (!custName) return alert('请输入客人姓名');
+    const custPhone = document.getElementById('apptCustPhone').value.trim();
+    const staffId = document.getElementById('apptStaffId').value;
+    const serviceId = document.getElementById('apptServiceId').value;
+    const note = document.getElementById('apptNote').value.trim();
+
+    const emp = state.employees.find(e => e.id === staffId);
+    const srv = state.services.find(s => s.id === serviceId);
+
+    // 检查该技师在该日期时间是否排班休息
+    if (emp && Array.isArray(emp.leaves)) {
+      const conflict = emp.leaves.find(l => l.date === date && time >= l.start && time <= l.end);
+      if (conflict && !confirm(`提醒：技师【${emp.name}】在 ${date} ${conflict.start}-${conflict.end} 设有排班休息（${conflict.reason || '休息'}），仍要继续预约吗？`)) {
+        return;
+      }
+    }
+
+    state.appointments.unshift({
+      id: 'appt_' + Date.now(),
+      date, time, custName, custPhone,
+      staffId: emp ? emp.id : '',
+      staffName: emp ? emp.name : '待分配',
+      serviceId: srv ? srv.id : '',
+      serviceName: srv ? srv.name : '常规项目',
+      status: '已预约',
+      note
+    });
+    document.getElementById('apptCustName').value = '';
+    document.getElementById('apptCustPhone').value = '';
+    document.getElementById('apptNote').value = '';
+    saveState();
+    renderAppointments();
+    renderAll();
+  }
+
+  function startApptTimer(apptId) {
+    const ap = state.appointments.find(a => a.id === apptId);
+    if (!ap) return;
+    const targetStaff = ap.staffId || state.selectedStaffId;
+    if (!targetStaff) return alert('请先为该预约分配技师或在主界面选择「当前技师」');
+    if (!ap.serviceId) return alert('预约未绑定具体项目');
+    ap.status = '已开钟';
+    closeModal('appointmentModal');
+    startServiceTimer(ap.serviceId, targetStaff);
+    renderAll();
+  }
+
+  function deleteAppointment(id) {
+    state.appointments = state.appointments.filter(a => a.id !== id);
+    saveState();
+    renderAppointments();
+    renderAll();
+  }
+
+  function renderAppointments() {
+    const tbody = document.getElementById('appointmentTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = state.appointments.map(a => `
+      <tr>
+        <td><strong>${escapeHTML(a.date)}</strong> ${escapeHTML(a.time)}</td>
+        <td>${escapeHTML(a.custName)}<br><small style="color:var(--muted);">${escapeHTML(a.custPhone || '')}</small></td>
+        <td>${escapeHTML(a.staffName)}</td>
+        <td>${escapeHTML(a.serviceName)}${a.note ? `<br><small>${escapeHTML(a.note)}</small>` : ''}</td>
+        <td><span class="tag ${a.status === '已开钟' ? 'tag-green' : 'tag-blue'}">${escapeHTML(a.status)}</span></td>
+        <td>
+          <button class="btn-success btn-sm" onclick="startApptTimer('${a.id}')">⏱️ 到店开钟</button>
+          <button class="btn-danger btn-sm" onclick="deleteAppointment('${a.id}')">删</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="6">暂无预约排班记录</td></tr>';
+  }
+
+  /* =========================================================
+     第11项：员工管理（排班休息 + 密码保护敏感信息：地址/SSN/紧急联系人）
+  ========================================================= */
+  function toggleSensitiveStaffLock() {
+    if (sensitiveUnlocked) {
+      sensitiveUnlocked = false;
+      document.getElementById('sensitiveInputRow').style.display = 'none';
+      document.getElementById('unlockSensitiveBtn').textContent = '🔐 解锁敏感档案';
+      renderAll();
+      return;
+    }
+    const pwd = prompt('请输入管理员档案密码（默认 123456）：');
+    if (pwd === null) return;
+    if (pwd !== (state.sensitivePassword || '123456')) {
+      return alert('密码错误，无法查看或修改员工敏感信息！');
+    }
+    sensitiveUnlocked = true;
+    document.getElementById('sensitiveInputRow').style.display = 'flex';
+    document.getElementById('unlockSensitiveBtn').textContent = '🔓 已解锁(点击锁定)';
+    renderAll();
+  }
+
+  function changeSensitivePassword() {
+    const oldPwd = prompt('请输入当前档案密码（默认 123456）：');
+    if (oldPwd !== (state.sensitivePassword || '123456')) return alert('原密码错误');
+    const newPwd = prompt('请输入新的管理员档案密码：');
+    if (!newPwd || newPwd.trim().length < 4) return alert('新密码至少需要 4 位');
+    state.sensitivePassword = newPwd.trim();
+    saveState();
+    alert('敏感档案密码已更新！');
+  }
+
+  function openStaffLeaveModal(empId) {
+    const emp = state.employees.find(e => e.id === empId);
+    if (!emp) return;
+    document.getElementById('leaveEmpId').value = emp.id;
+    document.getElementById('staffLeaveTitle').textContent = `🗓️ ${emp.name} — 排班休息设置`;
+    renderStaffLeaves(emp);
+    document.getElementById('staffLeaveModal').classList.add('open');
+  }
+
+  function addStaffLeave() {
+    const empId = document.getElementById('leaveEmpId').value;
+    const emp = state.employees.find(e => e.id === empId);
+    if (!emp) return;
+    const date = document.getElementById('leaveDate').value || todayStr();
+    const start = document.getElementById('leaveStart').value || '09:00';
+    const end = document.getElementById('leaveEnd').value || '21:00';
+    const reason = document.getElementById('leaveReason').value.trim() || '排班休息';
+    if (!Array.isArray(emp.leaves)) emp.leaves = [];
+    emp.leaves.unshift({ id: 'lv_' + Date.now(), date, start, end, reason });
+    document.getElementById('leaveReason').value = '';
+    saveState();
+    renderStaffLeaves(emp);
+    renderAll();
+  }
+
+  function deleteStaffLeave(empId, leaveId) {
+    const emp = state.employees.find(e => e.id === empId);
+    if (!emp || !Array.isArray(emp.leaves)) return;
+    emp.leaves = emp.leaves.filter(l => l.id !== leaveId);
+    saveState();
+    renderStaffLeaves(emp);
+    renderAll();
+  }
+
+  function renderStaffLeaves(emp) {
+    document.getElementById('staffLeaveTableBody').innerHTML = (emp.leaves || []).map(l => `
+      <tr>
+        <td>${escapeHTML(l.date)}</td>
+        <td>${escapeHTML(l.start)} - ${escapeHTML(l.end)}</td>
+        <td>${escapeHTML(l.reason)}</td>
+        <td><button class="btn-danger btn-sm" onclick="deleteStaffLeave('${emp.id}', '${l.id}')">删</button></td>
+      </tr>
+    `).join('') || '<tr><td colspan="4">暂无排班休息记录</td></tr>';
+  }
+
+  function saveEmployee() {
+    if (!currentUser || currentUser.uid !== ADMIN_UID || !initialCloudLoaded) return alert('Unauthorized');
+    const name = document.getElementById('empName').value.trim();
+    if (!name) return alert('请输入技师姓名');
+    const role = document.getElementById('empRole').value.trim() || '按摩师';
+    const base = parseFloat(document.getElementById('empBase').value) || 0;
+    const tax = parseFloat(document.getElementById('empTax').value) || 0;
+    const phone = document.getElementById('empPhone').value.trim();
+    const address = document.getElementById('empAddress').value.trim();
+    const ssn = document.getElementById('empSSN').value.trim();
+    const emergency = document.getElementById('empEmergency').value.trim();
+    const editId = document.getElementById('editEmpId').value;
+
+    if (editId) {
+      const emp = state.employees.find(e => e.id === editId);
+      if (emp) {
+        Object.assign(emp, { name, role, base, tax, phone });
+        if (sensitiveUnlocked) {
+          Object.assign(emp, { address, ssn, emergency });
+        }
+        addAudit('修改技师资料', `${name} (${role})`);
+      }
+    } else {
+      const id = 'emp_' + crypto.randomUUID();
+      state.employees.push({
+        id, name, role, base, tax, phone,
+        address: sensitiveUnlocked ? address : '',
+        ssn: sensitiveUnlocked ? ssn : '',
+        emergency: sensitiveUnlocked ? emergency : '',
+        leaves: []
+      });
+      if (!state.selectedStaffId) state.selectedStaffId = id;
+      addAudit('新增技师', `${name} (${role})`);
+    }
+    ['empName', 'empBase', 'empTax', 'empPhone', 'empAddress', 'empSSN', 'empEmergency', 'editEmpId'].forEach(id => {
+      document.getElementById(id).value = id === 'empBase' ? '0' : '';
+    });
+    document.getElementById('empRole').value = '按摩师';
+    saveState();
+    renderAll();
+  }
+
+  function editEmployee(id) {
+    const emp = state.employees.find(e => e.id === id);
+    if (!emp) return;
+    document.getElementById('empName').value = emp.name;
+    document.getElementById('empRole').value = emp.role;
+    document.getElementById('empBase').value = emp.base;
+    document.getElementById('empTax').value = emp.tax || '';
+    document.getElementById('empPhone').value = emp.phone || '';
+    document.getElementById('editEmpId').value = emp.id;
+    if (sensitiveUnlocked) {
+      document.getElementById('empAddress').value = emp.address || '';
+      document.getElementById('empSSN').value = emp.ssn || '';
+      document.getElementById('empEmergency').value = emp.emergency || '';
+    }
+  }
+
+  function deleteEmployee(id) {
+    if (state.role !== 'boss') return alert('仅店长可删除');
+    if (!confirm('确定删除该技师？')) return;
+    state.employees = state.employees.filter(e => e.id !== id);
+    if (state.selectedStaffId === id) state.selectedStaffId = state.employees[0]?.id || null;
+    saveState();
+    renderAll();
+  }
+
+  /* =========================================================
+     项目管理、小费、周期筛选与主渲染
+  ========================================================= */
+  function updateCommLabel() {
+    const type = document.getElementById('srvCommType').value;
+    document.getElementById('srvCommVal').placeholder = type === 'fixed' ? '固定提成 ($)' : '提成比例 (%)';
+  }
+
+  function calcCommission(srv, price) {
+    if (!srv) return 0;
+    const val = parseFloat(srv.commVal) || 0;
+    return srv.commType === 'percent' ? +(price * (val / 100)).toFixed(2) : +val.toFixed(2);
+  }
+
+  function saveService() {
+    if (state.role !== 'boss') return alert('仅店长可设置项目');
+    const name = document.getElementById('srvName').value.trim();
+    if (!name) return alert('请输入项目名称');
+    const price = parseFloat(document.getElementById('srvPrice').value) || 0;
+    const commType = document.getElementById('srvCommType').value;
+    const commVal = parseFloat(document.getElementById('srvCommVal').value) || 0;
+    const duration = parseInt(document.getElementById('srvDuration').value, 10) || 0;
+    const pointsMode = document.getElementById('srvPointsMode').value;
+    const fixedPoints = parseInt(document.getElementById('srvFixedPoints').value, 10) || 0;
+    const editId = document.getElementById('editSrvId').value;
+
+    if (editId) {
+      const srv = state.services.find(s => s.id === editId);
+      if (srv) Object.assign(srv, { name, price, commType, commVal, duration, pointsMode, fixedPoints });
+    } else {
+      state.services.push({ id: 'srv_' + Date.now(), name, price, commType, commVal, duration, pointsMode, fixedPoints });
+    }
+    ['srvName', 'srvPrice', 'srvCommVal', 'srvDuration', 'srvFixedPoints', 'editSrvId'].forEach(id => { document.getElementById(id).value = ''; });
+    saveState();
+    renderAll();
+  }
+
+  function editService(id) {
+    const srv = state.services.find(s => s.id === id);
+    if (!srv) return;
+    document.getElementById('srvName').value = srv.name;
+    document.getElementById('srvPrice').value = srv.price;
+    document.getElementById('srvCommType').value = srv.commType;
+    updateCommLabel();
+    document.getElementById('srvCommVal').value = srv.commVal;
+    document.getElementById('srvDuration').value = srv.duration || '';
+    document.getElementById('srvPointsMode').value = srv.pointsMode || 'price';
+    document.getElementById('srvFixedPoints').value = srv.fixedPoints || '';
+    document.getElementById('editSrvId').value = srv.id;
+  }
+
+  function deleteService(id) {
+    if (state.role !== 'boss') return alert('仅店长可删除项目');
+    if (!confirm('确定删除该项目？')) return;
+    state.services = state.services.filter(s => s.id !== id);
+    saveState();
+    renderAll();
+  }
+
   function setTipType(type) {
     state.tipType = type;
     document.querySelectorAll('.tip-type-btn').forEach(btn => {
       btn.className = btn.dataset.type === type ? 'btn-primary btn-sm tip-type-btn' : 'btn-outline btn-sm tip-type-btn';
     });
-    const memSel = document.getElementById('tipMemberSelect');
-    if (type === '会员卡扣小费') {
-      memSel.style.display = '';
-      memSel.innerHTML = state.members.map(m =>
-        `<option value="${m.id}">${escapeHTML(m.name)} (余额 $${Number(m.balance || 0).toFixed(2)})</option>`
-      ).join('') || '<option value="">暂无会员</option>';
-    } else {
-      memSel.style.display = 'none';
-    }
   }
 
   function addQuickTip() {
@@ -2133,18 +2673,7 @@
     if (!emp) return;
     const amount = presetAmount !== null ? presetAmount : parseFloat(document.getElementById('tipAmount').value);
     if (!amount || amount <= 0) return alert('请输入有效小费金额');
-    let note = document.getElementById('tipNote').value.trim();
-
-    if (state.tipType === '会员卡扣小费') {
-      const memId = document.getElementById('tipMemberSelect').value;
-      const member = state.members.find(m => m.id === memId);
-      if (!member) return alert('请选择要扣小费的会员');
-      if (Number(member.balance || 0) < amount) {
-        return alert(`会员卡余额不足！当前余额 $${Number(member.balance || 0).toFixed(2)}`);
-      }
-      member.balance = +(Number(member.balance || 0) - amount).toFixed(2);
-      note = note ? `${member.name} 卡扣 · ${note}` : `${member.name} 卡扣小费`;
-    }
+    const note = document.getElementById('tipNote').value.trim();
 
     state.tips.push({
       id: 'tip_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
@@ -2155,7 +2684,6 @@
       amount: +amount.toFixed(2),
       note
     });
-
     document.getElementById('tipAmount').value = '';
     document.getElementById('tipNote').value = '';
     saveState();
@@ -2186,46 +2714,6 @@
     document.getElementById('sfNote').value = '';
     saveState();
     renderAll();
-  }
-
-  /* ================= 第5、6项：门店总营收构成开关 & 项目统计 ================= */
-  function toggleRevenueBreakdown(forceVal = null) {
-    state.showRevenueBreakdown = forceVal !== null ? forceVal : !state.showRevenueBreakdown;
-    renderAll();
-  }
-
-  function toggleRevRule(key) {
-    state.revenueCfg[key] = !state.revenueCfg[key];
-    saveState();
-    renderAll();
-  }
-
-  function openServiceStatsModal() {
-    const orders = state.orders.filter(o => matchPeriod(o.date));
-    const totalCount = orders.length;
-    const map = new Map();
-
-    orders.forEach(o => {
-      const key = o.serviceName || '未命名项目';
-      const cur = map.get(key) || { name: key, count: 0, rev: 0 };
-      cur.count += 1;
-      cur.rev += Number(o.price || 0);
-      map.set(key, cur);
-    });
-
-    const list = Array.from(map.values()).sort((a, b) => b.count - a.count || b.rev - a.rev);
-
-    document.getElementById('serviceStatsBody').innerHTML = list.map((item, i) => `
-      <tr>
-        <td><strong>#${i + 1}</strong></td>
-        <td><strong>${escapeHTML(item.name)}</strong></td>
-        <td><span class="tag tag-blue">${item.count} 个</span></td>
-        <td>${totalCount > 0 ? ((item.count / totalCount) * 100).toFixed(1) : '0.0'}%</td>
-        <td>$${item.rev.toFixed(2)}</td>
-      </tr>
-    `).join('') || '<tr><td colspan="5">当前时间段暂无项目成交数据</td></tr>';
-
-    document.getElementById('serviceStatsModal').classList.add('open');
   }
 
   function setPeriod(p) {
@@ -2270,17 +2758,12 @@
     const html = state.timers.map(t => {
       const remMs = t.endTime - now;
       const isDone = remMs <= 0;
-      if (isDone && !t.bellPlayed) {
-        t.bellPlayed = true;
-        t.status = 'done';
-        bellNeeded = true;
-      }
+      if (isDone && !t.bellPlayed) { t.bellPlayed = true; t.status = 'done'; bellNeeded = true; }
       const remSecs = Math.max(0, Math.floor(remMs / 1000));
       const mm = String(Math.floor(remSecs / 60)).padStart(2, '0');
       const ss = String(remSecs % 60).padStart(2, '0');
       const boxClass = ['timer-box', t.checked ? 'checked' : '', isDone ? 'done' : (remSecs <= 300 ? 'warning' : '')].filter(Boolean).join(' ');
-      const extraCharge = Number(t.extraCharge || 0);
-      const itemSum = Number(t.price || 0) + extraCharge;
+      const extraVal = Number(t.extraCharge || 0);
 
       return `
         <div class="${boxClass}">
@@ -2293,18 +2776,19 @@
           </div>
           <div style="display:flex; justify-content:space-between; align-items:baseline;">
             <div class="timer-clock">${mm}:${ss}</div>
-            <div><strong>$${itemSum.toFixed(2)}</strong> ${extraCharge > 0 ? `<span class="tag tag-amber">含加钱 $${extraCharge.toFixed(2)}</span>` : ''}</div>
-          </div>
-          ${t.extraNote ? `<div style="font-size:0.82em; color:#92400e;">加钱备注：${escapeHTML(t.extraNote)}</div>` : ''}
-          <div class="inline-inputs">
-            <input type="number" id="extMins_${t.id}" min="1" placeholder="任意分钟" style="width:92px;" />
-            <button class="btn-outline btn-sm" onclick="applyCustomExtend('${t.id}')">+加时</button>
-            <button class="btn-success btn-sm" onclick="openTimerCheckout('${t.id}')">结账</button>
+            <div style="font-size:0.88em; font-weight:700;">
+              基础 $${Number(t.price).toFixed(2)} ${extraVal !== 0 ? `<span class="tag tag-amber">+加钱 $${extraVal.toFixed(2)}</span>` : ''}
+            </div>
           </div>
           <div class="inline-inputs">
-            <input type="number" id="extAmt_${t.id}" step="0.01" placeholder="加钱($)" style="width:86px;" />
-            <input type="text" id="extNote_${t.id}" placeholder="加钱备注" style="flex:1; min-width:85px;" />
-            <button class="btn-warning btn-sm" onclick="applyExtraCharge('${t.id}')">+加钱</button>
+            <input type="number" id="extMins_${t.id}" placeholder="加钟(分)" style="width:88px; padding:4px 7px;" />
+            <button class="btn-outline btn-sm" onclick="extendTimerCustom('${t.id}')">⏱️ 加钟</button>
+            <button class="btn-success btn-sm" style="margin-left:auto;" onclick="openTimerCheckout('${t.id}')">结账</button>
+          </div>
+          <div class="inline-inputs">
+            <input type="number" id="extraAmt_${t.id}" step="0.01" placeholder="加钱($)" style="width:88px; padding:4px 7px;" />
+            <input type="text" id="extraNote_${t.id}" placeholder="加项说明" style="flex:1; min-width:80px; padding:4px 7px;" />
+            <button class="btn-warning btn-sm" onclick="addTimerExtraCharge('${t.id}')">+ 加钱</button>
           </div>
         </div>
       `;
@@ -2320,22 +2804,25 @@
     mergeBtn.disabled = checkedItems.length === 0;
     mergeBtn.textContent = `🧾 合并结账 (已选 ${checkedItems.length} 项)`;
 
-    if (bellNeeded) {
-      saveState();
-      playBell();
-    }
+    if (bellNeeded) { saveState(); playBell(); }
   }
 
   function renderAll() {
     renderQuickTips();
     renderTimers();
 
+    const today = document.getElementById('entryDate')?.value || todayStr();
+    const todayAppts = state.appointments.filter(a => a.date === today && a.status !== '已开钟');
+    const apptBadge = document.getElementById('todayApptBadge');
+    if (apptBadge) apptBadge.textContent = todayAppts.length;
+
     const selectedEmp = state.employees.find(e => e.id === state.selectedStaffId);
     document.getElementById('selectedStaffBadge').textContent = selectedEmp ? `当前技师：${selectedEmp.name}` : '未选技师';
     document.getElementById('tipStaffBadge').textContent = selectedEmp ? `当前技师：${selectedEmp.name}` : '未选技师';
+    document.getElementById('viewCurStaffBtn').disabled = !selectedEmp;
 
     document.getElementById('quickStaffBar').innerHTML = state.employees.map(emp =>
-      `<button class="staff-pill ${emp.id === state.selectedStaffId ? 'selected' : ''}" onclick="selectAndJumpStaff('${emp.id}')">${escapeHTML(emp.name)}</button>`
+      `<button class="staff-pill ${emp.id === state.selectedStaffId ? 'selected' : ''}" onclick="selectAndFocusStaff('${emp.id}', false)">${escapeHTML(emp.name)}</button>`
     ).join('') || '<span style="color:var(--muted);">请先在下方添加技师</span>';
 
     document.getElementById('serviceGrid').innerHTML = state.services.map(srv =>
@@ -2351,104 +2838,27 @@
     const orders = state.orders.filter(o => matchPeriod(o.date));
     const tips = state.tips.filter(t => matchPeriod(t.date));
     const fees = state.serviceFees.filter(f => matchPeriod(f.date));
+    const expenses = state.expenses.filter(ex => matchPeriod(ex.date));
 
-    // 第5项：收入分类统计
-    const cashOrders = orders.filter(o => o.payMethod === '现金').reduce((s, o) => s + Number(o.price || 0), 0);
-    const cardOrders = orders.filter(o => o.payMethod === '银行卡').reduce((s, o) => s + Number(o.price || 0), 0);
-    const venmoOrders = orders.filter(o => o.payMethod === 'Venmo').reduce((s, o) => s + Number(o.price || 0), 0);
-    const memberCardOrders = orders.filter(o => o.payMethod === '会员充值卡').reduce((s, o) => s + Number(o.price || 0), 0);
-    const giftCardRedeem = orders.filter(o => o.payMethod === '礼卡消费' || o.payMethod === '礼品卡').reduce((s, o) => s + Number(o.price || 0), 0);
-    const couponRedeem = orders.filter(o => o.payMethod === '优惠券').reduce((s, o) => s + Number(o.price || 0), 0);
-
-    const pureServiceFees = fees.filter(f => (f.category || '服务费') === '服务费');
-    const giftCardSales = fees.filter(f => f.category === '销售礼卡');
-    const memberFees = fees.filter(f => f.category === '会员费' || f.category === '会员卡充值');
-
-    const cashSf = pureServiceFees.filter(f => f.payMethod === '现金').reduce((s, f) => s + Number(f.amount || 0), 0);
-    const cardSf = pureServiceFees.filter(f => f.payMethod === '银行卡').reduce((s, f) => s + Number(f.amount || 0), 0);
-    const venmoSf = pureServiceFees.filter(f => f.payMethod === 'Venmo').reduce((s, f) => s + Number(f.amount || 0), 0);
-
-    const cashMem = memberFees.filter(f => f.payMethod === '现金').reduce((s, f) => s + Number(f.amount || 0), 0);
-    const cardMem = memberFees.filter(f => f.payMethod === '银行卡').reduce((s, f) => s + Number(f.amount || 0), 0);
-    const venmoMem = memberFees.filter(f => f.payMethod === 'Venmo').reduce((s, f) => s + Number(f.amount || 0), 0);
-
-    const cashGcSale = giftCardSales.filter(f => f.payMethod === '现金').reduce((s, f) => s + Number(f.amount || 0), 0);
-    const cardGcSale = giftCardSales.filter(f => f.payMethod === '银行卡').reduce((s, f) => s + Number(f.amount || 0), 0);
-    const venmoGcSale = giftCardSales.filter(f => f.payMethod === 'Venmo').reduce((s, f) => s + Number(f.amount || 0), 0);
-
-    const gcSaleTotal = cashGcSale + cardGcSale + venmoGcSale;
-    const memberFeeTotal = cashMem + cardMem + venmoMem;
-    const serviceFeeTotal = cashSf + cardSf + venmoSf;
-
-    const cashRev = cashOrders + cashSf + cashMem + (state.revenueCfg.includeGiftCardSale ? cashGcSale : 0);
-    const cardRev = cardOrders + cardSf + cardMem + (state.revenueCfg.includeGiftCardSale ? cardGcSale : 0);
-    const venmoRev = venmoOrders + venmoSf + venmoMem + (state.revenueCfg.includeGiftCardSale ? venmoGcSale : 0);
-
-    const totalRev =
-      cashOrders + cardOrders + venmoOrders + memberCardOrders +
-      serviceFeeTotal + memberFeeTotal +
-      (state.revenueCfg.includeGiftCardSale ? gcSaleTotal : 0) +
-      (state.revenueCfg.includeGiftCardRedeem ? giftCardRedeem : 0) +
-      (state.revenueCfg.includeCoupon ? couponRedeem : 0);
-
-    const totalComm = orders.reduce((s, o) => s + Number(o.commission || 0), 0);
-    const totalTips = tips.reduce((s, t) => s + Number(t.amount || 0), 0);
+    const revBreakdown = computeRevenueBreakdown(orders, fees);
+    const netProfitInfo = calcNetProfitStats(orders, tips, fees, expenses);
 
     document.getElementById('statSummaryGrid').innerHTML = `
-      <div class="stat-box clickable" onclick="toggleRevenueBreakdown()">
-        <div class="stat-label">门店总营收 (点击看明细) ▾</div>
-        <div class="stat-val">$${totalRev.toFixed(2)}</div>
+      <div class="stat-box clickable" onclick="openRevenueBreakdownModal()">
+        <div class="stat-label"><span>门店总营收</span><span class="tag tag-blue">点击查明细</span></div>
+        <div class="stat-val" style="color:var(--primary);">$${revBreakdown.countedTotal.toFixed(2)}</div>
       </div>
-      <div class="stat-box clickable" onclick="openServiceStatsModal()">
-        <div class="stat-label">项目统计 (点击看排行) ▾</div>
+      <div class="stat-box clickable" onclick="openProjectStatsModal()">
+        <div class="stat-label"><span>项目统计</span><span class="tag tag-purple">点击看数量</span></div>
         <div class="stat-val">${orders.length} 个</div>
       </div>
-      <div class="stat-box">
-        <div class="stat-label">服务费收入</div>
-        <div class="stat-val">$${serviceFeeTotal.toFixed(2)}</div>
+      <div class="stat-box clickable" onclick="openNetProfitModal()">
+        <div class="stat-label"><span>门店净利润</span><span class="tag tag-green">点击看核算</span></div>
+        <div class="stat-val" style="color:${netProfitInfo.netProfit >= 0 ? 'var(--success)' : 'var(--danger)'};">$${netProfitInfo.netProfit.toFixed(2)}</div>
       </div>
-      <div class="stat-box">
-        <div class="stat-label">技师总提成</div>
-        <div class="stat-val">$${totalComm.toFixed(2)}</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-label">技师总小费</div>
-        <div class="stat-val">$${totalTips.toFixed(2)}</div>
-      </div>
+      <div class="stat-box"><div class="stat-label">技师总提成</div><div class="stat-val">$${netProfitInfo.totalComm.toFixed(2)}</div></div>
+      <div class="stat-box"><div class="stat-label">技师总小费</div><div class="stat-val">$${netProfitInfo.totalTips.toFixed(2)}</div></div>
     `;
-
-    const rbPanel = document.getElementById('revenueBreakdownPanel');
-    rbPanel.style.display = state.showRevenueBreakdown ? '' : 'none';
-    if (state.showRevenueBreakdown) {
-      document.getElementById('revenueBreakdownGrid').innerHTML = `
-        <div class="rev-item"><div class="stat-label">💵 现金收入</div><div class="stat-val">$${cashRev.toFixed(2)}</div></div>
-        <div class="rev-item"><div class="stat-label">💳 银行卡收入</div><div class="stat-val">$${cardRev.toFixed(2)}</div></div>
-        <div class="rev-item"><div class="stat-label">📱 Venmo收入</div><div class="stat-val">$${venmoRev.toFixed(2)}</div></div>
-        <div class="rev-item"><div class="stat-label">👑 会员费/充值收入</div><div class="stat-val">$${memberFeeTotal.toFixed(2)}</div><small style="color:var(--muted);">含卡扣消费 $${memberCardOrders.toFixed(2)}</small></div>
-        <div class="rev-item"><div class="stat-label">🛎️ 服务费收入</div><div class="stat-val">$${serviceFeeTotal.toFixed(2)}</div></div>
-        <div class="rev-item">
-          <div class="stat-label">🎁 销售礼卡收入</div>
-          <div class="stat-val">$${gcSaleTotal.toFixed(2)}</div>
-          <button class="btn-sm ${state.revenueCfg.includeGiftCardSale ? 'btn-success' : 'btn-outline'}" style="margin-top:5px;" onclick="toggleRevRule('includeGiftCardSale')">
-            ${state.revenueCfg.includeGiftCardSale ? '✓ 已计入总营收' : '✕ 不计入总营收'}
-          </button>
-        </div>
-        <div class="rev-item">
-          <div class="stat-label">🎁 使用礼卡消费</div>
-          <div class="stat-val">$${giftCardRedeem.toFixed(2)}</div>
-          <button class="btn-sm ${state.revenueCfg.includeGiftCardRedeem ? 'btn-success' : 'btn-outline'}" style="margin-top:5px;" onclick="toggleRevRule('includeGiftCardRedeem')">
-            ${state.revenueCfg.includeGiftCardRedeem ? '✓ 已计入总营收' : '✕ 不计入总营收'}
-          </button>
-        </div>
-        <div class="rev-item">
-          <div class="stat-label">🎟️ 优惠券消费</div>
-          <div class="stat-val">$${couponRedeem.toFixed(2)}</div>
-          <button class="btn-sm ${state.revenueCfg.includeCoupon ? 'btn-success' : 'btn-outline'}" style="margin-top:5px;" onclick="toggleRevRule('includeCoupon')">
-            ${state.revenueCfg.includeCoupon ? '✓ 已计入总营收' : '✕ 不计入总营收'}
-          </button>
-        </div>
-      `;
-    }
 
     document.getElementById('staffSummaryBody').innerHTML = state.employees.map(emp => {
       const eOrders = orders.filter(o => o.staffId === emp.id);
@@ -2457,26 +2867,31 @@
       const mins = eOrders.reduce((s, o) => s + Number(o.duration || 0), 0);
       const comm = eOrders.reduce((s, o) => s + Number(o.commission || 0), 0);
       const cardTip = eTips.filter(t => t.type === '银行卡小费').reduce((s, t) => s + Number(t.amount || 0), 0);
-      const cashTip = eTips.filter(t => t.type === '现金小费').reduce((s, t) => s + Number(t.amount || 0), 0);
       const venmoTip = eTips.filter(t => t.type === 'Venmo小费').reduce((s, t) => s + Number(t.amount || 0), 0);
-      const memTip = eTips.filter(t => t.type === '会员卡扣小费').reduce((s, t) => s + Number(t.amount || 0), 0);
+      const cashTip = eTips.filter(t => t.type === '现金小费').reduce((s, t) => s + Number(t.amount || 0), 0);
       const base = Number(emp.base || 0);
       const tax = Number(emp.tax || 0);
-      const netPay = base + comm + cardTip + cashTip + venmoTip + memTip - tax;
+      const netPay = base + comm + cardTip + venmoTip + cashTip - tax;
+
+      const isBusy = state.timers.some(t => t.staffId === emp.id && t.endTime > Date.now());
+      const isLeave = (emp.leaves || []).some(l => l.date === today);
+      const statusHtml = isBusy
+        ? '<span class="tag tag-blue">服务中</span>'
+        : (isLeave ? '<span class="tag tag-amber">排班休息</span>' : '<span class="tag tag-green">空闲</span>');
 
       return `
         <tr>
-          <td><a href="javascript:void(0)" onclick="openStaffDetailModal('${emp.id}')"><strong>${escapeHTML(emp.name)}</strong></a></td>
+          <td><a href="javascript:void(0)" style="color:var(--primary); text-decoration:underline;" onclick="selectAndFocusStaff('${emp.id}', true)"><strong>${escapeHTML(emp.name)} 🔍</strong></a></td>
           <td>${escapeHTML(emp.role)}</td>
+          <td>${statusHtml}</td>
           <td>${eOrders.length}</td>
           <td>${(mins / 60).toFixed(1)}h</td>
           <td>$${rev.toFixed(2)}</td>
           <td>$${base.toFixed(2)}</td>
           <td>$${comm.toFixed(2)}</td>
           <td>$${cardTip.toFixed(2)}</td>
-          <td>$${cashTip.toFixed(2)}</td>
           <td>$${venmoTip.toFixed(2)}</td>
-          <td>$${memTip.toFixed(2)}</td>
+          <td>$${cashTip.toFixed(2)}</td>
           <td>$${tax.toFixed(2)}</td>
           <td><strong>$${netPay.toFixed(2)}</strong></td>
         </tr>
@@ -2493,24 +2908,22 @@
     document.getElementById('orderDetailBody').innerHTML = filteredOrders.map(o => `
       <tr>
         <td>${escapeHTML(o.staffName)}</td>
-        <td>
-          ${escapeHTML(o.serviceName)}
-          ${o.extraCharge > 0 ? `<br><small style="color:#92400e;">+加钱 $${Number(o.extraCharge).toFixed(2)} ${escapeHTML(o.extraNote || '')}</small>` : ''}
-          ${o.memberName ? `<br><small style="color:#6b21a8;">👑 ${escapeHTML(o.memberName)} (+${o.pointsEarned || 0}分)</small>` : ''}
-        </td>
+        <td>${escapeHTML(o.serviceName)}</td>
         <td>$${Number(o.price).toFixed(2)}</td>
         <td><span class="tag tag-blue">${escapeHTML(o.payMethod)}</span></td>
         <td>$${Number(o.commission).toFixed(2)}</td>
         <td>${escapeHTML(o.date)}</td>
-        <td><button class="btn-danger btn-sm" onclick="deleteOrder('${o.id}')">删</button></td>
+        <td>
+          <button class="btn-outline btn-sm" onclick="printOrderReceipt('${o.id}')" title="打印收据">🖨️</button>
+          <button class="btn-danger btn-sm" onclick="deleteOrder('${o.id}')">删</button>
+        </td>
       </tr>
     `).join('') || '<tr><td colspan="7">暂无订单记录</td></tr>';
 
     const cardSum = filteredTips.filter(t => t.type === '银行卡小费').reduce((s, t) => s + Number(t.amount || 0), 0);
     const venmoSum = filteredTips.filter(t => t.type === 'Venmo小费').reduce((s, t) => s + Number(t.amount || 0), 0);
     const cashSum = filteredTips.filter(t => t.type === '现金小费').reduce((s, t) => s + Number(t.amount || 0), 0);
-    const memTipSum = filteredTips.filter(t => t.type === '会员卡扣小费').reduce((s, t) => s + Number(t.amount || 0), 0);
-    document.getElementById('tipTotalTag').textContent = `卡$${cardSum.toFixed(0)} | V$${venmoSum.toFixed(0)} | 现$${cashSum.toFixed(0)} | 会员$${memTipSum.toFixed(0)}`;
+    document.getElementById('tipTotalTag').textContent = `卡$${cardSum.toFixed(0)} | V$${venmoSum.toFixed(0)} | 现$${cashSum.toFixed(0)}`;
 
     document.getElementById('tipDetailBody').innerHTML = filteredTips.map(t => `
       <tr>
@@ -2522,37 +2935,49 @@
       </tr>
     `).join('') || '<tr><td colspan="5">暂无小费记录</td></tr>';
 
-    document.getElementById('sfDetailBody').innerHTML = fees.map(f => `
-      <tr>
-        <td>${escapeHTML(f.category || '服务费')} (${escapeHTML(f.payMethod)})</td>
-        <td>$${Number(f.amount).toFixed(2)}</td>
-        <td>${escapeHTML(f.date)}${f.note ? ' · ' + escapeHTML(f.note) : ''}</td>
-        <td><button class="btn-danger btn-sm" onclick="deleteServiceFee('${f.id}')">删</button></td>
-      </tr>
-    `).join('') || '<tr><td colspan="4">暂无入账记录</td></tr>';
+    const combinedFeed = [
+      ...fees.map(f => ({ kind: 'in', id: f.id, title: `${f.category || '服务费'} (${f.payMethod})`, amount: f.amount, date: f.date, note: f.note })),
+      ...expenses.map(ex => ({ kind: 'out', id: ex.id, title: `支出: ${ex.category} (${ex.payMethod})`, amount: ex.amount, date: ex.date, note: ex.note }))
+    ];
 
-    document.getElementById('empTableBody').innerHTML = state.employees.map(emp => `
+    document.getElementById('sfDetailBody').innerHTML = combinedFeed.map(row => `
       <tr>
-        <td>${escapeHTML(emp.name)}</td>
-        <td>${escapeHTML(emp.role)}</td>
-        <td>$${Number(emp.base || 0).toFixed(2)}</td>
-        <td>$${Number(emp.tax || 0).toFixed(2)}</td>
-        <td>
-          <button class="btn-outline btn-sm" onclick="editEmployee('${emp.id}')">编辑</button>
-          <button class="btn-danger btn-sm" onclick="deleteEmployee('${emp.id}')">删除</button>
-        </td>
+        <td><span class="tag ${row.kind === 'in' ? 'tag-green' : 'tag-red'}">${escapeHTML(row.title)}</span></td>
+        <td style="color:${row.kind === 'in' ? 'var(--success)' : 'var(--danger)'}; font-weight:700;">${row.kind === 'in' ? '+' : '-'}$${Number(row.amount).toFixed(2)}</td>
+        <td>${escapeHTML(row.date)}${row.note ? ' · ' + escapeHTML(row.note) : ''}</td>
+        <td><button class="btn-danger btn-sm" onclick="${row.kind === 'in' ? `deleteServiceFee('${row.id}')` : `deleteExpense('${row.id}')`}">删</button></td>
       </tr>
-    `).join('') || '<tr><td colspan="5">暂无员工</td></tr>';
+    `).join('') || '<tr><td colspan="4">暂无入账或支出记录</td></tr>';
+
+    document.getElementById('empTableBody').innerHTML = state.employees.map(emp => {
+      const leaveCnt = Array.isArray(emp.leaves) ? emp.leaves.length : 0;
+      const sensitiveInfo = sensitiveUnlocked
+        ? `<div style="font-size:0.84em;">📍 ${escapeHTML(emp.address || '未填地址')}<br>🪪 SSN: ${escapeHTML(emp.ssn || '未填')}<br>🆘 紧急: ${escapeHTML(emp.emergency || '未填')}</div>`
+        : '<span class="tag tag-amber">🔒 已加密隐藏</span>';
+
+      return `
+        <tr>
+          <td><strong>${escapeHTML(emp.name)}</strong> (${escapeHTML(emp.role)})<br><small style="color:var(--muted);">📱 ${escapeHTML(emp.phone || '未设登录手机')}</small></td>
+          <td><button class="btn-outline btn-sm" onclick="openStaffLeaveModal('${emp.id}')">🗓️ 休息排班 (${leaveCnt})</button></td>
+          <td>${sensitiveInfo}</td>
+          <td>底$${Number(emp.base || 0).toFixed(0)} / 税$${Number(emp.tax || 0).toFixed(0)}</td>
+          <td>
+            <button class="btn-outline btn-sm" onclick="editEmployee('${emp.id}')">编辑</button>
+            <button class="btn-danger btn-sm" onclick="deleteEmployee('${emp.id}')">删除</button>
+          </td>
+        </tr>
+      `;
+    }).join('') || '<tr><td colspan="5">暂无员工</td></tr>';
 
     document.getElementById('srvTableBody').innerHTML = state.services.map(srv => {
-      const pLabel = srv.pointMode === 'none' ? '不加积分' : (srv.pointMode === 'fixed' ? `固定 +${srv.fixedPoints || 0}分` : '按消费金额');
+      const pLabel = srv.pointsMode === 'none' ? '不加积分' : (srv.pointsMode === 'fixed' ? `固定+${srv.fixedPoints || 0}分` : '按消费额积分');
       return `
         <tr>
           <td>${escapeHTML(srv.name)}</td>
           <td>$${Number(srv.price).toFixed(2)}</td>
           <td>${srv.commType === 'percent' ? srv.commVal + '%' : '$' + Number(srv.commVal).toFixed(2)}</td>
           <td>${srv.duration || 0} 分钟</td>
-          <td><span class="tag tag-purple">${pLabel}</span></td>
+          <td><span class="tag tag-amber">${pLabel}</span></td>
           <td>
             <button class="btn-outline btn-sm" onclick="editService('${srv.id}')">编辑</button>
             <button class="btn-danger btn-sm" onclick="deleteService('${srv.id}')">删除</button>
@@ -2563,6 +2988,7 @@
   }
 
   function deleteOrder(id) {
+    if (state.role !== 'boss') return alert('仅店长可删除账单');
     state.orders = state.orders.filter(o => o.id !== id);
     addAudit('删除订单', id);
     saveState();
@@ -2570,6 +2996,7 @@
   }
 
   function deleteTip(id) {
+    if (state.role !== 'boss') return alert('仅店长可删除小费');
     state.tips = state.tips.filter(t => t.id !== id);
     addAudit('删除小费', id);
     saveState();
@@ -2577,6 +3004,7 @@
   }
 
   function deleteServiceFee(id) {
+    if (state.role !== 'boss') return alert('仅店长可删除入账');
     state.serviceFees = state.serviceFees.filter(f => f.id !== id);
     addAudit('删除入账记录', id);
     saveState();
@@ -2593,8 +3021,8 @@
   function openPayslipModal() { window.print(); }
 
   function exportCSV() {
-    const rows = [['Date', 'Staff', 'Service', 'Price', 'Commission', 'Payment', 'Member', 'Points']];
-    state.orders.forEach(o => rows.push([o.date, o.staffName, o.serviceName, o.price, o.commission, o.payMethod, o.memberName || '', o.pointsEarned || 0]));
+    const rows = [['Date', 'Staff', 'Service', 'Price', 'Commission', 'Payment']];
+    state.orders.forEach(o => rows.push([o.date, o.staffName, o.serviceName, o.price, o.commission, o.payMethod]));
     const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a');
@@ -2619,20 +3047,16 @@
     if (!currentUser || currentUser.uid !== ADMIN_UID || !initialCloudLoaded || saveFailed) return alert('Cloud access is unavailable.');
     const file = event.target.files[0];
     if (!file) return;
-    if (!confirm('Restoring this backup will replace your existing cloud records. Continue?')) {
-      event.target.value = '';
-      return;
-    }
+    if (!confirm('Restoring this backup will replace your cloud records. Continue?')) { event.target.value = ''; return; }
     try {
-      const raw = await file.text();
-      const imported = JSON.parse(raw);
+      const imported = JSON.parse(await file.text());
       mergeStateData(imported);
       addAudit('导入备份', file.name);
       applyAppearance();
       applyRoleVisibility();
       renderAll();
       await saveState();
-      alert('数据已恢复并同步云端 / Backup restored and synced.');
+      alert('数据已恢复并同步云端');
     } catch (error) {
       alert('Invalid JSON backup: ' + error.message);
     } finally {
@@ -2643,22 +3067,14 @@
   function openResetModal() { document.getElementById('resetModal').classList.add('open'); }
 
   function resetData(mode) {
+    if (state.role !== 'boss') return alert('仅店长可清空数据');
     if (mode === 'orders') {
-      state.orders = [];
-      state.tips = [];
-      state.serviceFees = [];
-      state.timers = [];
+      state.orders = []; state.tips = []; state.serviceFees = []; state.expenses = []; state.timers = [];
       addAudit('清空流水账单', '保留员工、项目与会员');
     } else {
-      state.employees = [];
-      state.services = [];
-      state.orders = [];
-      state.tips = [];
-      state.serviceFees = [];
-      state.timers = [];
-      state.members = [];
-      state.selectedStaffId = null;
-      state.filterStaffId = null;
+      state.employees = []; state.services = []; state.orders = []; state.tips = [];
+      state.serviceFees = []; state.expenses = []; state.timers = []; state.members = []; state.appointments = [];
+      state.selectedStaffId = null; state.filterStaffId = null;
       addAudit('全部清空账本', '重置为空白账本');
     }
     saveState();
@@ -2667,18 +3083,22 @@
   }
 
   Object.assign(window, {
+    switchLoginTab, loginAsEmployeePhone, refreshStaffPortal, logoutStaffPortal,
     logout, toggleLang, closeModal, toggleSound, playBell, toggleTouch, changeScale, toggleTheme,
     openPayslipModal, exportCSV, exportJSON, importJSON, openAuditModal, openResetModal,
-    toggleSelectAllTimers, openMergedCheckout, setTipType, addTip, addQuickTip, setSfPay, addServiceFee,
-    setPeriod, clearStaffFilter, saveEmployee, editEmployee, deleteEmployee,
-    updateCommLabel, updateSrvPointInput, saveService, editService, deleteService,
-    completeCheckout, updateCheckoutPreview, resetData,
-    startServiceTimer, applyCustomExtend, applyExtraCharge, toggleTimerCheck,
-    openDirectServiceCheckout, openTimerCheckout,
-    deleteOrder, deleteTip, deleteServiceFee,
-    selectAndJumpStaff, openStaffDetailModal,
-    openMemberModal, saveMemberSettings, createMember, topupMemberCard, deleteMember,
-    toggleRevenueBreakdown, toggleRevRule, openServiceStatsModal
+    toggleSelectAllTimers, openMergedCheckout, setTipType, addTip, addQuickTip,
+    setSfPay, addServiceFee, setPeriod, clearStaffFilter, saveEmployee, editEmployee, deleteEmployee,
+    updateCommLabel, saveService, editService, deleteService, completeCheckout, completeSplitCheckout,
+    addSplitRow, updateSplitHint, resetData,
+    startServiceTimer, extendTimerCustom, addTimerExtraCharge, toggleTimerCheck,
+    openDirectServiceCheckout, openTimerCheckout, deleteOrder, deleteTip, deleteServiceFee,
+    selectAndFocusStaff, openStaffDetailModal, openMemberModal, saveMemberConfig,
+    createMember, topupMember, chargeMemberTip, editMemberDiscount, renderMembers,
+    updateCheckoutTotalDisplay, openRevenueBreakdownModal, openCardCouponModal,
+    saveRevenueRuleConfig, openProjectStatsModal, openNetProfitModal, openExpenseModal,
+    addExpense, deleteExpense, openAppointmentModal, addAppointment, startApptTimer, deleteAppointment,
+    toggleSensitiveStaffLock, changeSensitivePassword, openStaffLeaveModal, addStaffLeave, deleteStaffLeave,
+    printOrderReceipt
   });
 
   setInterval(() => {
