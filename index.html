@@ -759,9 +759,9 @@
         <div style="font-weight:700; margin-bottom:6px;">⚙️ 年费价格、优惠幅度与积分规则设置</div>
         <div class="inline-inputs">
           <label>单人年费($): <input type="number" id="cfgSinglePrice" style="width:75px;" /></label>
-          <label>单人优惠(%): <input type="number" id="cfgSingleDisc" style="width:70px;" /></label>
+          <label>单人优惠: <select id="cfgSingleDiscType"><option value="percent">百分比 (%)</option><option value="fixed">固定金额 ($)</option></select> <input min="0" step="0.01" type="number" id="cfgSingleDisc" style="width:70px;" /></label>
           <label>双人年费($): <input type="number" id="cfgDoublePrice" style="width:75px;" /></label>
-          <label>双人优惠(%): <input type="number" id="cfgDoubleDisc" style="width:70px;" /></label>
+          <label>双人优惠: <select id="cfgDoubleDiscType"><option value="percent">百分比 (%)</option><option value="fixed">固定金额 ($)</option></select> <input min="0" step="0.01" type="number" id="cfgDoubleDisc" style="width:70px;" /></label>
           <label>每消费$1得积分: <input type="number" id="cfgPointsPerDollar" step="0.1" value="1" style="width:65px;" /></label>
           <button class="btn-primary btn-sm" onclick="saveMemberConfig()">💾 保存规则</button>
         </div>
@@ -776,7 +776,7 @@
             <option value="double">双人年费会员</option>
             <option value="prepaid">普通充值储值卡</option>
           </select>
-          <input type="number" id="memCustomDisc" step="1" placeholder="专属优惠% (可选)" style="width:130px;" />
+          <select id="memDiscType" onchange="document.getElementById('memCustomDisc').disabled=this.value==='default';document.getElementById('memCustomDisc').placeholder=this.value==='fixed'?'减免金额 ($)':'优惠百分比 (%)'"><option value="default">使用默认优惠</option><option value="percent">百分比优惠 (%)</option><option value="fixed">固定金额优惠 ($)</option></select><input type="number" id="memCustomDisc" min="0" step="0.01" disabled placeholder="使用默认优惠" style="width:130px;" />
           <input type="number" id="memInitBalance" step="0.01" placeholder="初始充值($)" style="width:110px;" />
           <select id="memPayMethod">
             <option value="银行卡">💳 银行卡</option>
@@ -1807,18 +1807,25 @@
   ========================================================= */
   function openMemberModal() {
     document.getElementById('cfgSinglePrice').value = state.memberCfg.singlePrice ?? 99;
+    document.getElementById('cfgSingleDiscType').value = state.memberCfg.singleDiscType || 'percent';
     document.getElementById('cfgSingleDisc').value = state.memberCfg.singleDisc ?? 10;
     document.getElementById('cfgDoublePrice').value = state.memberCfg.doublePrice ?? 169;
+    document.getElementById('cfgDoubleDiscType').value = state.memberCfg.doubleDiscType || 'percent';
     document.getElementById('cfgDoubleDisc').value = state.memberCfg.doubleDisc ?? 15;
     document.getElementById('cfgPointsPerDollar').value = state.memberCfg.pointsPerDollar ?? 1;
     renderMembers();
     document.getElementById('memberModal').classList.add('open');
   }
 
+  function validMemberDiscount(value, type) { return String(value).trim() !== '' && Number.isFinite(Number(value)) && Number(value) >= 0 && (type !== 'percent' || Number(value) <= 100); }
+  function memberDiscountLabel(m) { return m.discountType === 'fixed' ? `$${Number(m.discount || 0).toFixed(2)} OFF / 项` : `${Number(m.discount || 0)}% OFF`; }
   function saveMemberConfig() {
+    for (const k of ['Single','Double']) { if (!validMemberDiscount(document.getElementById('cfg'+k+'Disc').value, document.getElementById('cfg'+k+'DiscType').value)) return alert('请输入有效优惠：百分比 0–100，固定金额不得为负'); }
     state.memberCfg.singlePrice = parseFloat(document.getElementById('cfgSinglePrice').value) || 0;
+    state.memberCfg.singleDiscType = document.getElementById('cfgSingleDiscType').value;
     state.memberCfg.singleDisc = parseFloat(document.getElementById('cfgSingleDisc').value) || 0;
     state.memberCfg.doublePrice = parseFloat(document.getElementById('cfgDoublePrice').value) || 0;
+    state.memberCfg.doubleDiscType = document.getElementById('cfgDoubleDiscType').value;
     state.memberCfg.doubleDisc = parseFloat(document.getElementById('cfgDoubleDisc').value) || 0;
     state.memberCfg.pointsPerDollar = parseFloat(document.getElementById('cfgPointsPerDollar').value) || 1;
     saveState();
@@ -1839,14 +1846,18 @@
     if (tier === 'single') { fee = Number(state.memberCfg.singlePrice || 0); defaultDisc = Number(state.memberCfg.singleDisc || 0); tierLabel = '单人年费会员'; }
     else if (tier === 'double') { fee = Number(state.memberCfg.doublePrice || 0); defaultDisc = Number(state.memberCfg.doubleDisc || 0); tierLabel = '双人年费会员'; }
 
-    const discount = customDiscRaw !== '' ? (parseFloat(customDiscRaw) || 0) : defaultDisc;
+    const choice = document.getElementById('memDiscType').value;
+    const discountType = choice === 'default' ? (tier === 'single' ? state.memberCfg.singleDiscType : tier === 'double' ? state.memberCfg.doubleDiscType : 'percent') || 'percent' : choice;
+    const discountInput = choice === 'default' ? defaultDisc : customDiscRaw;
+    if (!validMemberDiscount(discountInput, discountType)) return alert('请输入有效优惠：百分比 0–100，固定金额不得为负');
+    const discount = Number(discountInput);
     const totalCollected = +(fee + initBalance).toFixed(2);
     const initPoints = Math.round(totalCollected * Number(state.memberCfg.pointsPerDollar || 1));
     const dateVal = document.getElementById('entryDate').value || todayStr();
 
     const newMem = {
       id: 'mem_' + Date.now(),
-      name, phone, tier, tierLabel, discount,
+      name, phone, tier, tierLabel, discount, discountType,
       balance: +initBalance.toFixed(2),
       points: initPoints,
       createdAt: dateVal
@@ -1866,6 +1877,9 @@
     document.getElementById('memName').value = '';
     document.getElementById('memPhone').value = '';
     document.getElementById('memCustomDisc').value = '';
+    document.getElementById('memDiscType').value = 'default';
+    document.getElementById('memCustomDisc').disabled = true;
+    document.getElementById('memCustomDisc').placeholder = '使用默认优惠';
     document.getElementById('memInitBalance').value = '';
     addAudit('开通会员/充值卡', `${name} (${tierLabel}, 充值$${initBalance})`);
     saveState();
@@ -1948,9 +1962,15 @@
   function editMemberDiscount(memId) {
     const m = state.members.find(x => x.id === memId);
     if (!m) return;
-    const newDisc = prompt(`调整会员【${m.name}】的专属优惠幅度 (%)：`, m.discount ?? 0);
+    const typeInput = prompt(`调整会员【${m.name}】优惠类型：输入 1 = 百分比，2 = 固定金额（每项目）`, m.discountType === 'fixed' ? '2' : '1');
+    if (typeInput === null) return;
+    if (!['1','2'].includes(typeInput.trim())) return alert('请输入 1 或 2');
+    const type = typeInput.trim() === '2' ? 'fixed' : 'percent';
+    const newDisc = prompt(type === 'fixed' ? '每个服务项目减免金额 ($)' : '优惠百分比 (%)', m.discount ?? 0);
     if (newDisc === null) return;
-    m.discount = Math.max(0, Math.min(100, parseFloat(newDisc) || 0));
+    if (!validMemberDiscount(newDisc, type)) return alert('优惠数值无效');
+    m.discountType = type;
+    m.discount = Number(newDisc);
     saveState();
     renderMembers();
   }
@@ -1963,7 +1983,7 @@
         <td><strong>${escapeHTML(m.name)}</strong></td>
         <td>${escapeHTML(m.phone)}</td>
         <td><span class="tag tag-purple">${escapeHTML(m.tierLabel || '会员')}</span></td>
-        <td><strong>${Number(m.discount || 0)}% OFF</strong></td>
+        <td><strong>${memberDiscountLabel(m)}</strong></td>
         <td style="color:var(--success); font-weight:700;">$${Number(m.balance || 0).toFixed(2)}</td>
         <td><span class="tag tag-amber">${Number(m.points || 0)} 分</span></td>
         <td>
@@ -2007,7 +2027,7 @@
     selectedCheckoutMethod = '现金'; clearCheckoutConfirmation();
     const sel = document.getElementById('checkoutMemberSelect');
     sel.innerHTML = `<option value="">-- 非会员 / 不使用会员卡 --</option>` +
-      state.members.map(m => `<option value="${m.id}">${escapeHTML(m.name)} (${escapeHTML(m.phone)}) · 享${m.discount}%OFF · 余额$${Number(m.balance).toFixed(2)}</option>`).join('');
+      state.members.map(m => `<option value="${m.id}">${escapeHTML(m.name)} (${escapeHTML(m.phone)}) · 享${memberDiscountLabel(m)} · 余额$${Number(m.balance).toFixed(2)}</option>`).join('');
 
     document.getElementById('splitRowsContainer').innerHTML = '';
     addSplitRow();
@@ -2063,26 +2083,27 @@
   function updateCheckoutTotalDisplay() {
     const memId = document.getElementById('checkoutMemberSelect')?.value;
     const member = state.members.find(m => m.id === memId);
-    const discRate = member ? (Number(member.discount || 0) / 100) : 0;
+    const discountValue = Math.max(0, Number(member?.discount || 0));
+    const fixedDiscount = member?.discountType === 'fixed';
 
     let rawTotal = 0;
     let finalTotal = 0;
 
     document.getElementById('checkoutItemsList').innerHTML = checkoutCart.map((item, idx) => {
       const raw = Number(item.customPrice ?? item.price ?? 0);
-      const final = +(raw * (1 - discRate)).toFixed(2);
+      const final = +Math.max(0, fixedDiscount ? raw - discountValue : raw * (1 - Math.min(100, discountValue) / 100)).toFixed(2);
       item.finalPrice = final;
       if (item.earlyEnded) item.commission = calcCommission(state.services.find(s => s.id === item.serviceId), raw);
       rawTotal += raw;
       finalTotal += final;
-      return `<div class="co-line"><div><strong>${escapeHTML(item.staffName)} · ${escapeHTML(item.serviceName)}</strong><div class="co-muted">${item.earlyEnded ? '提前结束 · 实际 ' : '服务时长 · '}${Number(item.duration || 0)} 分钟</div>${item.earlyEnded ? `<label class="co-muted"><input type="checkbox" ${item.customPrice != null ? 'checked' : ''} onchange="toggleCustomCheckout(${idx},this.checked)"> Custom Amount / 自定义金额</label>${item.customPrice != null ? `<div><input type="number" min="0" step="0.01" value="${raw.toFixed(2)}" onchange="setInlineCheckoutAmount(${idx},this.value)" style="width:120px" aria-label="自定义金额"></div>` : ''}` : ''}</div><div>${discRate > 0 ? `<del class="co-muted">$${raw.toFixed(2)}</del> ` : ''}<strong>$${final.toFixed(2)}</strong></div></div>`;
+      return `<div class="co-line"><div><strong>${escapeHTML(item.staffName)} · ${escapeHTML(item.serviceName)}</strong><div class="co-muted">${item.earlyEnded ? '提前结束 · 实际 ' : '服务时长 · '}${Number(item.duration || 0)} 分钟</div>${item.earlyEnded ? `<label class="co-muted"><input type="checkbox" ${item.customPrice != null ? 'checked' : ''} onchange="toggleCustomCheckout(${idx},this.checked)"> Custom Amount / 自定义金额</label>${item.customPrice != null ? `<div><input type="number" min="0" step="0.01" value="${raw.toFixed(2)}" onchange="setInlineCheckoutAmount(${idx},this.value)" style="width:120px" aria-label="自定义金额"></div>` : ''}` : ''}</div><div>${final < raw ? `<del class="co-muted">$${raw.toFixed(2)}</del> ` : ''}<strong>$${final.toFixed(2)}</strong></div></div>`;
     }).join('');
 
     const hintEl = document.getElementById('checkoutMemberHint');
     const cardBtn = document.getElementById('payMemberCardBtn');
     if (member) {
       const earnPts = calcCartEarnedPoints(checkoutCart);
-      hintEl.textContent = `会员【${member.name}】享 ${member.discount}% 优惠，卡余额 $${Number(member.balance).toFixed(2)}，预计得 +${earnPts} 积分`;
+      hintEl.textContent = `会员【${member.name}】享 ${memberDiscountLabel(member)} 优惠，卡余额 $${Number(member.balance).toFixed(2)}，预计得 +${earnPts} 积分`;
       cardBtn.disabled = Number(member.balance) < finalTotal;
     } else {
       hintEl.textContent = '选择会员可自动享受对应折扣、从充值卡扣款并累计积分';
