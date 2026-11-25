@@ -428,7 +428,7 @@
         <span class="tag tag-amber" id="cloudStatusBadge">☁️ 未配置 Firebase</span>
       </h1>
       <div class="toolbar">
-        <span id="currentUserEmail" class="tag tag-blue"></span>
+        <button class="btn-outline btn-sm" onclick="openStoreZone()">⚙️ 门店营业设置</button><span id="storeClock" class="tag tag-blue"></span><span id="currentUserEmail" class="tag tag-blue"></span>
         <button class="btn-sm logout-btn" onclick="logout()">🚪 退出登录</button>
         <button class="btn-purple btn-sm" onclick="openMemberModal()">👑 年费会员 & 充值卡</button>
         <button class="btn-outline btn-sm" onclick="openContracts()">会员合同</button>
@@ -469,6 +469,7 @@
           <button class="btn-outline btn-sm" onclick="openAppointmentModal()">📅 今日预约 (<span id="todayApptBadge">0</span>)</button>
         </div>
       </div>
+      <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px"><div class="inline-inputs"><strong>实时排工看板</strong><button onclick="resetDispatch()">重置今日排工</button><button onclick="clearDispatchOverride()">恢复自动推荐</button></div><p style="color:var(--muted)">未接客按初始顺序；之后按完成单数、空闲时间排序。取消服务不计单。</p><div style="overflow:auto"><table><thead><tr><th>初始顺序</th><th>技师</th><th>今日单数</th><th>空闲时间</th><th>当前状态</th><th>排工顺位</th><th>操作</th></tr></thead><tbody id="dispatchBoard"></tbody></table></div></div>
     </div>
 
     <!-- 服务计时看板 -->
@@ -1041,14 +1042,18 @@
 
   const ADMIN_UID = '8qzT5mvmg6SX9MkEhywAb5iVB8u2';
   const FIRESTORE_DOC_PATH = ['pos_systems', 'default_store'];
-  const todayStr = () => new Intl.DateTimeFormat("en-CA", {timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
-  const nowStr = () => new Date().toLocaleString();
+  const zone = () => staffView?.storeZone || state.storeZone || 'America/Los_Angeles';
+  function dayAt(ms=Date.now(), tz=zone()) { const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(ms).map(x=>[x.type,x.value]));return `${p.year}-${p.month}-${p.day}`; }
+  const todayStr = () => dayAt();
+  const nowStr = () => storeTime(Date.now());
+  function storeTime(ms){return new Date(ms).toLocaleString('en-US',{timeZone:zone()});}
+  function storeHour(){return new Intl.DateTimeFormat('en-GB',{timeZone:zone(),hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());}
 
   let state = {
     lang: 'zh',
     role: null,
     therapistViewId: null,
-    dispatchDays: {}, rewardCodes: [], contractTemplate: null,
+    storeZone: "America/Los_Angeles", dispatchDays: {}, dispatchRecords: {}, dispatchControls: {}, rewardCodes: [], contractTemplate: null,
     employees: [],
     services: [],
     orders: [],
@@ -1340,7 +1345,7 @@
       const own = key => (payload[key]||[]).filter(x=>x.staffId===e.id);
       const clean = (arr, fields) => arr.map(x=>Object.fromEntries(fields.filter(k=>x[k]!==undefined).map(k=>[k,x[k]])));
       batch.set(doc(db,'staff_portals',phone), {
-        employeeId:e.id, name:e.name, role:e.role||'技师',
+        storeZone:payload.storeZone||"America/Los_Angeles", employeeId:e.id, name:e.name, role:e.role||'技师',
         timers:clean(own('timers'),['id','serviceName','startTime','endTime','durationMins','status','earlyEndedAt']),
         orders:clean(own('orders'),['id','date','duration','commission','payMethod']),
         tips:clean(own('tips'),['date','amount','type']),
@@ -1397,7 +1402,7 @@
     const appts=e.appointments.filter(a=>a.date>=today&&!['已取消','已完成','已开钟'].includes(a.status)).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
     const appt=a=>`<div class="staff-line"><strong>${h(a.date)} ${h(a.time)}</strong><div>${h(a.serviceName)} · ${h(a.status||'已预约')}</div></div>`;
     const timer=t=>{const sec=Math.max(0,Math.ceil((t.endTime-Date.now())/1000)), done=sec===0||t.earlyEndedAt;return `<div class="staff-hero"><div>${done?'待结账':'服务中'} · ${h(t.serviceName)}</div><strong class="staff-clock">${done?'已结束':Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')}</strong><progress max="100" value="${Math.max(0,Math.min(100,100*(Date.now()-t.startTime)/Math.max(1,t.endTime-t.startTime)))}"></progress><div>计划 ${Number(t.durationMins||0)} 分钟</div></div>`};
-    const localTime=new Intl.DateTimeFormat('en-GB',{timeZone:'America/Los_Angeles',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
+    const localTime=new Intl.DateTimeFormat('en-GB',{timeZone:zone(),hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
     const resting=e.leaves.some(l=>l.date===today&&l.start<=localTime&&l.end>localTime);
     let body='';
     if(staffTab==='home')body=`<h2>你好，${h(e.name)}</h2>${e.timers.map(timer).join('')||`<div class="staff-hero">${resting?'休息中':'当前空闲 / 可接单'}</div>`}<h3>今日业绩</h3>${stats}<div class="card"><h3>下一位预约</h3>${appts.length?appt(appts[0]):'暂无预约'}</div>`;
@@ -1631,6 +1636,7 @@
       bellPlayed: false,
       checked: false
     });
+    trackTimer(state.timers.at(-1)); const c=control(); c.override=null;c.skipped=[];
     saveState();
     renderTimers(); renderDispatch();
   }
@@ -1645,6 +1651,7 @@
     if (t.earlyEndedAt) return alert('服务已提前结束，请结账');
     t.durationMins = Math.max(1, (t.durationMins || 0) + addMins);
     t.endTime = Math.max(Date.now(), t.endTime) + addMins * 60000;
+    trackTimer(t);
     t.status = 'running';
     t.bellPlayed = false;
     input.value = '';
@@ -1708,6 +1715,7 @@
     const pin = prompt(`取消 ${t.staffName} · ${t.serviceName}？请输入四位取消密码。取消后不生成订单。`);
     if (pin === null) return;
     if (pin !== state.timerCancelPin) return alert('密码错误，服务未取消');
+    trackTimer(t);state.dispatchRecords[t.id].cancelled=true;
     state.timers = state.timers.filter(item => item.id !== timerId);
     invalidateTimerCheckout(timerId);
     addAudit('取消服务', `${t.staffName} · ${t.serviceName} · $${(Number(t.price || 0) + Number(t.extraCharge || 0)).toFixed(2)} · ${t.id}`);
@@ -1729,6 +1737,7 @@
     t.durationMins = Math.max(0, Math.floor((now - t.startTime) / 60000));
     t.earlyEndedAt = now;
     t.endTime = now;
+    trackTimer(t);
     t.status = 'done';
     t.bellPlayed = true;
     invalidateTimerCheckout(timerId);
@@ -2272,6 +2281,7 @@
     if (state.receipts.length > 100) state.receipts.pop();
 
     if (finishedTimerIds.size) {
+      for(const t of state.timers.filter(t=>finishedTimerIds.has(t.id))){if(t.endTime>Date.now())t.endTime=Date.now();trackTimer(t);}
       state.timers = state.timers.filter(t => !finishedTimerIds.has(t.id));
     }
 
@@ -2945,6 +2955,7 @@
   function renderTimers() {
     const now = Date.now();
     let bellNeeded = false;
+    for(const t of state.timers)if(!state.dispatchRecords?.[t.id])trackTimer(t);
 
     const html = state.timers.map(t => {
       const remMs = t.endTime - now;
@@ -2966,7 +2977,7 @@
             <span class="tag ${isDone ? 'tag-green' : 'tag-blue'}">${t.earlyEndedAt ? '提前结束 · ' + t.durationMins + '分钟' : isDone ? '已到点' : '计时中'}</span>
           </div>
           <div style="display:flex; justify-content:space-between; align-items:baseline;">
-            <div class="timer-clock">${mm}:${ss}</div>
+            <div><div class="timer-clock">${mm}:${ss}</div><small>${escapeHTML(storeTime(t.startTime))} → ${escapeHTML(storeTime(t.endTime))}</small></div>
             <div style="font-size:0.88em; font-weight:700;">
               合计 $${(Number(t.price) + extraVal).toFixed(2)} · 基础 $${Number(t.price).toFixed(2)} ${extraVal !== 0 ? `<span class="tag tag-amber">+加钱 $${extraVal.toFixed(2)}</span>` : ''}
             </div>
@@ -3303,9 +3314,20 @@
   const el=id=>document.getElementById(id);
   function maskPhone(v){return v?'••••'+String(v).slice(-4):'—';}
   function maskEmail(v){return v?String(v).slice(0,1)+'•••@•••':'—';}
-  function staffAvailable(e){const time=new Intl.DateTimeFormat('en-GB',{timeZone:'America/Los_Angeles',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());return !state.timers.some(t=>t.staffId===e.id&&t.endTime>Date.now()) && !(e.leaves||[]).some(l=>l.date===todayStr()&&l.start<=time&&time<l.end);}
-  function dispatchList(){const ids=state.dispatchDays?.[todayStr()]||state.employees.map(e=>e.id);return ids.map(id=>state.employees.find(e=>e.id===id)).filter(Boolean).map((e,i)=>{const orders=state.orders.filter(o=>o.staffId===e.id&&o.date===todayStr());const timers=state.timers.filter(t=>t.staffId===e.id&&t.endTime<=Date.now()&&new Date(t.startTime).toLocaleDateString('en-CA',{timeZone:'America/Los_Angeles'})===todayStr());return {e,i,count:new Set(orders.map(o=>o.dispatchKey||o.id)).size+timers.length,last:Math.max(0,...orders.map(o=>o.serviceEnd||0),...timers.map(t=>t.endTime))};}).sort((a,b)=>a.count-b.count||a.last-b.last||a.i-b.i);}
-  function renderDispatch(){const next=dispatchList().find(x=>staffAvailable(x.e));el('dispatchNext').textContent=next?`下一位：${next.e.name} · 已完成 ${next.count} 单`:'暂无可排工员工';}
+  function dispatchIds(){return state.dispatchDays?.[todayStr()]||state.employees.map(e=>e.id);}
+  function staffStatus(e){if(!dispatchIds().includes(e.id))return '未上班';if(state.timers.some(t=>t.staffId===e.id&&t.endTime>Date.now()))return '服务中';if((e.leaves||[]).some(l=>l.date===todayStr()&&l.start<=storeHour()&&storeHour()<l.end))return '休息中';return '空闲';}
+  function staffAvailable(e){return staffStatus(e)==='空闲';}
+  function control(){state.dispatchControls??={};return state.dispatchControls[todayStr()]??={resetAt:0,override:null,skipped:[]};}
+  function trackTimer(t){state.dispatchRecords??={};const old=state.dispatchRecords[t.id];state.dispatchRecords[t.id]={staffId:t.staffId,day:old?.day||dayAt(t.startTime),start:t.startTime,end:t.endTime,cancelled:false};}
+  function dispatchList(){const c=state.dispatchControls?.[todayStr()]||{resetAt:0,skipped:[]};const ids=dispatchIds();return state.employees.map(e=>{const i=ids.indexOf(e.id);const records=Object.values(state.dispatchRecords||{}).filter(r=>r.staffId===e.id&&r.day===todayStr()&&!r.cancelled&&r.start>=c.resetAt);const done=records.filter(r=>r.end<=Date.now());return {e,i,count:done.length,last:Math.max(0,...done.map(r=>r.end)),status:staffStatus(e)};}).sort((a,b)=>a.count-b.count||(a.count===0?0:a.last-b.last)||a.i-b.i);}
+  function renderDispatch(){const c=state.dispatchControls?.[todayStr()]||{skipped:[]};const rows=dispatchList();let eligible=rows.filter(x=>x.status==='空闲');const unskipped=eligible.filter(x=>!c.skipped.includes(x.e.id));if(unskipped.length)eligible=unskipped;eligible.sort((a,b)=>Number(b.e.id===c.override)-Number(a.e.id===c.override));const next=eligible[0];el('dispatchNext').textContent=next?`下一位：${next.e.name} · 已完成 ${next.count} 单`:'暂无可排工员工';const html=rows.sort((a,b)=>(a.i<0?99999:a.i)-(b.i<0?99999:b.i)).map(x=>{const rank=eligible.indexOf(x);const id=escapeHTML(x.e.id);return `<tr><td>${x.i<0?'—':x.i+1}</td><td>${escapeHTML(x.e.name)}</td><td>${x.count}</td><td>${x.status==='服务中'?'—':x.last?Math.max(0,Math.floor((Date.now()-x.last)/60000))+' 分钟':'未开工'}</td><td>${x.status}${c.skipped.includes(x.e.id)?' · 已跳过':''}</td><td>${rank<0?'—':rank===0?'<span class="tag tag-green">第1位</span>':'第'+(rank+1)+'位'}</td><td><button class="btn-sm" onclick="overrideDispatch('${id}')" ${x.status!=='空闲'?'disabled':''}>指定下一位</button> <button class="btn-sm" onclick="skipDispatch('${id}')" ${x.status!=='空闲'?'disabled':''}>跳过</button></td></tr>`}).join('');if(el('dispatchBoard').dataset.markup!==html){el('dispatchBoard').innerHTML=html;el('dispatchBoard').dataset.markup=html;}el('storeClock').textContent='门店 '+nowStr()+' · 设备 '+new Date().toLocaleString();}
+  function resetDispatch(){if(!canEditTimer()||!confirm('仅重置今日排工统计？营业及工资记录不变。'))return;Object.assign(control(),{resetAt:Date.now(),override:null,skipped:[]});saveState();renderDispatch();}
+  function overrideDispatch(id){if(!canEditTimer())return;const c=control();c.override=id;c.skipped=c.skipped.filter(x=>x!==id);saveState();renderDispatch();}
+  function skipDispatch(id){if(!canEditTimer())return;const c=control();if(!c.skipped.includes(id))c.skipped.push(id);if(c.override===id)c.override=null;saveState();renderDispatch();}
+  function clearDispatchOverride(){if(!canEditTimer())return;Object.assign(control(),{override:null,skipped:[]});saveState();renderDispatch();}
+  function openStoreZone(){showExtra('门店营业设置',`<p>时区（IANA 名称，自动适应夏令时）</p><input id="zoneInput" value="${escapeHTML(zone())}" list="zoneOptions"><datalist id="zoneOptions">${['America/Los_Angeles','America/New_York','America/Chicago','America/Denver','Asia/Shanghai','Asia/Tokyo','Pacific/Honolulu'].map(z=>`<option value="${z}">`).join('')}</datalist><p>营业日期切换：当地 00:00；排工依据：门店时间。</p><button onclick="saveStoreZone()">保存</button>`);}
+  function saveStoreZone(){if(!canEditTimer())return;const z=el('zoneInput').value.trim();try{new Intl.DateTimeFormat('en-US',{timeZone:z});}catch{return alert('无效时区');}if(!confirm('修改时区仅影响后续日期及显示，历史账目不迁移。继续？'))return;state.storeZone=z;for(const id of ['entryDate','statDate','apptDate','leaveDate'])if(el(id))el(id).value=todayStr();saveState();closeModal('extraModal');renderAll();}
+  Object.assign(window,{resetDispatch,overrideDispatch,skipDispatch,clearDispatchOverride,openStoreZone,saveStoreZone});
   function openDispatch(){const ids=state.dispatchDays?.[todayStr()]||state.employees.map(e=>e.id);const all=[...ids,...state.employees.map(e=>e.id).filter(id=>!ids.includes(id))];showExtra('今日排工顺序', '<p>按完成单数少、空闲时间长、初始顺序排序。取消勾选表示今日不上工。</p><div id="dispatchRows">'+all.map(id=>{const e=state.employees.find(x=>x.id===id);return e?`<div class="inline-inputs" data-id="${escapeHTML(id)}"><label><input type="checkbox" ${ids.includes(id)?'checked':''}>${escapeHTML(e.name)}</label><button onclick="moveDispatch(this,-1)">↑</button><button onclick="moveDispatch(this,1)">↓</button></div>`:''}).join('')+'</div><button class="btn-primary" onclick="saveDispatch()">保存今日顺序</button>');}
   function moveDispatch(b,d){const row=b.parentElement,p=row.parentElement;if(d<0&&row.previousElementSibling)p.insertBefore(row,row.previousElementSibling);if(d>0&&row.nextElementSibling)p.insertBefore(row.nextElementSibling,row);}
   function saveDispatch(){state.dispatchDays??={};state.dispatchDays[todayStr()]=[...el('dispatchRows').children].filter(x=>x.querySelector('input').checked).map(x=>x.dataset.id);saveState();renderDispatch();closeModal('extraModal');}
@@ -3314,10 +3336,10 @@
   function quickStartService(sid,id){const n=state.timers.length;startServiceTimer(sid,id);if(state.timers.length>n){closeModal('extraModal');el('serviceGrid').scrollIntoView({behavior:'smooth'});}}
   function refreshMemberExtras(){el('pointsEnabled').checked=state.memberCfg.pointsEnabled!==false;el('pointsRate').value=state.memberCfg.pointsRate||100;const select=el('memTier'),old=select.value;select.querySelectorAll('[data-custom]').forEach(x=>x.remove());for(const t of state.memberCfg.extraTiers||[]){const o=new Option(t.name,t.id);o.dataset.custom='1';select.add(o);}if([...select.options].some(o=>o.value===old))select.value=old;const t=state.contractTemplate;el('contractSign').innerHTML=t?`<details open><summary>会员合同：${escapeHTML(t.name)}</summary><pre style="white-space:pre-wrap;max-height:240px;overflow:auto">${escapeHTML(t.text)}</pre></details><label><input id="contractAgree" type="checkbox">我已阅读并同意合同，接受电子签名</label><input id="contractSignature" placeholder="会员本人输入完整姓名签字">`:'本店尚未设置合同';}
   function editTier(){const list=state.memberCfg.extraTiers??=[];const key=prompt('输入新增等级名称，或输入现有等级名称进行修改：\n'+list.map(t=>t.name).join(' / '));if(!key?.trim())return;const old=list.find(t=>t.name===key.trim());const f=prompt('年费 ($)',old?.fee??99),d=prompt('优惠百分比 (0–100)',old?.discount??10);if(f===null||d===null||!validMemberDiscount(d,'percent')||!validMemberDiscount(f,'fixed'))return alert('金额无效');const t={id:old?.id||crypto.randomUUID(),name:key.trim(),fee:Number(f),discount:Number(d),type:'percent'};if(old)Object.assign(old,t);else list.push(t);saveState();refreshMemberExtras();}
-  function openContracts(){showExtra('会员合同管理',`<p>上传 UTF-8 TXT 合同；签署后保存原文快照。邮件需后台服务，当前可下载并手动发送。</p><input type="file" accept=".txt,text/plain" onchange="uploadContract(this)"><button onclick="removeContract()">停用新合同</button><p>当前：${escapeHTML(state.contractTemplate?.name||'未设置')}</p>`+state.members.filter(m=>m.contract).map(m=>`<div class="staff-line">${escapeHTML(m.name)} · ${escapeHTML(maskEmail(m.email))} · ${escapeHTML(m.contract.signedAt)} <button onclick="downloadContract('${m.id}')">查看/下载签署合同</button></div>`).join(''));}
+  function openContracts(){showExtra('会员合同管理',`<p>上传 UTF-8 TXT 合同；签署后保存原文快照。邮件需后台服务，当前可下载并手动发送。</p><input type="file" accept=".txt,text/plain" onchange="uploadContract(this)"><button onclick="removeContract()">停用新合同</button><p>当前：${escapeHTML(state.contractTemplate?.name||'未设置')}</p>`+state.members.filter(m=>m.contract).map(m=>`<div class="staff-line">${escapeHTML(m.name)} · ${escapeHTML(maskEmail(m.email))} · ${escapeHTML(storeTime(Date.parse(m.contract.signedAt)))} <button onclick="downloadContract('${m.id}')">查看/下载签署合同</button></div>`).join(''));}
   async function uploadContract(input){const f=input.files[0];if(!f)return;if(f.size>20000)return alert('合同文本上限20KB；当前数据库为单文档结构');const text=await f.text();if(!text.trim())return alert('合同为空');state.contractTemplate={name:f.name,text,version:crypto.randomUUID()};await saveState();openContracts();}
   function removeContract(){if(confirm('停用新注册合同？历史签署记录保留。')){state.contractTemplate=null;saveState();openContracts();}}
-  function downloadContract(id){const m=state.members.find(x=>x.id===id),c=m?.contract;if(!c)return;const text=c.text+'\n\n会员：'+m.name+'\n电子签名：'+c.signature+'\n签署时间：'+c.signedAt+'\n合同版本：'+c.version+'\n会员邮箱：'+c.memberEmail+'\n店长邮箱：'+c.ownerEmail;const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='signed-'+id+'.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+  function downloadContract(id){const m=state.members.find(x=>x.id===id),c=m?.contract;if(!c)return;const text=c.text+'\n\n会员：'+m.name+'\n电子签名：'+c.signature+'\n签署时间：'+storeTime(Date.parse(c.signedAt))+' ('+zone()+')'+'\n合同版本：'+c.version+'\n会员邮箱：'+c.memberEmail+'\n店长邮箱：'+c.ownerEmail;const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='signed-'+id+'.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
   function redeemPoints(id){if(state.memberCfg.pointsEnabled===false)return alert('积分已关闭');const m=state.members.find(x=>x.id===id);if(!m)return;const rate=state.memberCfg.pointsRate||100;const raw=prompt(`余额 ${m.points||0} 分，每 ${rate} 分兑换 $1。输入兑换美元金额`,'5');if(raw===null)return;const dollars=Number(raw),cost=Math.ceil(dollars*rate);if(!Number.isFinite(dollars)||dollars<=0||cost>m.points)return alert('积分不足或金额无效');const type=prompt('输入 1 礼卡 / 2 优惠券','2');if(!['1','2'].includes(type))return;const code=crypto.randomUUID();m.points-=cost;state.rewardCodes??=[];state.rewardCodes.push({code,memberId:id,type:type==='1'?'礼品卡':'优惠券',amount:dollars,used:false});addAudit('积分兑换',`${cost}分 → $${dollars}`);saveState();renderMembers();alert('兑换码：'+code+'（目前需人工核销）');}
   Object.assign(window,{openDispatch,moveDispatch,saveDispatch,quickStart,quickStartService,editTier,openContracts,uploadContract,removeContract,downloadContract,redeemPoints});
 
@@ -3342,6 +3364,7 @@
 
   setInterval(() => {
     if (currentUser && currentUser.uid === ADMIN_UID && initialCloudLoaded && cloudEnabled && !saveFailed) {
+      const d=todayStr();if(window.lastStoreDay&&window.lastStoreDay!==d){for(const id of ["entryDate","statDate"])if(el(id).value===window.lastStoreDay)el(id).value=d;renderAll();}window.lastStoreDay=d;
       renderTimers(); renderDispatch();
     }
   }, 1000);
