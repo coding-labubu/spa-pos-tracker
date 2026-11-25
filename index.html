@@ -415,6 +415,7 @@
         <button class="btn-purple btn-sm" onclick="openMemberModal()">👑 年费会员 & 充值卡</button>
         <button class="btn-primary btn-sm" onclick="openAppointmentModal()">📅 预约排班</button>
         <button class="btn-warning btn-sm" onclick="openExpenseModal()">💸 门店支出</button>
+        <button class="btn-outline btn-sm boss-only" onclick="configureCardFee()">💳 手续费设置</button>
         <button class="btn-outline btn-sm" onclick="openCardCouponModal()">🎁 礼卡/优惠券设置</button>
         <button class="btn-outline btn-sm" id="soundToggleBtn" onclick="toggleSound()">🔔 铃声:开</button>
         <button class="btn-outline btn-sm" onclick="playBell()">🔊 试听</button>
@@ -1057,6 +1058,7 @@
       doubleDisc: 15,
       pointsPerDollar: 1
     },
+    cardFeeConfig: { mode: 'fixed', value: 2 },
     revenueRules: {
       countGiftCardSale: true,
       countGiftCardUse: false,
@@ -1120,6 +1122,7 @@
       ...state,
       ...clean,
       memberCfg: { ...state.memberCfg, ...(clean.memberCfg || {}) },
+      cardFeeConfig: { ...EMPTY_STATE.cardFeeConfig, ...(clean.cardFeeConfig || {}) },
       revenueRules: { ...state.revenueRules, ...(clean.revenueRules || {}) },
       expenses: Array.isArray(clean.expenses) ? clean.expenses : state.expenses,
       appointments: Array.isArray(clean.appointments) ? clean.appointments : state.appointments,
@@ -1766,7 +1769,8 @@
       price: totalPrice,
       commission: calcCommission(srv, totalPrice),
       duration: t.durationMins || 0,
-      timerId: t.id
+      timerId: t.id,
+      earlyEnded: !!t.earlyEndedAt
     };
   }
 
@@ -2033,6 +2037,7 @@
     const target = getCurrentCheckoutPayable();
     let entered = 0;
     document.querySelectorAll('.split-amount').forEach(inp => { entered += parseFloat(inp.value) || 0; });
+    const fee = Array.from(document.querySelectorAll('.split-row')).reduce((sum, row) => sum + cardFeeFor({method: row.querySelector('.split-method').value, amount: Number(row.querySelector('.split-amount').value) || 0}), 0);
     const diff = +(target - entered).toFixed(2);
     const hint = document.getElementById('splitRemainHint');
     if (!hint) return;
@@ -2043,6 +2048,7 @@
       hint.style.color = 'var(--danger)';
       hint.textContent = `应收 $${target.toFixed(2)} · 已填 $${entered.toFixed(2)} · 差额 $${diff.toFixed(2)}`;
     }
+    hint.textContent += ` · 手续费 $${fee.toFixed(2)} · 实收 $${(target + fee).toFixed(2)}`;
   }
 
   function updateCheckoutTotalDisplay() {
@@ -2053,14 +2059,15 @@
     let rawTotal = 0;
     let finalTotal = 0;
 
-    document.getElementById('checkoutItemsList').innerHTML = checkoutCart.map(item => {
-      const raw = Number(item.price || 0);
+    document.getElementById('checkoutItemsList').innerHTML = checkoutCart.map((item, idx) => {
+      const raw = Number(item.customPrice ?? item.price ?? 0);
       const final = +(raw * (1 - discRate)).toFixed(2);
       item.finalPrice = final;
+      if (item.earlyEnded) item.commission = calcCommission(state.services.find(s => s.id === item.serviceId), raw);
       rawTotal += raw;
       finalTotal += final;
       return `<div style="padding:5px 0; border-bottom:1px dashed var(--border); display:flex; justify-content:space-between;">
-        <span>${escapeHTML(item.staffName)} · ${escapeHTML(item.serviceName)}</span>
+        <span>${escapeHTML(item.staffName)} · ${escapeHTML(item.serviceName)} ${item.earlyEnded ? `<small>（实际 ${item.duration} 分钟）</small> <button class="btn-outline btn-sm" onclick="customCheckoutAmount(${idx})">Custom Amount</button> ${item.customPrice != null ? `<button class="btn-outline btn-sm" onclick="customCheckoutAmount(${idx}, true)">恢复原价</button>` : ''}` : ''}</span>
         <span>${discRate > 0 ? `<del style="color:var(--muted);">$${raw.toFixed(2)}</del> ` : ''}<strong>$${final.toFixed(2)}</strong></span>
       </div>`;
     }).join('');
@@ -2082,7 +2089,54 @@
     updateSplitHint();
   }
 
-  function finalizeOrderCheckout(payments) {
+  function customCheckoutAmount(idx, reset = false) {
+    const item = checkoutCart[idx];
+    if (!item?.earlyEnded) return;
+    if (reset) delete item.customPrice;
+    else {
+      const input = prompt('自定义项目金额（会员折扣前，不含手续费） / Custom Amount', Number(item.customPrice ?? item.price).toFixed(2));
+      if (input === null) return;
+      if (!/^\d+(\.\d{1,2})?$/.test(input.trim()) || !Number.isFinite(Number(input))) return alert('请输入有效金额（最多两位小数）');
+      item.customPrice = Number(input);
+    }
+    updateCheckoutTotalDisplay();
+  }
+
+  function configureCardFee() {
+    if (state.role !== 'boss') return;
+    const cfg = state.cardFeeConfig;
+    const mode = prompt('手续费模式：1 = 固定金额，2 = 百分比，0 = 关闭', cfg.mode === 'fixed' ? '1' : cfg.mode === 'percent' ? '2' : '0');
+    if (mode === null) return;
+    if (!['0','1','2'].includes(mode)) return alert('请选择 0、1 或 2');
+    const input = mode === '0' ? '0' : prompt(mode === '1' ? '每笔固定手续费 ($)' : '银行卡手续费百分比 (%)', String(cfg.value));
+    if (input === null) return;
+    const value = Number(input);
+    if (!/^\d+(\.\d{1,2})?$/.test(input.trim()) || !Number.isFinite(value) || (mode === '2' && value > 100)) return alert('请输入有效数值');
+    state.cardFeeConfig = { mode: mode === '1' ? 'fixed' : mode === '2' ? 'percent' : 'off', value };
+    addAudit('修改银行卡手续费', JSON.stringify(state.cardFeeConfig));
+    saveState();
+    updateSplitHint();
+  }
+
+  function cardFeeFor(p) {
+    if (p.method !== '银行卡' || p.amount <= 0) return 0;
+    const cfg = state.cardFeeConfig;
+    const value = Number(cfg.value);
+    if (!Number.isFinite(value) || value < 0) return 0;
+    return +(cfg.mode === 'fixed' ? value : cfg.mode === 'percent' ? p.amount * value / 100 : 0).toFixed(2);
+  }
+
+  function confirmCheckoutPayments(payments) {
+    if (!currentUser || currentUser.uid !== ADMIN_UID || !initialCloudLoaded || !cloudEnabled || saveFailed) return alert('云端不可用，无法结账');
+    if (!checkoutCart.length || checkoutCart.some(it => it.timerId && !state.timers.some(t => t.id === it.timerId))) return alert('服务已变更，请重新打开结账');
+    const fee = payments.reduce((sum, p) => sum + cardFeeFor(p), 0);
+    const total = getCurrentCheckoutPayable();
+    const lines = payments.map(p => `${p.method}: $${p.amount.toFixed(2)}${cardFeeFor(p) ? ` + 手续费 $${cardFeeFor(p).toFixed(2)}` : ''}`);
+    if (!confirm(`请确认收款 / Confirm Payment\n\n${lines.join('\n')}\n项目合计 $${total.toFixed(2)}\n银行卡手续费 $${fee.toFixed(2)}\n最终实收 $${(total + fee).toFixed(2)}\n\n确认后将正式入账。`)) return;
+    finalizeOrderCheckout(payments, fee);
+  }
+
+  function finalizeOrderCheckout(payments, cardFee = 0) {
     const dateVal = document.getElementById('entryDate').value || todayStr();
     const memId = document.getElementById('checkoutMemberSelect')?.value;
     const member = state.members.find(m => m.id === memId);
@@ -2124,8 +2178,11 @@
         const itemPrice = Number(item.finalPrice ?? item.price ?? 0);
         const ratio = totalPayable > 0 ? (itemPrice / totalPayable) : (1 / checkoutCart.length);
         payments.forEach((p, pIdx) => {
-          const partPrice = +(p.amount * ratio).toFixed(2);
-          const partComm = +(Number(item.commission || 0) * ratio).toFixed(2);
+          const prior = checkoutCart.slice(0, idx).reduce((sum, it) => sum + Number(it.finalPrice ?? it.price ?? 0), 0);
+          const partPrice = totalPayable > 0 ? (Math.round(p.amount * 100 * (prior + itemPrice) / totalPayable) - Math.round(p.amount * 100 * prior / totalPayable)) / 100 : 0;
+          const prevPay = payments.slice(0, pIdx).reduce((sum, x) => sum + x.amount, 0);
+          const comm = Number(item.commission || 0);
+          const partComm = totalPayable > 0 ? (Math.round(comm * 100 * (prevPay + p.amount) / totalPayable) - Math.round(comm * 100 * prevPay / totalPayable)) / 100 : 0;
           state.orders.push({
             id: `ord_${baseTs}_${idx}_${pIdx}_${Math.random().toString(36).slice(2, 6)}`,
             date: dateVal,
@@ -2150,15 +2207,17 @@
       memberSummaryText = `${member.name} · 剩余余额 $${member.balance.toFixed(2)} · 本次+${earnedPts}分 (总${member.points}分)`;
     }
 
+    if (cardFee > 0) state.serviceFees.push({ id: 'sf_card_' + baseTs, date: dateVal, category: '银行卡手续费', payMethod: '银行卡', amount: +cardFee.toFixed(2), note: '结账 RC-' + baseTs.toString().slice(-6) });
     const receiptPayload = {
       receiptNo: 'RC-' + baseTs.toString().slice(-6),
       time: nowStr(),
       title: '门店服务消费收据',
       items: checkoutCart.map(it => ({ name: `${it.serviceName} (${it.staffName})`, amount: Number(it.finalPrice ?? it.price ?? 0) })),
-      totalPaid: totalPayable,
-      payments,
+      totalPaid: +(totalPayable + cardFee).toFixed(2),
+      payments: payments.map(p => ({ ...p, amount: +(p.amount + cardFeeFor(p)).toFixed(2) })),
       memberInfo: memberSummaryText
     };
+    if (cardFee > 0) receiptPayload.items.push({ name: '银行卡手续费 / Card fee', amount: +cardFee.toFixed(2) });
     state.receipts.unshift(receiptPayload);
     if (state.receipts.length > 100) state.receipts.pop();
 
@@ -2176,7 +2235,7 @@
   function completeCheckout(payMethod) {
     if (!checkoutCart.length) return;
     const total = getCurrentCheckoutPayable();
-    finalizeOrderCheckout([{ method: payMethod, amount: +total.toFixed(2) }]);
+    confirmCheckoutPayments([{ method: payMethod, amount: +total.toFixed(2) }]);
   }
 
   function completeSplitCheckout() {
@@ -2190,10 +2249,10 @@
     });
     if (!payments.length) return alert('请填写拆分支付金额');
     const sum = payments.reduce((s, p) => s + p.amount, 0);
-    if (Math.abs(sum - target) >= 0.02) {
+    if (Math.round(sum * 100) !== Math.round(target * 100)) {
       return alert(`拆分金额合计 ($${sum.toFixed(2)}) 与应收总额 ($${target.toFixed(2)}) 不一致！`);
     }
-    finalizeOrderCheckout(payments);
+    confirmCheckoutPayments(payments);
   }
 
   function showReceiptModal(rc) {
@@ -2264,12 +2323,13 @@
     const couponUse = orders.filter(o => o.payMethod === '优惠券').reduce((s, o) => s + Number(o.price || 0), 0);
 
     const serviceFeeIncome = fees.filter(f => (f.category || '服务费') === '服务费').reduce((s, f) => s + Number(f.amount || 0), 0);
+    const cardFeeIncome = fees.filter(f => f.category === '银行卡手续费').reduce((s, f) => s + Number(f.amount || 0), 0);
     const memberFeeIncome = fees.filter(f => f.category === '会员费' || f.category === '会员充值').reduce((s, f) => s + Number(f.amount || 0), 0);
     const giftCardSale = fees.filter(f => f.category === '销售礼卡').reduce((s, f) => s + Number(f.amount || 0), 0);
     const couponSale = fees.filter(f => f.category === '销售优惠券').reduce((s, f) => s + Number(f.amount || 0), 0);
 
     const countedTotal =
-      cashOrders + cardOrders + venmoOrders + memberCardUse + serviceFeeIncome + memberFeeIncome +
+      cashOrders + cardOrders + venmoOrders + memberCardUse + serviceFeeIncome + memberFeeIncome + cardFeeIncome +
       (r.countGiftCardSale ? giftCardSale : 0) +
       (r.countGiftCardUse ? giftCardUse : 0) +
       (r.countCouponSale ? couponSale : 0) +
@@ -2277,7 +2337,7 @@
 
     return {
       cashOrders, cardOrders, venmoOrders, memberCardUse,
-      memberFeeIncome, serviceFeeIncome,
+      memberFeeIncome, serviceFeeIncome, cardFeeIncome,
       giftCardSale, giftCardUse, couponSale, couponUse,
       countedTotal
     };
@@ -2298,6 +2358,7 @@
           <tr><td>💳 银行卡收入（项目）</td><td><strong>$${b.cardOrders.toFixed(2)}</strong></td><td><span class="tag tag-green">计入</span></td></tr>
           <tr><td>📱 Venmo 收入（项目）</td><td><strong>$${b.venmoOrders.toFixed(2)}</strong></td><td><span class="tag tag-green">计入</span></td></tr>
           <tr><td>👑 会员年费 / 充值入账</td><td><strong>$${b.memberFeeIncome.toFixed(2)}</strong></td><td><span class="tag tag-green">计入</span></td></tr>
+          <tr><td>💳 银行卡手续费收入</td><td><strong>$${b.cardFeeIncome.toFixed(2)}</strong></td><td>计入</td></tr>
           <tr><td>🛎️ 服务费收入</td><td><strong>$${b.serviceFeeIncome.toFixed(2)}</strong></td><td><span class="tag tag-green">计入</span></td></tr>
           <tr><td>🎁 礼卡收入 — 销售礼卡</td><td><strong>$${b.giftCardSale.toFixed(2)}</strong></td><td>${badge(r.countGiftCardSale)}</td></tr>
           <tr><td>🛍️ 礼卡收入 — 使用礼卡消费</td><td><strong>$${b.giftCardUse.toFixed(2)}</strong></td><td>${badge(r.countGiftCardUse)}</td></tr>
@@ -3193,7 +3254,7 @@
     toggleSelectAllTimers, openMergedCheckout, setTipType, addTip, addQuickTip,
     setSfPay, addServiceFee, setPeriod, clearStaffFilter, saveEmployee, editEmployee, deleteEmployee,
     updateCommLabel, saveService, editService, deleteService, completeCheckout, completeSplitCheckout,
-    addSplitRow, updateSplitHint, resetData,
+    addSplitRow, updateSplitHint, resetData, configureCardFee, customCheckoutAmount,
     startServiceTimer, extendTimerCustom, addTimerExtraCharge, toggleTimerCheck, changeTimerCancelPin, cancelServiceTimer, endServiceTimerEarly,
     openDirectServiceCheckout, openTimerCheckout, deleteOrder, deleteTip, deleteServiceFee,
     selectAndFocusStaff, openStaffDetailModal, openMemberModal, saveMemberConfig,
