@@ -431,6 +431,7 @@
         <span id="currentUserEmail" class="tag tag-blue"></span>
         <button class="btn-sm logout-btn" onclick="logout()">🚪 退出登录</button>
         <button class="btn-purple btn-sm" onclick="openMemberModal()">👑 年费会员 & 充值卡</button>
+        <button class="btn-outline btn-sm" onclick="openContracts()">会员合同</button>
         <button class="btn-primary btn-sm" onclick="openAppointmentModal()">📅 预约排班</button>
         <button class="btn-warning btn-sm" onclick="openExpenseModal()">💸 门店支出</button>
         <button class="btn-outline btn-sm boss-only" onclick="configureCardFee()">💳 手续费设置</button>
@@ -461,7 +462,7 @@
           <strong data-i18n="entryDate">📅 记账日期：</strong>
           <input type="date" id="entryDate" onchange="renderAll()" />
           <strong style="margin-left:8px;" data-i18n="curTech">👤 当前技师：</strong>
-          <div class="staff-pills" id="quickStaffBar"></div>
+          <div class="staff-pills" id="quickStaffBar"></div><button onclick="openDispatch()">设置今日排工</button><div id="dispatchNext" style="color:#166534;font-weight:700"></div>
           <button class="btn-outline btn-sm" onclick="openStaffDetailModal(state.selectedStaffId)" id="viewCurStaffBtn">📋 查看该技师详情</button>
         </div>
         <div class="inline-inputs">
@@ -763,14 +764,14 @@
           <label>双人年费($): <input type="number" id="cfgDoublePrice" style="width:75px;" /></label>
           <label>双人优惠: <select id="cfgDoubleDiscType"><option value="percent">百分比 (%)</option><option value="fixed">固定金额 ($)</option></select> <input min="0" step="0.01" type="number" id="cfgDoubleDisc" style="width:70px;" /></label>
           <label>每消费$1得积分: <input type="number" id="cfgPointsPerDollar" step="0.1" value="1" style="width:65px;" /></label>
-          <button class="btn-primary btn-sm" onclick="saveMemberConfig()">💾 保存规则</button>
+          <label><input type="checkbox" id="pointsEnabled" checked /> 启用积分</label><label>每 $1 兑换所需积分 <input type="number" id="pointsRate" min="1" value="100" style="width:85px" /></label><button onclick="editTier()">添加/修改会员等级</button><button class="btn-primary btn-sm" onclick="saveMemberConfig()">💾 保存规则</button>
         </div>
       </div>
       <div class="card" style="padding:10px; margin-bottom:10px;">
         <div style="font-weight:700; margin-bottom:6px;">➕ 开通新会员 / 年费办卡（自动生成可打印收据）</div>
         <div class="inline-inputs">
           <input type="text" id="memName" placeholder="会员姓名" style="width:115px;" />
-          <input type="text" id="memPhone" placeholder="手机号/卡号" style="width:125px;" />
+          <input type="email" id="memEmail" placeholder="邮箱" /><label>生日 <input type="date" id="memBirthday" /></label><input type="text" id="memPhone" placeholder="手机号/卡号" style="width:125px;" />
           <select id="memTier">
             <option value="single">单人年费会员</option>
             <option value="double">双人年费会员</option>
@@ -783,7 +784,7 @@
             <option value="现金">💵 现金</option>
             <option value="Venmo">📱 Venmo</option>
           </select>
-          <button class="btn-success btn-sm" onclick="createMember()">✅ 立即办卡并打印收据</button>
+          <div id="contractSign" style="width:100%"></div><button class="btn-success btn-sm" onclick="createMember()">✅ 立即办卡并打印收据</button>
         </div>
       </div>
       <div class="inline-inputs" style="margin-bottom:8px;">
@@ -1023,6 +1024,7 @@
     </div>
   </div>
 
+<div class="modal-backdrop" id="extraModal" style="z-index:1100"><div class="modal"><div class="card-title"><span id="extraTitle"></span><button onclick="closeModal('extraModal')">关闭</button></div><div id="extraBody"></div></div></div>
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js';
   import { doc, setDoc, getDocFromServer, collection, getDocsFromServer, writeBatch, onSnapshot, serverTimestamp, initializeFirestore } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
@@ -1046,6 +1048,7 @@
     lang: 'zh',
     role: null,
     therapistViewId: null,
+    dispatchDays: {}, rewardCodes: [], contractTemplate: null,
     employees: [],
     services: [],
     orders: [],
@@ -1609,6 +1612,7 @@
     const emp = state.employees.find(e => e.id === targetStaff);
     if (!srv || !emp) return;
 
+    if (!canEditTimer() || !staffAvailable(emp)) return alert("该员工正在服务或休息，或云端未连接");
     const mins = srv.duration > 0 ? srv.duration : 60;
     const now = Date.now();
     state.timers.push({
@@ -1628,7 +1632,7 @@
       checked: false
     });
     saveState();
-    renderTimers();
+    renderTimers(); renderDispatch();
   }
 
   function extendTimerCustom(timerId) {
@@ -1813,6 +1817,7 @@
     document.getElementById('cfgDoubleDiscType').value = state.memberCfg.doubleDiscType || 'percent';
     document.getElementById('cfgDoubleDisc').value = state.memberCfg.doubleDisc ?? 15;
     document.getElementById('cfgPointsPerDollar').value = state.memberCfg.pointsPerDollar ?? 1;
+    refreshMemberExtras();
     renderMembers();
     document.getElementById('memberModal').classList.add('open');
   }
@@ -1827,7 +1832,8 @@
     state.memberCfg.doublePrice = parseFloat(document.getElementById('cfgDoublePrice').value) || 0;
     state.memberCfg.doubleDiscType = document.getElementById('cfgDoubleDiscType').value;
     state.memberCfg.doubleDisc = parseFloat(document.getElementById('cfgDoubleDisc').value) || 0;
-    state.memberCfg.pointsPerDollar = parseFloat(document.getElementById('cfgPointsPerDollar').value) || 1;
+    state.memberCfg.pointsPerDollar = Math.max(0, Number(document.getElementById('cfgPointsPerDollar').value)||0);
+    state.memberCfg.pointsEnabled = el("pointsEnabled").checked; state.memberCfg.pointsRate = Math.max(1, Number(el("pointsRate").value)||100);
     saveState();
     alert('会员与积分规则已保存');
   }
@@ -1837,6 +1843,11 @@
     const phone = document.getElementById('memPhone').value.trim();
     if (!name || !phone) return alert('请输入会员姓名和手机号/卡号');
 
+    const email = el("memEmail").value.trim(), birthday = el("memBirthday").value;
+    if (!email || !el("memEmail").checkValidity() || !birthday || birthday > todayStr()) return alert("请输入有效邮箱和生日");
+    if (state.members.some(m=>m.phone===phone)) return alert("该手机号/卡号已注册");
+    const template=state.contractTemplate;
+    if(template && (!el("contractAgree")?.checked || !el("contractSignature")?.value.trim())) return alert("请阅读合同并签字确认");
     const tier = document.getElementById('memTier').value;
     const customDiscRaw = document.getElementById('memCustomDisc').value;
     const initBalance = parseFloat(document.getElementById('memInitBalance').value) || 0;
@@ -1846,23 +1857,27 @@
     if (tier === 'single') { fee = Number(state.memberCfg.singlePrice || 0); defaultDisc = Number(state.memberCfg.singleDisc || 0); tierLabel = '单人年费会员'; }
     else if (tier === 'double') { fee = Number(state.memberCfg.doublePrice || 0); defaultDisc = Number(state.memberCfg.doubleDisc || 0); tierLabel = '双人年费会员'; }
 
+    const customTier=(state.memberCfg.extraTiers||[]).find(t=>t.id===tier); if(customTier){fee=customTier.fee;defaultDisc=customTier.discount;tierLabel=customTier.name;}
+    if(initBalance<0 || fee<0) return alert('金额不能为负');
     const choice = document.getElementById('memDiscType').value;
-    const discountType = choice === 'default' ? (tier === 'single' ? state.memberCfg.singleDiscType : tier === 'double' ? state.memberCfg.doubleDiscType : 'percent') || 'percent' : choice;
+    const discountType = choice === 'default' ? (tier === 'single' ? state.memberCfg.singleDiscType : tier === 'double' ? state.memberCfg.doubleDiscType : customTier?.type || 'percent') || 'percent' : choice;
     const discountInput = choice === 'default' ? defaultDisc : customDiscRaw;
     if (!validMemberDiscount(discountInput, discountType)) return alert('请输入有效优惠：百分比 0–100，固定金额不得为负');
     const discount = Number(discountInput);
     const totalCollected = +(fee + initBalance).toFixed(2);
-    const initPoints = Math.round(totalCollected * Number(state.memberCfg.pointsPerDollar || 1));
+    const initPoints = Math.round(totalCollected * (state.memberCfg.pointsEnabled===false?0:Number(state.memberCfg.pointsPerDollar ?? 1)));
     const dateVal = document.getElementById('entryDate').value || todayStr();
 
     const newMem = {
       id: 'mem_' + Date.now(),
-      name, phone, tier, tierLabel, discount, discountType,
+      name, phone, email, birthday, tier, tierLabel, discount, discountType,
+      contract: template ? { ...template, signature:el("contractSignature").value.trim(), signedAt:new Date().toISOString(), memberEmail:email, ownerEmail:currentUser.email||"", delivery:"pending" } : null,
       balance: +initBalance.toFixed(2),
       points: initPoints,
       createdAt: dateVal
     };
     state.members.unshift(newMem);
+    el("memEmail").value="";el("memBirthday").value="";refreshMemberExtras();
 
     const receiptLines = [];
     if (fee > 0) {
@@ -1907,7 +1922,7 @@
 
     const method = prompt('请输入收款方式（银行卡 / 现金 / Venmo）：', '银行卡') || '银行卡';
     m.balance = +((Number(m.balance || 0) + amt).toFixed(2));
-    const addedPts = Math.round(amt * Number(state.memberCfg.pointsPerDollar || 1));
+    const addedPts = Math.round(amt * (state.memberCfg.pointsEnabled===false?0:Number(state.memberCfg.pointsPerDollar ?? 1)));
     m.points = (Number(m.points || 0) + addedPts);
 
     state.serviceFees.push({
@@ -1977,16 +1992,17 @@
 
   function renderMembers() {
     const kw = (document.getElementById('memberSearchInput')?.value || '').trim().toLowerCase();
-    const list = state.members.filter(m => !kw || m.name.toLowerCase().includes(kw) || m.phone.toLowerCase().includes(kw));
+    const list = state.members.filter(m => !kw || m.name.toLowerCase().includes(kw) || String(m.phone||"").toLowerCase().includes(kw) || String(m.email||"").toLowerCase().includes(kw));
     document.getElementById('memberTableBody').innerHTML = list.map(m => `
       <tr>
         <td><strong>${escapeHTML(m.name)}</strong></td>
-        <td>${escapeHTML(m.phone)}</td>
+        <td>${escapeHTML(maskPhone(m.phone))}<br>${escapeHTML(maskEmail(m.email))}</td>
         <td><span class="tag tag-purple">${escapeHTML(m.tierLabel || '会员')}</span></td>
         <td><strong>${memberDiscountLabel(m)}</strong></td>
         <td style="color:var(--success); font-weight:700;">$${Number(m.balance || 0).toFixed(2)}</td>
         <td><span class="tag tag-amber">${Number(m.points || 0)} 分</span></td>
         <td>
+          <button class="btn-sm" onclick="redeemPoints('${m.id}')">兑换积分</button>
           <button class="btn-success btn-sm" onclick="topupMember('${m.id}')">💰 充值</button>
           <button class="btn-primary btn-sm" onclick="chargeMemberTip('${m.id}')">💵 扣小费</button>
           <button class="btn-outline btn-sm" onclick="editMemberDiscount('${m.id}')">🏷️ 调优惠</button>
@@ -1996,7 +2012,8 @@
   }
 
   function calcCartEarnedPoints(items) {
-    const ppd = Number(state.memberCfg.pointsPerDollar || 1);
+    if(state.memberCfg.pointsEnabled===false)return 0;
+    const ppd = (state.memberCfg.pointsEnabled===false?0:Number(state.memberCfg.pointsPerDollar ?? 1));
     let points = 0;
     items.forEach(item => {
       const srv = state.services.find(s => s.id === item.serviceId);
@@ -2027,7 +2044,7 @@
     selectedCheckoutMethod = '现金'; clearCheckoutConfirmation();
     const sel = document.getElementById('checkoutMemberSelect');
     sel.innerHTML = `<option value="">-- 非会员 / 不使用会员卡 --</option>` +
-      state.members.map(m => `<option value="${m.id}">${escapeHTML(m.name)} (${escapeHTML(m.phone)}) · 享${memberDiscountLabel(m)} · 余额$${Number(m.balance).toFixed(2)}</option>`).join('');
+      state.members.map(m => `<option value="${m.id}">${escapeHTML(m.name)} (${escapeHTML(maskPhone(m.phone))}) · 享${memberDiscountLabel(m)} · 余额$${Number(m.balance).toFixed(2)}</option>`).join('');
 
     document.getElementById('splitRowsContainer').innerHTML = '';
     addSplitRow();
@@ -2194,7 +2211,7 @@
         const actualPrice = Number(item.finalPrice ?? item.price ?? 0);
         state.orders.push({
           id: `ord_${baseTs}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
-          date: dateVal,
+          date: dateVal, dispatchKey: `${baseTs}_${idx}`, serviceEnd: state.timers.find(t=>t.id===item.timerId)?.endTime || baseTs,
           staffId: item.staffId,
           staffName: item.staffName,
           serviceId: item.serviceId,
@@ -2218,7 +2235,7 @@
           const partComm = totalPayable > 0 ? (Math.round(comm * 100 * (prevPay + p.amount) / totalPayable) - Math.round(comm * 100 * prevPay / totalPayable)) / 100 : 0;
           state.orders.push({
             id: `ord_${baseTs}_${idx}_${pIdx}_${Math.random().toString(36).slice(2, 6)}`,
-            date: dateVal,
+            date: dateVal, dispatchKey: `${baseTs}_${idx}`, serviceEnd: state.timers.find(t=>t.id===item.timerId)?.endTime || baseTs,
             staffId: item.staffId,
             staffName: item.staffName,
             serviceId: item.serviceId,
@@ -3009,7 +3026,7 @@
   function renderAll() {
     document.getElementById("staffAccountList").innerHTML=state.employees.map(e=>`<div>${escapeHTML(e.name)} · ${e.portalDisabled?"已停用":normalizePhone(e.phone)?"允许验证登录":"未登记手机号"} <button class="btn-sm" onclick="toggleStaffAccess('${escapeHTML(e.id)}')">${e.portalDisabled?"启用":"停用"}</button></div>`).join("");
     renderQuickTips();
-    renderTimers();
+    renderTimers(); renderDispatch();
 
     const today = document.getElementById('entryDate')?.value || todayStr();
     const todayAppts = state.appointments.filter(a => a.date === today && a.status !== '已开钟');
@@ -3022,7 +3039,7 @@
     document.getElementById('viewCurStaffBtn').disabled = !selectedEmp;
 
     document.getElementById('quickStaffBar').innerHTML = state.employees.map(emp =>
-      `<button class="staff-pill ${emp.id === state.selectedStaffId ? 'selected' : ''}" onclick="selectAndFocusStaff('${emp.id}', false)">${escapeHTML(emp.name)}</button>`
+      `<button class="staff-pill ${emp.id === state.selectedStaffId ? 'selected' : ''}" onclick="quickStart('${emp.id}')">${escapeHTML(emp.name)}</button>`
     ).join('') || '<span style="color:var(--muted);">请先在下方添加技师</span>';
 
     document.getElementById('serviceGrid').innerHTML = state.services.map(srv =>
@@ -3282,6 +3299,28 @@
     renderAll();
   }
 
+
+  const el=id=>document.getElementById(id);
+  function maskPhone(v){return v?'••••'+String(v).slice(-4):'—';}
+  function maskEmail(v){return v?String(v).slice(0,1)+'•••@•••':'—';}
+  function staffAvailable(e){const time=new Intl.DateTimeFormat('en-GB',{timeZone:'America/Los_Angeles',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());return !state.timers.some(t=>t.staffId===e.id&&t.endTime>Date.now()) && !(e.leaves||[]).some(l=>l.date===todayStr()&&l.start<=time&&time<l.end);}
+  function dispatchList(){const ids=state.dispatchDays?.[todayStr()]||state.employees.map(e=>e.id);return ids.map(id=>state.employees.find(e=>e.id===id)).filter(Boolean).map((e,i)=>{const orders=state.orders.filter(o=>o.staffId===e.id&&o.date===todayStr());const timers=state.timers.filter(t=>t.staffId===e.id&&t.endTime<=Date.now()&&new Date(t.startTime).toLocaleDateString('en-CA',{timeZone:'America/Los_Angeles'})===todayStr());return {e,i,count:new Set(orders.map(o=>o.dispatchKey||o.id)).size+timers.length,last:Math.max(0,...orders.map(o=>o.serviceEnd||0),...timers.map(t=>t.endTime))};}).sort((a,b)=>a.count-b.count||a.last-b.last||a.i-b.i);}
+  function renderDispatch(){const next=dispatchList().find(x=>staffAvailable(x.e));el('dispatchNext').textContent=next?`下一位：${next.e.name} · 已完成 ${next.count} 单`:'暂无可排工员工';}
+  function openDispatch(){const ids=state.dispatchDays?.[todayStr()]||state.employees.map(e=>e.id);const all=[...ids,...state.employees.map(e=>e.id).filter(id=>!ids.includes(id))];showExtra('今日排工顺序', '<p>按完成单数少、空闲时间长、初始顺序排序。取消勾选表示今日不上工。</p><div id="dispatchRows">'+all.map(id=>{const e=state.employees.find(x=>x.id===id);return e?`<div class="inline-inputs" data-id="${escapeHTML(id)}"><label><input type="checkbox" ${ids.includes(id)?'checked':''}>${escapeHTML(e.name)}</label><button onclick="moveDispatch(this,-1)">↑</button><button onclick="moveDispatch(this,1)">↓</button></div>`:''}).join('')+'</div><button class="btn-primary" onclick="saveDispatch()">保存今日顺序</button>');}
+  function moveDispatch(b,d){const row=b.parentElement,p=row.parentElement;if(d<0&&row.previousElementSibling)p.insertBefore(row,row.previousElementSibling);if(d>0&&row.nextElementSibling)p.insertBefore(row.nextElementSibling,row);}
+  function saveDispatch(){state.dispatchDays??={};state.dispatchDays[todayStr()]=[...el('dispatchRows').children].filter(x=>x.querySelector('input').checked).map(x=>x.dataset.id);saveState();renderDispatch();closeModal('extraModal');}
+  function showExtra(title,html){el('extraTitle').textContent=title;el('extraBody').innerHTML=html;el('extraModal').classList.add('open');}
+  function quickStart(id){state.selectedStaffId=id;renderAll();const e=state.employees.find(x=>x.id===id);showExtra(e.name+' · 选择服务',state.services.map(x=>`<button class="btn-primary" style="margin:5px" onclick="quickStartService('${x.id}','${id}')">${escapeHTML(x.name)} · ${x.duration||60}分钟 · $${Number(x.price).toFixed(2)}</button>`).join('')||'请先添加项目');}
+  function quickStartService(sid,id){const n=state.timers.length;startServiceTimer(sid,id);if(state.timers.length>n){closeModal('extraModal');el('serviceGrid').scrollIntoView({behavior:'smooth'});}}
+  function refreshMemberExtras(){el('pointsEnabled').checked=state.memberCfg.pointsEnabled!==false;el('pointsRate').value=state.memberCfg.pointsRate||100;const select=el('memTier'),old=select.value;select.querySelectorAll('[data-custom]').forEach(x=>x.remove());for(const t of state.memberCfg.extraTiers||[]){const o=new Option(t.name,t.id);o.dataset.custom='1';select.add(o);}if([...select.options].some(o=>o.value===old))select.value=old;const t=state.contractTemplate;el('contractSign').innerHTML=t?`<details open><summary>会员合同：${escapeHTML(t.name)}</summary><pre style="white-space:pre-wrap;max-height:240px;overflow:auto">${escapeHTML(t.text)}</pre></details><label><input id="contractAgree" type="checkbox">我已阅读并同意合同，接受电子签名</label><input id="contractSignature" placeholder="会员本人输入完整姓名签字">`:'本店尚未设置合同';}
+  function editTier(){const list=state.memberCfg.extraTiers??=[];const key=prompt('输入新增等级名称，或输入现有等级名称进行修改：\n'+list.map(t=>t.name).join(' / '));if(!key?.trim())return;const old=list.find(t=>t.name===key.trim());const f=prompt('年费 ($)',old?.fee??99),d=prompt('优惠百分比 (0–100)',old?.discount??10);if(f===null||d===null||!validMemberDiscount(d,'percent')||!validMemberDiscount(f,'fixed'))return alert('金额无效');const t={id:old?.id||crypto.randomUUID(),name:key.trim(),fee:Number(f),discount:Number(d),type:'percent'};if(old)Object.assign(old,t);else list.push(t);saveState();refreshMemberExtras();}
+  function openContracts(){showExtra('会员合同管理',`<p>上传 UTF-8 TXT 合同；签署后保存原文快照。邮件需后台服务，当前可下载并手动发送。</p><input type="file" accept=".txt,text/plain" onchange="uploadContract(this)"><button onclick="removeContract()">停用新合同</button><p>当前：${escapeHTML(state.contractTemplate?.name||'未设置')}</p>`+state.members.filter(m=>m.contract).map(m=>`<div class="staff-line">${escapeHTML(m.name)} · ${escapeHTML(maskEmail(m.email))} · ${escapeHTML(m.contract.signedAt)} <button onclick="downloadContract('${m.id}')">查看/下载签署合同</button></div>`).join(''));}
+  async function uploadContract(input){const f=input.files[0];if(!f)return;if(f.size>20000)return alert('合同文本上限20KB；当前数据库为单文档结构');const text=await f.text();if(!text.trim())return alert('合同为空');state.contractTemplate={name:f.name,text,version:crypto.randomUUID()};await saveState();openContracts();}
+  function removeContract(){if(confirm('停用新注册合同？历史签署记录保留。')){state.contractTemplate=null;saveState();openContracts();}}
+  function downloadContract(id){const m=state.members.find(x=>x.id===id),c=m?.contract;if(!c)return;const text=c.text+'\n\n会员：'+m.name+'\n电子签名：'+c.signature+'\n签署时间：'+c.signedAt+'\n合同版本：'+c.version+'\n会员邮箱：'+c.memberEmail+'\n店长邮箱：'+c.ownerEmail;const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='signed-'+id+'.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+  function redeemPoints(id){if(state.memberCfg.pointsEnabled===false)return alert('积分已关闭');const m=state.members.find(x=>x.id===id);if(!m)return;const rate=state.memberCfg.pointsRate||100;const raw=prompt(`余额 ${m.points||0} 分，每 ${rate} 分兑换 $1。输入兑换美元金额`,'5');if(raw===null)return;const dollars=Number(raw),cost=Math.ceil(dollars*rate);if(!Number.isFinite(dollars)||dollars<=0||cost>m.points)return alert('积分不足或金额无效');const type=prompt('输入 1 礼卡 / 2 优惠券','2');if(!['1','2'].includes(type))return;const code=crypto.randomUUID();m.points-=cost;state.rewardCodes??=[];state.rewardCodes.push({code,memberId:id,type:type==='1'?'礼品卡':'优惠券',amount:dollars,used:false});addAudit('积分兑换',`${cost}分 → $${dollars}`);saveState();renderMembers();alert('兑换码：'+code+'（目前需人工核销）');}
+  Object.assign(window,{openDispatch,moveDispatch,saveDispatch,quickStart,quickStartService,editTier,openContracts,uploadContract,removeContract,downloadContract,redeemPoints});
+
   Object.assign(window, {
     switchLoginTab, loginAsEmployeePhone, refreshStaffPortal, logoutStaffPortal, setStaffTab, setStaffPeriod, syncStaffAccounts, toggleStaffAccess,
     logout, toggleLang, closeModal, toggleSound, playBell, toggleTouch, changeScale, toggleTheme,
@@ -3303,7 +3342,7 @@
 
   setInterval(() => {
     if (currentUser && currentUser.uid === ADMIN_UID && initialCloudLoaded && cloudEnabled && !saveFailed) {
-      renderTimers();
+      renderTimers(); renderDispatch();
     }
   }, 1000);
 
