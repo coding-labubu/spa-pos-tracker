@@ -455,7 +455,7 @@
     <div class="card non-therapist">
       <div class="card-title">
         <span data-i18n="timerBoardTitle">⏱️ 服务计时看板（支持任意分钟加钟 & 任意加钱 & 多选合并结账）</span>
-        <button class="btn-outline btn-sm boss-only" onclick="changeTimerCancelPin()">🔑 设置/修改取消密码</button>
+        <button class="btn-outline btn-sm boss-only" onclick="changeTimerCancelPin()">🔑 设置/修改结束与取消密码</button>
         <span class="tag tag-blue" id="activeTimerCount">0 进行中</span>
       </div>
       <div class="merge-bar">
@@ -1640,6 +1640,7 @@
     if (!Number.isSafeInteger(addMins) || addMins <= 0) return alert('请输入有效的加钟分钟数');
     const t = state.timers.find(item => item.id === timerId);
     if (!t) return;
+    if (t.earlyEndedAt) return alert('服务已提前结束，请结账');
     t.durationMins = Math.max(1, (t.durationMins || 0) + addMins);
     t.endTime = Math.max(Date.now(), t.endTime) + addMins * 60000;
     t.status = 'running';
@@ -1701,13 +1702,35 @@
     if (!canEditTimer()) return alert('请先连接云端并登录店长账号');
     const t = state.timers.find(item => item.id === timerId);
     if (!t) return;
-    if (!state.timerCancelPin) return alert('请先点击看板上的设置/修改取消密码');
+    if (!state.timerCancelPin) return alert('请先点击看板上的设置/修改结束与取消密码');
     const pin = prompt(`取消 ${t.staffName} · ${t.serviceName}？请输入四位取消密码。取消后不生成订单。`);
     if (pin === null) return;
     if (pin !== state.timerCancelPin) return alert('密码错误，服务未取消');
     state.timers = state.timers.filter(item => item.id !== timerId);
     invalidateTimerCheckout(timerId);
     addAudit('取消服务', `${t.staffName} · ${t.serviceName} · $${(Number(t.price || 0) + Number(t.extraCharge || 0)).toFixed(2)} · ${t.id}`);
+    saveState();
+    renderAll();
+  }
+
+  function endServiceTimerEarly(timerId) {
+    if (!canEditTimer()) return alert('请先连接云端并登录店长账号');
+    const t = state.timers.find(item => item.id === timerId);
+    if (!t || t.earlyEndedAt || t.endTime <= Date.now()) return alert('服务已结束，请直接结账');
+    if (!state.timerCancelPin) return alert('请先设置结束与取消密码');
+    const pin = prompt(`提前结束 ${t.staffName} · ${t.serviceName}？请输入四位密码。将保留订单及费用，按实际分钟记录。`);
+    if (pin === null) return;
+    if (pin !== state.timerCancelPin) return alert('密码错误，服务继续计时');
+    const now = Date.now();
+    if (t.endTime <= now) return alert('服务已到点，请直接结账');
+    const planned = t.durationMins;
+    t.durationMins = Math.max(0, Math.floor((now - t.startTime) / 60000));
+    t.earlyEndedAt = now;
+    t.endTime = now;
+    t.status = 'done';
+    t.bellPlayed = true;
+    invalidateTimerCheckout(timerId);
+    addAudit('提前结束服务', `${t.staffName} · ${t.serviceName} · 原定${planned}分钟 · 实际${t.durationMins}分钟 · ${t.id}`);
     saveState();
     renderAll();
   }
@@ -2828,7 +2851,7 @@
               <input type="checkbox" ${t.checked ? 'checked' : ''} onchange="toggleTimerCheck('${t.id}')" />
               ${escapeHTML(t.staffName)} · ${escapeHTML(t.serviceName)}
             </label>
-            <span class="tag ${isDone ? 'tag-green' : 'tag-blue'}">${isDone ? '已到点' : '计时中'}</span>
+            <span class="tag ${isDone ? 'tag-green' : 'tag-blue'}">${t.earlyEndedAt ? '提前结束 · ' + t.durationMins + '分钟' : isDone ? '已到点' : '计时中'}</span>
           </div>
           <div style="display:flex; justify-content:space-between; align-items:baseline;">
             <div class="timer-clock">${mm}:${ss}</div>
@@ -2839,13 +2862,14 @@
           ${t.extraNote ? `<div style="font-size:0.85em;overflow-wrap:anywhere;">加项：${escapeHTML(t.extraNote)}</div>` : ''}
           <div class="inline-inputs">
             <input type="number" id="extMins_${t.id}" min="1" step="1" placeholder="加钟(分)" style="width:88px; padding:4px 7px;" />
-            <button class="btn-outline btn-sm" onclick="extendTimerCustom('${t.id}')">⏱️ 加钟</button>
+            <button class="btn-outline btn-sm" onclick="extendTimerCustom('${t.id}')" ${t.earlyEndedAt ? 'disabled' : ''}>⏱️ 加钟</button>
             <button class="btn-success btn-sm" style="margin-left:auto;" onclick="openTimerCheckout('${t.id}')">结账</button>
           </div>
           <div class="inline-inputs">
             <input type="number" id="extraAmt_${t.id}" min="0.01" step="0.01" placeholder="加钱($)" style="width:88px; padding:4px 7px;" />
             <input type="text" id="extraNote_${t.id}" placeholder="加项说明" style="flex:1; min-width:80px; padding:4px 7px;" />
             <button class="btn-warning btn-sm" onclick="addTimerExtraCharge('${t.id}')">+ 加钱/加项</button>
+            <button class="btn-purple btn-sm early-end-btn" ${isDone ? 'disabled' : ''} onclick="endServiceTimerEarly('${t.id}')">提前结束</button>
             <button class="btn-danger btn-sm" onclick="cancelServiceTimer('${t.id}')">取消服务</button>
           </div>
         </div>
@@ -2853,7 +2877,7 @@
     }).join('');
 
     const grid = document.getElementById('timerGrid');
-    const key = JSON.stringify(state.timers.map(t => [t.id,t.staffName,t.serviceName,t.price,t.extraCharge,t.extraNote,t.durationMins,t.endTime,t.checked]));
+    const key = JSON.stringify(state.timers.map(t => [t.id,t.staffName,t.serviceName,t.price,t.extraCharge,t.extraNote,t.durationMins,t.endTime,t.checked,t.earlyEndedAt]));
     if (timerMarkupKey !== key || !grid.children.length) {
       const drafts = new Map([...grid.querySelectorAll('input[id]')].map(el => [el.id, el.value]));
       const focused = grid.contains(document.activeElement) ? document.activeElement.id : '';
@@ -2872,7 +2896,8 @@
       box.classList.toggle('warning', !done && remaining <= 300);
       const badge = box.querySelector('label + .tag');
       badge.className = `tag ${done ? 'tag-green' : 'tag-blue'}`;
-      badge.textContent = done ? '已到点' : '计时中';
+      badge.textContent = t.earlyEndedAt ? `提前结束 · ${t.durationMins}分钟` : done ? '已到点' : '计时中';
+      box.querySelector('.early-end-btn').disabled = done;
     });
     document.getElementById('activeTimerCount').textContent = `${state.timers.length} 进行中`;
 
@@ -3169,7 +3194,7 @@
     setSfPay, addServiceFee, setPeriod, clearStaffFilter, saveEmployee, editEmployee, deleteEmployee,
     updateCommLabel, saveService, editService, deleteService, completeCheckout, completeSplitCheckout,
     addSplitRow, updateSplitHint, resetData,
-    startServiceTimer, extendTimerCustom, addTimerExtraCharge, toggleTimerCheck, changeTimerCancelPin, cancelServiceTimer,
+    startServiceTimer, extendTimerCustom, addTimerExtraCharge, toggleTimerCheck, changeTimerCancelPin, cancelServiceTimer, endServiceTimerEarly,
     openDirectServiceCheckout, openTimerCheckout, deleteOrder, deleteTip, deleteServiceFee,
     selectAndFocusStaff, openStaffDetailModal, openMemberModal, saveMemberConfig,
     createMember, topupMember, chargeMemberTip, editMemberDiscount, renderMembers,
