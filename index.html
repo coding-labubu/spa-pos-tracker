@@ -341,7 +341,24 @@
         border: none;
       }
     }
-  </style>
+  
+#checkoutModal .modal {max-width:620px;padding:26px;border-radius:20px;}
+#checkoutModal .card-title {font-size:1.35em;border:0;margin-bottom:18px;}
+#checkoutModal .pay-grid {gap:10px;}
+#checkoutModal .pay-btn {flex-direction:column;gap:7px;min-height:76px;background:white;border:1px solid #cbd5e1;border-radius:12px;}
+#checkoutModal .pay-btn.selected {background:#eff6ff;border:2px solid #2563eb;color:#1d4ed8;}
+#checkoutModal .pay-btn svg {width:25px;height:25px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+.co-line {display:flex;justify-content:space-between;gap:12px;align-items:start;padding:12px 0;border-bottom:1px solid #e2e8f0;}
+.co-muted {color:#64748b;font-size:.88em;}
+.co-total {display:flex;justify-content:space-between;align-items:center;font-size:1.5em;font-weight:800;padding:12px 0;border-top:1px solid #e2e8f0;margin-top:8px;}
+.co-summary {padding:12px 0;display:grid;gap:8px;}
+.co-summary > div:not(.co-total) {display:flex;justify-content:space-between;gap:10px;}
+.co-next {width:100%;min-height:46px;border-radius:10px;font-size:1em;}
+#coConfirm {border:1px solid #cbd5e1;border-radius:12px;padding:16px;margin-top:12px;}
+#checkoutModal .member-highlight {background:#f8fafc;border-color:#e2e8f0;margin-top:12px;}
+#checkoutModal .split-box {background:white;border-color:#e2e8f0;}
+@media(max-width:480px){#checkoutModal .modal{padding:16px;} #checkoutModal .pay-btn{font-size:.85em;} }
+</style>
 </head>
 <body>
 
@@ -930,7 +947,7 @@
   <div class="modal-backdrop" id="checkoutModal">
     <div class="modal">
       <div class="card-title">
-        <span>🧾 收款结账（支持合并结账、会员扣款、拆分结账与打印收据）</span>
+        <span>收款结账 / Checkout</span>
         <button class="btn-outline btn-sm" onclick="closeModal('checkoutModal')">✕</button>
       </div>
       <div id="checkoutItemsList" style="margin-bottom:10px;"></div>
@@ -943,18 +960,7 @@
         <div id="checkoutMemberHint" style="font-size:0.86em; color:#166534; margin-top:4px;"></div>
       </div>
 
-      <div id="checkoutTotalInfo" style="font-weight:700; font-size:1.1em; margin-bottom:10px;"></div>
-
-      <div style="font-weight:600; font-size:0.9em; color:var(--muted);">方式一：单渠道全额结账</div>
-      <div class="pay-grid">
-        <button class="pay-btn" onclick="completeCheckout('现金')">1. 💵 现金</button>
-        <button class="pay-btn" onclick="completeCheckout('银行卡')">2. 💳 银行卡</button>
-        <button class="pay-btn" onclick="completeCheckout('Venmo')">3. 📱 Venmo</button>
-        <button class="pay-btn" onclick="completeCheckout('会员充值卡')" id="payMemberCardBtn">4. 👑 会员充值卡扣款</button>
-        <button class="pay-btn" onclick="completeCheckout('礼品卡')">5. 🎁 使用礼卡消费</button>
-        <button class="pay-btn" onclick="completeCheckout('优惠券')">6. 🎟️ 使用优惠券消费</button>
-      </div>
-
+<strong>选择支付方式 / Payment Method</strong><div class="pay-grid"><button class="pay-btn" data-method="现金"  onclick="selectCheckoutMethod('现金')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>现金</button><button class="pay-btn" data-method="银行卡"  onclick="selectCheckoutMethod('银行卡')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>银行卡</button><button class="pay-btn" data-method="Venmo"  onclick="selectCheckoutMethod('Venmo')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Venmo</button><button class="pay-btn" data-method="会员充值卡" id="payMemberCardBtn" onclick="selectCheckoutMethod('会员充值卡')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M15 12h6"/></svg>会员充值卡</button><button class="pay-btn" data-method="礼品卡"  onclick="selectCheckoutMethod('礼品卡')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="8" width="16" height="13" rx="1"/><path d="M2 8h20M12 8v13M12 8C3 8 5 0 12 8C19 0 21 8 12 8"/></svg>礼品卡</button><button class="pay-btn" data-method="优惠券"  onclick="selectCheckoutMethod('优惠券')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4zM15 6v12"/></svg>优惠券</button></div><div id="checkoutTotalInfo" class="co-summary"></div><button id="coNext" class="btn-primary co-next" onclick="beginSelectedCheckout()">下一步：确认收款</button>
       <!-- 第10项：拆分结账 -->
       <div class="split-box">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -964,9 +970,9 @@
         <div id="splitRowsContainer"></div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
           <span id="splitRemainHint" style="font-size:0.88em; font-weight:700;"></span>
-          <button class="btn-success btn-sm" onclick="completeSplitCheckout()">✅ 确认拆分结账并打印收据</button>
+          <button class="btn-success btn-sm" onclick="completeSplitCheckout()">下一步：确认拆分收款</button>
         </div>
-      </div>
+      </div><div id="coConfirm" hidden><strong>确认收款 / Confirm Payment</strong><div id="coConfirmDetails" class="co-summary"></div><div class="inline-inputs"><button class="btn-outline" onclick="clearCheckoutConfirmation()">返回修改</button><button class="btn-primary" onclick="commitCheckoutConfirmation()">确认收款并入账</button></div></div>
     </div>
   </div>
 
@@ -1996,7 +2002,20 @@
   /* =========================================================
      第10项 & 第12项：收款结账（含拆分结账 + 打印收据）
   ========================================================= */
+  let selectedCheckoutMethod = '现金';
+  let pendingCheckout = null;
+  function clearCheckoutConfirmation() { pendingCheckout = null; document.getElementById('coConfirm').hidden = true; }
+  function selectCheckoutMethod(method) { selectedCheckoutMethod = method; clearCheckoutConfirmation(); renderCheckoutSummary(); }
+  function beginSelectedCheckout() { completeCheckout(selectedCheckoutMethod); }
+  function renderCheckoutSummary() {
+    const total = getCurrentCheckoutPayable();
+    const fee = cardFeeFor({method:selectedCheckoutMethod,amount:total});
+    document.querySelectorAll('#checkoutModal .pay-btn').forEach(b=>{const active=b.dataset.method===selectedCheckoutMethod;b.classList.toggle('selected',active);b.setAttribute('aria-pressed',String(active));});
+    document.getElementById('coNext').disabled = selectedCheckoutMethod==='会员充值卡' && document.getElementById('payMemberCardBtn').disabled;
+    document.getElementById('checkoutTotalInfo').innerHTML = `<div><span class="co-muted">项目金额 / Subtotal</span><strong>$${total.toFixed(2)}</strong></div><div><span class="co-muted">银行卡手续费 / Card fee</span><strong>$${fee.toFixed(2)}</strong></div><div class="co-total"><span>最终应收 / Total</span><span>$${(total+fee).toFixed(2)}</span></div>`;
+  }
   function showCheckoutModal() {
+    selectedCheckoutMethod = '现金'; clearCheckoutConfirmation();
     const sel = document.getElementById('checkoutMemberSelect');
     sel.innerHTML = `<option value="">-- 非会员 / 不使用会员卡 --</option>` +
       state.members.map(m => `<option value="${m.id}">${escapeHTML(m.name)} (${escapeHTML(m.phone)}) · 享${m.discount}%OFF · 余额$${Number(m.balance).toFixed(2)}</option>`).join('');
@@ -2034,6 +2053,7 @@
   }
 
   function updateSplitHint() {
+    clearCheckoutConfirmation();
     const target = getCurrentCheckoutPayable();
     let entered = 0;
     document.querySelectorAll('.split-amount').forEach(inp => { entered += parseFloat(inp.value) || 0; });
@@ -2066,10 +2086,7 @@
       if (item.earlyEnded) item.commission = calcCommission(state.services.find(s => s.id === item.serviceId), raw);
       rawTotal += raw;
       finalTotal += final;
-      return `<div style="padding:5px 0; border-bottom:1px dashed var(--border); display:flex; justify-content:space-between;">
-        <span>${escapeHTML(item.staffName)} · ${escapeHTML(item.serviceName)} ${item.earlyEnded ? `<small>（实际 ${item.duration} 分钟）</small> <button class="btn-outline btn-sm" onclick="customCheckoutAmount(${idx})">Custom Amount</button> ${item.customPrice != null ? `<button class="btn-outline btn-sm" onclick="customCheckoutAmount(${idx}, true)">恢复原价</button>` : ''}` : ''}</span>
-        <span>${discRate > 0 ? `<del style="color:var(--muted);">$${raw.toFixed(2)}</del> ` : ''}<strong>$${final.toFixed(2)}</strong></span>
-      </div>`;
+      return `<div class="co-line"><div><strong>${escapeHTML(item.staffName)} · ${escapeHTML(item.serviceName)}</strong><div class="co-muted">${item.earlyEnded ? '提前结束 · 实际 ' : '服务时长 · '}${Number(item.duration || 0)} 分钟</div>${item.earlyEnded ? `<label class="co-muted"><input type="checkbox" ${item.customPrice != null ? 'checked' : ''} onchange="toggleCustomCheckout(${idx},this.checked)"> Custom Amount / 自定义金额</label>${item.customPrice != null ? `<div><input type="number" min="0" step="0.01" value="${raw.toFixed(2)}" onchange="setInlineCheckoutAmount(${idx},this.value)" style="width:120px" aria-label="自定义金额"></div>` : ''}` : ''}</div><div>${discRate > 0 ? `<del class="co-muted">$${raw.toFixed(2)}</del> ` : ''}<strong>$${final.toFixed(2)}</strong></div></div>`;
     }).join('');
 
     const hintEl = document.getElementById('checkoutMemberHint');
@@ -2083,12 +2100,12 @@
       cardBtn.disabled = true;
     }
 
-    document.getElementById('checkoutTotalInfo').textContent = discRate > 0
-      ? `原价：$${rawTotal.toFixed(2)} ｜ 折后实收：$${finalTotal.toFixed(2)}`
-      : `合计应收（共 ${checkoutCart.length} 项）：$${finalTotal.toFixed(2)}`;
+    renderCheckoutSummary();
     updateSplitHint();
   }
 
+  function toggleCustomCheckout(idx, enabled) { const item=checkoutCart[idx]; if(!item?.earlyEnded)return; if(enabled)item.customPrice=Number(item.price);else delete item.customPrice;updateCheckoutTotalDisplay(); }
+  function setInlineCheckoutAmount(idx,value) { const item=checkoutCart[idx]; if(!item?.earlyEnded)return; if(!/^\d+(\.\d{1,2})?$/.test(value)||!Number.isFinite(Number(value))){alert('请输入有效金额');updateCheckoutTotalDisplay();return;} item.customPrice=Number(value);updateCheckoutTotalDisplay(); }
   function customCheckoutAmount(idx, reset = false) {
     const item = checkoutCart[idx];
     if (!item?.earlyEnded) return;
@@ -2131,9 +2148,15 @@
     if (!checkoutCart.length || checkoutCart.some(it => it.timerId && !state.timers.some(t => t.id === it.timerId))) return alert('服务已变更，请重新打开结账');
     const fee = payments.reduce((sum, p) => sum + cardFeeFor(p), 0);
     const total = getCurrentCheckoutPayable();
-    const lines = payments.map(p => `${p.method}: $${p.amount.toFixed(2)}${cardFeeFor(p) ? ` + 手续费 $${cardFeeFor(p).toFixed(2)}` : ''}`);
-    if (!confirm(`请确认收款 / Confirm Payment\n\n${lines.join('\n')}\n项目合计 $${total.toFixed(2)}\n银行卡手续费 $${fee.toFixed(2)}\n最终实收 $${(total + fee).toFixed(2)}\n\n确认后将正式入账。`)) return;
-    finalizeOrderCheckout(payments, fee);
+    pendingCheckout = {payments, fee, total, signature: checkoutSignature()};
+    document.getElementById('coConfirmDetails').innerHTML = payments.map(p=>`<div><span>${escapeHTML(p.method)}</span><strong>$${(p.amount+cardFeeFor(p)).toFixed(2)}</strong></div>`).join('')+`<div><span>项目合计</span><span>$${total.toFixed(2)}</span></div><div><span>手续费</span><span>$${fee.toFixed(2)}</span></div><div class="co-total"><span>确认实收</span><span>$${(total+fee).toFixed(2)}</span></div>`;
+    const panel=document.getElementById('coConfirm');panel.hidden=false;panel.scrollIntoView({block:'nearest',behavior:'smooth'});
+  }
+  function checkoutSignature(){return JSON.stringify([checkoutCart,state.cardFeeConfig,document.getElementById('checkoutMemberSelect').value,state.members.find(m=>m.id===document.getElementById('checkoutMemberSelect').value),checkoutCart.map(it=>state.timers.find(t=>t.id===it.timerId)),document.getElementById('entryDate').value]);}
+  function commitCheckoutConfirmation(){
+    const p=pendingCheckout;if(!p)return;
+    if(!currentUser || currentUser.uid!==ADMIN_UID || !initialCloudLoaded || !cloudEnabled || saveFailed || p.signature!==checkoutSignature()){clearCheckoutConfirmation();return alert('结账信息或云端状态已变化，请重新核对');}
+    clearCheckoutConfirmation();finalizeOrderCheckout(p.payments,p.fee);
   }
 
   function finalizeOrderCheckout(payments, cardFee = 0) {
@@ -3254,7 +3277,7 @@
     toggleSelectAllTimers, openMergedCheckout, setTipType, addTip, addQuickTip,
     setSfPay, addServiceFee, setPeriod, clearStaffFilter, saveEmployee, editEmployee, deleteEmployee,
     updateCommLabel, saveService, editService, deleteService, completeCheckout, completeSplitCheckout,
-    addSplitRow, updateSplitHint, resetData, configureCardFee, customCheckoutAmount,
+    selectCheckoutMethod, beginSelectedCheckout, clearCheckoutConfirmation, commitCheckoutConfirmation, toggleCustomCheckout, setInlineCheckoutAmount, addSplitRow, updateSplitHint, resetData, configureCardFee, customCheckoutAmount,
     startServiceTimer, extendTimerCustom, addTimerExtraCharge, toggleTimerCheck, changeTimerCancelPin, cancelServiceTimer, endServiceTimerEarly,
     openDirectServiceCheckout, openTimerCheckout, deleteOrder, deleteTip, deleteServiceFee,
     selectAndFocusStaff, openStaffDetailModal, openMemberModal, saveMemberConfig,
