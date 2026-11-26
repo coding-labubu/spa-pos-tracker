@@ -959,7 +959,7 @@
         <div id="checkoutMemberHint" style="font-size:0.86em; color:#166534; margin-top:4px;"></div>
       </div>
 
-<strong>选择支付方式 / Payment Method</strong><div class="pay-grid"><button class="pay-btn" data-method="现金"  onclick="selectCheckoutMethod('现金')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>现金</button><button class="pay-btn" data-method="银行卡"  onclick="selectCheckoutMethod('银行卡')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>银行卡</button><button class="pay-btn" data-method="Venmo"  onclick="selectCheckoutMethod('Venmo')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Venmo</button><button class="pay-btn" data-method="会员充值卡" id="payMemberCardBtn" onclick="selectCheckoutMethod('会员充值卡')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M15 12h6"/></svg>会员充值卡</button><button class="pay-btn" data-method="礼品卡"  onclick="selectCheckoutMethod('礼品卡')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="8" width="16" height="13" rx="1"/><path d="M2 8h20M12 8v13M12 8C3 8 5 0 12 8C19 0 21 8 12 8"/></svg>礼品卡</button><button class="pay-btn" data-method="优惠券"  onclick="selectCheckoutMethod('优惠券')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4zM15 6v12"/></svg>优惠券</button></div><div class="split-box"><strong>添加小费（任意支付方式）</strong><div id="checkoutTips"></div><label>小费支付方式 <select id="coTipMethod" onchange="updateCheckoutTotalDisplay()"><option value="现金">现金</option><option value="银行卡">银行卡</option><option value="Venmo">Venmo</option><option value="会员充值卡">会员充值卡</option><option value="礼品卡">礼品卡</option><option value="优惠券">优惠券</option></select></label></div><div id="checkoutTotalInfo" class="co-summary"></div><button id="coNext" class="btn-primary co-next" onclick="beginSelectedCheckout()">下一步：确认收款</button>
+<strong>选择支付方式 / Payment Method</strong><div class="pay-grid"><button class="pay-btn" data-method="现金"  onclick="selectCheckoutMethod('现金')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>现金</button><button class="pay-btn" data-method="银行卡"  onclick="selectCheckoutMethod('银行卡')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>银行卡</button><button class="pay-btn" data-method="Venmo"  onclick="selectCheckoutMethod('Venmo')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Venmo</button><button class="pay-btn" data-method="会员充值卡" id="payMemberCardBtn" onclick="selectCheckoutMethod('会员充值卡')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M15 12h6"/></svg>会员充值卡</button><button class="pay-btn" data-method="礼品卡"  onclick="selectCheckoutMethod('礼品卡')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="8" width="16" height="13" rx="1"/><path d="M2 8h20M12 8v13M12 8C3 8 5 0 12 8C19 0 21 8 12 8"/></svg>礼品卡</button><button class="pay-btn" data-method="优惠券"  onclick="selectCheckoutMethod('优惠券')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4zM15 6v12"/></svg>优惠券</button></div><div class="split-box"><strong>添加小费（任意支付方式）</strong><div id="checkoutTips"></div><label>小费支付方式 <select id="coTipMethod" onchange="updateCheckoutTotalDisplay()"><option value="现金">现金</option><option value="银行卡">银行卡</option><option value="Venmo">Venmo</option><option value="会员充值卡">会员充值卡</option><option value="礼品卡">礼品卡</option><option value="优惠券">优惠券</option></select></label></div><div id="checkoutTotalInfo" class="co-summary"></div><button onclick="squareSetup()">Square 设置 / Setup</button> <button onclick="squareRecover()">核对未完成 Square 支付</button><button id="coNext" class="btn-primary co-next" onclick="beginSelectedCheckout()">下一步：确认收款</button>
       <!-- 第10项：拆分结账 -->
       <div class="split-box">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -971,7 +971,7 @@
           <span id="splitRemainHint" style="font-size:0.88em; font-weight:700;"></span>
           <button class="btn-success btn-sm" onclick="completeSplitCheckout()">下一步：确认拆分收款</button>
         </div>
-      </div><div id="coConfirm" hidden><strong>确认收款 / Confirm Payment</strong><div id="coConfirmDetails" class="co-summary"></div><div class="inline-inputs"><button class="btn-outline" onclick="clearCheckoutConfirmation()">返回修改</button><button class="btn-primary" onclick="commitCheckoutConfirmation()">确认收款并入账</button></div></div>
+      </div><div id="coConfirm" hidden><strong>确认收款 / Confirm Payment</strong><p id="squareStatus" aria-live="polite"></p><button onclick="squareRecover()">Square 状态 / Status</button> <button onclick="squareCancel()">取消 Square 请求 / Cancel</button><div id="coConfirmDetails" class="co-summary"></div><div class="inline-inputs"><button class="btn-outline" onclick="clearCheckoutConfirmation()">返回修改</button><button class="btn-primary" onclick="commitCheckoutConfirmation()">确认收款并入账</button></div></div>
     </div>
   </div>
 
@@ -2235,6 +2235,7 @@
   }
 
   function cardFeeFor(p) {
+    if (p.method === "银行卡") return 0;
     if (p.method !== '银行卡' || p.amount <= 0) return 0;
     const cfg = state.cardFeeConfig;
     const value = Number(cfg.value);
@@ -2252,13 +2253,16 @@
     const panel=document.getElementById('coConfirm');panel.hidden=false;panel.scrollIntoView({block:'nearest',behavior:'smooth'});
   }
   function checkoutSignature(){return JSON.stringify([checkoutCart,tipEntries(),el("coTipMethod").value,state.cardFeeConfig,document.getElementById('checkoutMemberSelect').value,state.members.find(m=>m.id===document.getElementById('checkoutMemberSelect').value),checkoutCart.map(it=>state.timers.find(t=>t.id===it.timerId)),document.getElementById('entryDate').value]);}
-  function commitCheckoutConfirmation(){
+  async function commitCheckoutConfirmation(){
     const p=pendingCheckout;if(!p)return;
     if(!currentUser || currentUser.uid!==ADMIN_UID || !initialCloudLoaded || !cloudEnabled || saveFailed || p.signature!==checkoutSignature()){clearCheckoutConfirmation();return alert('结账信息或云端状态已变化，请重新核对');}
+    if (squareBusy || localStorage.getItem(squarePendingKey)) return alert('存在未核对 Square 支付，请先查状态 / Reconcile pending payment');
+    if(p.payments.some(x=>x.method==='银行卡') || (tipTotal()>0 && el('coTipMethod').value==='银行卡')) return squareCheckout(p);
     clearCheckoutConfirmation();finalizeOrderCheckout(p.payments,p.fee);
   }
 
-  function finalizeOrderCheckout(payments, cardFee = 0) {
+  async function finalizeOrderCheckout(payments, cardFee = 0, square = null) {
+    const orderStart = state.orders.length;
     const dateVal = document.getElementById('entryDate').value || todayStr();
     const memId = document.getElementById('checkoutMemberSelect')?.value;
     const member = state.members.find(m => m.id === memId);
@@ -2350,6 +2354,7 @@
     };
     if(tipTotal())receiptPayload.items.push({name:"小费",amount:tipTotal()});
     if (cardFee > 0) receiptPayload.items.push({ name: '银行卡手续费 / Service fee', amount: +cardFee.toFixed(2) });
+    if(square){receiptPayload.squareCheckoutId=square.id;receiptPayload.squarePaymentIds=square.payment_ids; for(const o of state.orders.slice(orderStart)){o.squareCheckoutId=square.id;o.squarePaymentIds=square.payment_ids;}}
     state.receipts.unshift(receiptPayload);
     if (state.receipts.length > 100) state.receipts.pop();
 
@@ -2360,9 +2365,10 @@
 
     checkoutCart = [];
     closeModal('checkoutModal');
-    saveState();
+    const saved=await saveState();
     renderAll();
     showReceiptModal(receiptPayload);
+    return saved;
   }
 
   function completeCheckout(payMethod) {
@@ -3400,7 +3406,7 @@
   async function uploadContract(input){const f=input.files[0];if(!f)return;input.disabled=true;try{if(currentUser?.uid!==ADMIN_UID)throw Error('Unauthorized');const version=crypto.randomUUID();let t;if(/\.pdf$/i.test(f.name)){if(!f.size||f.size>10*1024*1024)throw Error('PDF limit: 10 MiB');const bytes=new Uint8Array(await f.arrayBuffer());await PDFLib.PDFDocument.load(bytes);const ref=templateRef(version),batch=writeBatch(db),chunkCount=Math.ceil(bytes.length/512000);batch.set(ref,{name:f.name,version,format:'pdf',fileSize:bytes.length,chunkCount,uploadedAt:serverTimestamp()});for(let i=0;i<chunkCount;i++)batch.set(doc(ref,'chunks',String(i)),{data:Bytes.fromUint8Array(bytes.slice(i*512000,(i+1)*512000))});await batch.commit();t={name:f.name,version,format:'pdf'};pdfCache.set(version,bytes);}else{if(!/\.txt$/i.test(f.name)||f.size>20000)throw Error('TXT limit: 20 KB');const text=await f.text();if(!text.trim())throw Error('Empty contract');t={name:f.name,version,text,format:'txt'};}const previous=state.contractTemplate;state.contractTemplate=t;if(!await saveState()){state.contractTemplate=previous;throw Error('Template activation failed');}openContracts();}catch(e){alert('Upload failed: '+e.message);}finally{input.disabled=false;input.value='';}}
   function removeContract(){if(confirm('停用新注册合同？历史签署记录保留。')){state.contractTemplate=null;saveState();openContracts();}}
   let signedContractURL;
-  const MAIL_ENDPOINT = ''; // Paste deployed Apps Script /exec URL here
+  const MAIL_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyf6WFolxfSIfutLvcrLmYRQi8YmVsTVVdIasKUA1bnhIVvDF6k6n75R2NIIjxN5HwOYw/exec'; // Paste deployed Apps Script /exec URL here
   const mailRef=id=>doc(db,'pos_systems','default_store','contractMail',id);
   const mailBusy=new Set();
   async function buildSignedContract(m){const c=m.contract;
@@ -3527,6 +3533,35 @@
   function renderResources(){const root=el('resourceBoard');if(!root)return;const now=Date.now(),{rows,unknown}=resExisting(),e=escapeHTML;const p=pendingResourceStart, srv=p&&state.services.find(x=>x.id===p.serviceId), emp=p&&state.employees.find(x=>x.id===p.staffId), ap=p?.appointmentId&&state.appointments.find(x=>x.id===p.appointmentId), mins=ap?apDuration(ap):(srv?.duration>0?srv.duration:60); const combo=p&&isComboPick(p),mode=p?.mode||'split',first=resFirst(srv),mid=now+first*60000,end=now+mins*60000; const selection=p?`<div style="padding:14px;background:#eff6ff;border:2px solid #2563eb;border-radius:10px;margin-bottom:12px"><strong>请选择设备 / Select equipment</strong><p>${e(emp?.name||'')} · ${e(srv?.name||'')} · ${mins} 分钟</p>${combo?`<p><button class="${mode==='split'?'btn-primary':''}" onclick="comboMode('split')">${first}分钟沙发 + ${mins-first}分钟床</button> <button class="${mode==='chair'?'btn-primary':''}" onclick="comboMode('chair')">全程沙发</button></p><p>沙发：${e(resources().find(r=>r.id===p.chair)?.name||'未选择')} · ${e(storeTime(now))} – ${e(storeTime(mode==='chair'?end:mid))}</p>${mode==='split'?`<p>按摩床：${e(resources().find(r=>r.id===p.bed)?.name||'未选择')} · ${e(storeTime(mid))} – ${e(storeTime(end))}</p>`:''}<button class="btn-success" onclick="comboConfirm()" ${p.chair&&(mode==='chair'||p.bed)?'':'disabled'}>确认设备并开钟</button> <button onclick="comboConfirm(true)">自动分配并开钟</button>`:'<p>点击可用设备立即开钟。</p>'}<button onclick="cancelResourceStart()">取消选择 / Cancel</button></div>`:'';root.innerHTML=selection+(unknown.some(p=>p.end>now)?'<p style="color:#b45309">存在未分配设备的旧记录，请先处理。</p>':'')+'<div class="res-grid">'+resources().map(r=>{const active=rows.find(p=>p.resourceId===r.id&&p.start<=now&&p.end>now),future=rows.filter(p=>p.resourceId===r.id&&p.start>now).sort((a,b)=>a.start-b.start)[0];const locked=r.room==='couple'&&rows.some(p=>p.start<=now&&p.end>now&&resources().find(z=>z.id===p.resourceId)?.room==='couple');const check=p?resAllocate({serviceId:p.serviceId,start:now,end:now+mins*60000,group:p.group,exclude:ap?[ap.id]:[],preferred:combo?(r.type==='chair'?r.id:(p.chair||'')):r.id,preferredBed:combo?(r.type==='bed'?r.id:(p.bed||'')):'',comboMode:combo?mode:''}):null;const selectable=check&&!check.error&&check.plan.some(q=>q.resourceId===r.id)&&emp&&staffAvailable(emp)&&canEditTimer();return `<div class="res-tile ${active?'busy':locked?'locked':''}"><strong>${e(r.name)}</strong><div>${r.enabled===false?'停用':active?e(active.label||'已预留')+' · '+Math.ceil((active.end-now)/60000)+' 分钟':locked?'双人房隐私预留':'空闲'}</div><small>${future?'已预留：'+e(storeTime(future.start))+' · '+e(future.label||''):'无后续预留'}</small>${p?`<button style="width:100%;margin-top:10px" class="${selectable?'btn-success':'btn-outline'}" ${selectable?'':'disabled'} data-rid="${e(r.id)}" onclick="chooseResourceStart(this.dataset.rid)">${selectable?(combo?(p.chair===r.id||p.bed===r.id?'✓ 已选择':r.type==='bed'?'选择后段按摩床':'选择沙发'):'选择并开钟 / Start'):'不可选 / Unavailable'}</button>`:''}</div>`;}).join('')+'</div>';}
   function resCalendar(){const day=apDate||todayStr(),lo=resEpoch(day,apHours().start),hi=resEpoch(day,apHours().end),{rows}=resExisting();const e=escapeHTML;el('apCalendar').innerHTML='<div style="overflow:auto"><table><thead><tr><th>设备</th><th>预约 / 服务时间</th></tr></thead><tbody>'+resources().map(r=>`<tr><th>${e(r.name)}</th><td>${rows.filter(p=>p.resourceId===r.id&&p.start<hi&&p.end>lo).sort((a,b)=>a.start-b.start).map(p=>`<div class="tag tag-blue" style="margin:4px">${e(storeTime(p.start))} – ${e(storeTime(p.end))} · ${e(p.label||'')}</div>`).join('')||'空闲'}</td></tr>`).join('')+'</tbody></table></div>';}
   Object.assign(window,{resSettings,resSave,resAdd,resManual});
+
+
+  const SQUARE_API = 'https://spa-pos-square-api.comfootmassage.workers.dev'; // Cloudflare Worker URL, no trailing slash
+  const squarePendingKey='spa-square-pending-v1';
+  let squareBusy=false;
+  async function squareCall(path,body){if(!SQUARE_API||!currentUser)throw Error('请配置 Square Worker 并登录');const r=await fetch(SQUARE_API+path,{method:body===undefined?'GET':'POST',headers:{Authorization:'Bearer '+await currentUser.getIdToken(),'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});const j=await r.json();if(!r.ok)throw Error(j.error||'Square error');return j;}
+  const sqMsg=m=>{el('squareStatus').textContent=m;};
+  const sqRead=()=>JSON.parse(localStorage.getItem(squarePendingKey)||'null');
+  const sqWrite=x=>localStorage.setItem(squarePendingKey,JSON.stringify(x));
+  async function squareCheckout(p){
+    if(!SQUARE_API)return alert('请先设置 SQUARE_API');
+    if(p.payments.length!==1||p.payments[0].method!=='银行卡'||(tipTotal()>0&&el('coTipMethod').value!=='银行卡'))return alert('当前 Square 版本仅支持整单银行卡支付，银行卡小费请选择银行卡；暂不支持混合支付');
+    if(!confirm('发送至 Square Terminal？请确认金额及小费。'))return;
+    const a={key:crypto.randomUUID(),cents:Math.round((p.total+tipTotal())*100),signature:p.signature};
+    if(a.cents<1||a.cents>100000)return alert('金额超出测试版本范围 $0.01–$1000');
+    sqWrite(a);squareBusy=true;
+    try{const j=await squareCall('/checkout',a);a.id=j.checkout.id;sqWrite(a);await squarePoll(a,p);}catch(e){sqMsg(e.message);alert('支付结果未确认，勿重复收费：'+e.message);}finally{squareBusy=false;}
+  }
+  async function squarePoll(a,p){for(let i=0;i<75;i++){const j=await squareCall('/status',{id:a.id,key:a.key});const c=j.checkout;sqMsg('Square: '+c.status);
+    if(c.status==='CANCELED'){localStorage.removeItem(squarePendingKey);alert('Square 已取消，请重新结账');return;}
+    if(c.status==='COMPLETED'){if(!j.verified||c.amount_money.amount!==a.cents)throw Error('金额或支付状态需要人工核对');
+      if(!p||p.signature!==a.signature||checkoutSignature()!==a.signature||saveFailed||!initialCloudLoaded)throw Error('Square 已收款，POS 信息已变化，请人工对账，勿再次收费。支付编号 '+c.id);
+      if(state.orders.some(o=>o.squareCheckoutId===c.id))throw Error('该支付已存在于订单，请人工核对');
+      clearCheckoutConfirmation();const ok=await finalizeOrderCheckout(p.payments,0,c);if(!ok)throw Error('Square 已收款但 POS 保存未确认，请人工对账');localStorage.removeItem(squarePendingKey);return;}
+    await new Promise(r=>setTimeout(r,4000));}throw Error('等待超时，使用状态按钮核对');}
+  async function squareRecover(){if(squareBusy)return alert('正在查询，请稍候');let a=sqRead();if(!a)return alert('本浏览器没有待核对支付');squareBusy=true;try{if(!a.id){if(!confirm('使用原支付请求编号恢复请求，可能发送至设备。继续？'))return;const j=await squareCall('/checkout',a);a.id=j.checkout.id;sqWrite(a);}await squarePoll(a,pendingCheckout);}catch(e){alert(e.message);}finally{squareBusy=false;}}
+  async function squareCancel(){const a=sqRead();if(!a?.id)return alert('请先核对支付请求');try{const j=await squareCall('/cancel',{id:a.id,key:a.key});sqMsg(j.checkout.status);if(j.checkout.status==='CANCELED')localStorage.removeItem(squarePendingKey);else alert('取消尚未确认，请核对状态');}catch(e){alert(e.message);}}
+  async function squareSetup(){try{const action=prompt('1 = 门店列表 / Locations; 2 = 配对码 / Pair; 3 = 查询配对 / Pair status');const j=action==='1'?await squareCall('/locations'):action==='2'?await squareCall('/pair',{}):action==='3'?await squareCall('/pair-status',{id:prompt('Device code ID')}):null;if(j)alert(JSON.stringify(j,null,2));}catch(e){alert(e.message);}}
+  Object.assign(window,{squareRecover,squareCancel,squareSetup});
 
   initFirebaseSync();
 </script>
