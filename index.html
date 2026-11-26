@@ -1607,7 +1607,16 @@
   /* =========================================================
      第2项 & 第3项：计时任意加钟、任意加钱随结账一起结、合并结账
   ========================================================= */
-  function startServiceTimer(serviceId, overrideStaffId = null, appointment = null) {
+  let pendingResourceStart = null;
+  function cancelResourceStart(){pendingResourceStart=null;renderResources();}
+  function chooseResourceStart(id){
+    const p=pendingResourceStart;if(!p)return;
+    const a=p.appointmentId?state.appointments.find(x=>x.id===p.appointmentId):null;
+    if(p.appointmentId&&(!a||a.status!=='已预约')){cancelResourceStart();return alert('预约状态已变化');}
+    startServiceTimer(p.serviceId,p.staffId,a,id,p.group);
+  }
+  Object.assign(window,{cancelResourceStart,chooseResourceStart});
+  function startServiceTimer(serviceId, overrideStaffId = null, appointment = null, selectedResource = null, pendingGroup = null) {
     const targetStaff = overrideStaffId || state.selectedStaffId;
     if (!targetStaff) return alert('请先选择「当前技师」');
     const srv = state.services.find(s => s.id === serviceId);
@@ -1616,11 +1625,17 @@
 
     if (!canEditTimer() || !staffAvailable(emp)) return alert("该员工正在服务或休息，或云端未连接");
     const mins = appointment ? apDuration(appointment) : (srv.duration > 0 ? srv.duration : 60);
-    const now = Date.now(); const group=appointment?.groupId||appointment?.id||crypto.randomUUID();
-    const preferred=appointment?.resourcePreferred||'';
+    const now = Date.now(); const group=pendingGroup||appointment?.groupId||appointment?.id||crypto.randomUUID();
+    const rule=resRule(srv);
+    if(selectedResource===null && rule && rule!=='none'){
+      pendingResourceStart={serviceId,staffId:targetStaff,appointmentId:appointment?.id||null,group};
+      if(appointment){apCloseEditor();closeModal('appointmentModal');}
+      const board=el('resourceBoard');board.closest('details').open=true;renderResources();board.closest('.card').scrollIntoView({behavior:'smooth',block:'start'});return;
+    }
+    const preferred=selectedResource||appointment?.resourcePreferred||'';
     const allocation=resAllocate({serviceId,start:now,end:now+mins*60000,group,exclude:appointment?[appointment.id]:[],preferred});
-    if(allocation.error)return alert(allocation.error);
-    if(!appointment&&allocation.plan.length){const choice=prompt('自动分配：'+allocation.plan.map(p=>resources().find(r=>r.id===p.resourceId)?.name).join(' → ')+'\n留空确认自动分配，或输入首阶段设备编号：\n'+resources().map(r=>r.id+' '+r.name).join('\n'),'');if(choice===null)return;if(choice.trim()){const manual=resAllocate({serviceId,start:now,end:now+mins*60000,group,preferred:choice.trim()});if(manual.error)return alert(manual.error);allocation.plan=manual.plan;}}
+    if(allocation.error){renderResources();return alert(allocation.error);}
+    pendingResourceStart=null;
     if(appointment)appointment.status='已开钟';
     state.timers.push({
       id: 'tm_' + now + '_' + Math.random().toString(36).slice(2, 6),
@@ -3380,7 +3395,7 @@
   async function uploadContract(input){const f=input.files[0];if(!f)return;input.disabled=true;try{if(currentUser?.uid!==ADMIN_UID)throw Error('Unauthorized');const version=crypto.randomUUID();let t;if(/\.pdf$/i.test(f.name)){if(!f.size||f.size>10*1024*1024)throw Error('PDF limit: 10 MiB');const bytes=new Uint8Array(await f.arrayBuffer());await PDFLib.PDFDocument.load(bytes);const ref=templateRef(version),batch=writeBatch(db),chunkCount=Math.ceil(bytes.length/512000);batch.set(ref,{name:f.name,version,format:'pdf',fileSize:bytes.length,chunkCount,uploadedAt:serverTimestamp()});for(let i=0;i<chunkCount;i++)batch.set(doc(ref,'chunks',String(i)),{data:Bytes.fromUint8Array(bytes.slice(i*512000,(i+1)*512000))});await batch.commit();t={name:f.name,version,format:'pdf'};pdfCache.set(version,bytes);}else{if(!/\.txt$/i.test(f.name)||f.size>20000)throw Error('TXT limit: 20 KB');const text=await f.text();if(!text.trim())throw Error('Empty contract');t={name:f.name,version,text,format:'txt'};}const previous=state.contractTemplate;state.contractTemplate=t;if(!await saveState()){state.contractTemplate=previous;throw Error('Template activation failed');}openContracts();}catch(e){alert('Upload failed: '+e.message);}finally{input.disabled=false;input.value='';}}
   function removeContract(){if(confirm('停用新注册合同？历史签署记录保留。')){state.contractTemplate=null;saveState();openContracts();}}
   let signedContractURL;
-  const MAIL_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyf6WFolxfSIfutLvcrLmYRQi8YmVsTVVdIasKUA1bnhIVvDF6k6n75R2NIIjxN5HwOYw/exec'; // Paste deployed Apps Script /exec URL here
+  const MAIL_ENDPOINT = ''; // Paste deployed Apps Script /exec URL here
   const mailRef=id=>doc(db,'pos_systems','default_store','contractMail',id);
   const mailBusy=new Set();
   async function buildSignedContract(m){const c=m.contract;
@@ -3503,7 +3518,7 @@
   function resSave(){if(!canEditTimer())return;const next=resources().map(r=>{const row=[...el('extraBody').querySelectorAll('[data-rid]')].find(x=>x.dataset.rid===r.id);return {...r,name:row.querySelector('.resName').value.trim()||r.name,enabled:row.querySelector('.resEnabled').checked};});const busy=resExisting().rows; if(next.some(r=>!r.enabled&&busy.some(p=>p.resourceId===r.id&&p.end>Date.now())))return alert('设备仍有预留或服务，不能停用');state.resources=next;for(const row of el('resRules').children){const x=state.services.find(s=>s.id===row.dataset.sid);if(x)x.resourceRule=row.querySelector('select').value;}saveState();closeModal('extraModal');renderResources();}
   function resAdd(){if(!canEditTimer())return;const name=prompt('设备名称');if(!name?.trim())return;const type=prompt('设备类型：chair 或 bed','bed');if(!['chair','bed'].includes(type))return;state.resources=[...resources(),{id:crypto.randomUUID(),name:name.trim(),type,room:crypto.randomUUID(),enabled:true}];saveState();resSettings();}
   function resManual(id,kind){if(!canEditTimer())return;const a=(kind==='timer'?state.timers:state.appointments).find(x=>x.id===id);if(!a)return;const choices=resources().filter(r=>r.enabled!==false);const v=prompt('输入首阶段设备编号（留空自动）\n'+choices.map(r=>r.id+' : '+r.name).join('\n'),a.resourcePreferred||'');if(v===null)return;if(v&&!choices.some(r=>r.id===v))return alert('设备编号无效');if(kind==='timer')return alert('进行中服务暂不支持重新分配，请在开钟前选择。');const next={...a,resourcePreferred:v};const err=resAssignAppointment(next);if(err)return alert(err);Object.assign(a,next);saveState();renderAll();}
-  function renderResources(){const root=el('resourceBoard');if(!root)return;const now=Date.now(),{rows,unknown}=resExisting(),e=escapeHTML;root.innerHTML=(unknown.some(p=>p.end>now)?'<p style="color:#b45309">存在未分配设备的旧记录，请先处理。</p>':'')+'<div class="res-grid">'+resources().map(r=>{const active=rows.find(p=>p.resourceId===r.id&&p.start<=now&&p.end>now),future=rows.filter(p=>p.resourceId===r.id&&p.start>now).sort((a,b)=>a.start-b.start)[0];const locked=r.room==='couple'&&rows.some(p=>p.start<=now&&p.end>now&&resources().find(z=>z.id===p.resourceId)?.room==='couple');return `<div class="res-tile ${active?'busy':locked?'locked':''}"><strong>${e(r.name)}</strong><div>${r.enabled===false?'停用':active?e(active.label||'已预留')+' · '+Math.ceil((active.end-now)/60000)+' 分钟':locked?'双人房隐私预留':'空闲'}</div><small>${future?'下次：'+e(storeTime(future.start))+' · '+e(future.label||''):'无后续预留'}</small></div>`;}).join('')+'</div>';}
+  function renderResources(){const root=el('resourceBoard');if(!root)return;const now=Date.now(),{rows,unknown}=resExisting(),e=escapeHTML;const p=pendingResourceStart, srv=p&&state.services.find(x=>x.id===p.serviceId), emp=p&&state.employees.find(x=>x.id===p.staffId), ap=p?.appointmentId&&state.appointments.find(x=>x.id===p.appointmentId), mins=ap?apDuration(ap):(srv?.duration>0?srv.duration:60); const selection=p?`<div style="padding:14px;background:#eff6ff;border:2px solid #2563eb;border-radius:10px;margin-bottom:12px"><strong>请选择设备 / Select equipment</strong><p>${e(emp?.name||'')} · ${e(srv?.name||'')} · ${mins} 分钟</p><p>点击可用设备立即开钟，Combo 后续设备自动安排。</p><button onclick="cancelResourceStart()">取消选择 / Cancel</button></div>`:'';root.innerHTML=selection+(unknown.some(p=>p.end>now)?'<p style="color:#b45309">存在未分配设备的旧记录，请先处理。</p>':'')+'<div class="res-grid">'+resources().map(r=>{const active=rows.find(p=>p.resourceId===r.id&&p.start<=now&&p.end>now),future=rows.filter(p=>p.resourceId===r.id&&p.start>now).sort((a,b)=>a.start-b.start)[0];const locked=r.room==='couple'&&rows.some(p=>p.start<=now&&p.end>now&&resources().find(z=>z.id===p.resourceId)?.room==='couple');const check=p?resAllocate({serviceId:p.serviceId,start:now,end:now+mins*60000,group:p.group,exclude:ap?[ap.id]:[],preferred:r.id}):null;const selectable=check&&!check.error&&check.plan[0]?.resourceId===r.id&&emp&&staffAvailable(emp)&&canEditTimer();return `<div class="res-tile ${active?'busy':locked?'locked':''}"><strong>${e(r.name)}</strong><div>${r.enabled===false?'停用':active?e(active.label||'已预留')+' · '+Math.ceil((active.end-now)/60000)+' 分钟':locked?'双人房隐私预留':'空闲'}</div><small>${future?'下次：'+e(storeTime(future.start))+' · '+e(future.label||''):'无后续预留'}</small>${p?`<button style="width:100%;margin-top:10px" class="${selectable?'btn-success':'btn-outline'}" ${selectable?'':'disabled'} data-rid="${e(r.id)}" onclick="chooseResourceStart(this.dataset.rid)">${selectable?'选择并开钟 / Start':'不可选 / Unavailable'}</button>`:''}</div>`;}).join('')+'</div>';}
   function resCalendar(){const day=apDate||todayStr(),lo=resEpoch(day,apHours().start),hi=resEpoch(day,apHours().end),{rows}=resExisting();const e=escapeHTML;el('apCalendar').innerHTML='<div style="overflow:auto"><table><thead><tr><th>设备</th><th>预约 / 服务时间</th></tr></thead><tbody>'+resources().map(r=>`<tr><th>${e(r.name)}</th><td>${rows.filter(p=>p.resourceId===r.id&&p.start<hi&&p.end>lo).sort((a,b)=>a.start-b.start).map(p=>`<div class="tag tag-blue" style="margin:4px">${e(storeTime(p.start))} – ${e(storeTime(p.end))} · ${e(p.label||'')}</div>`).join('')||'空闲'}</td></tr>`).join('')+'</tbody></table></div>';}
   Object.assign(window,{resSettings,resSave,resAdd,resManual});
 
