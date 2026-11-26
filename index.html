@@ -1073,7 +1073,7 @@
       doubleDisc: 15,
       pointsPerDollar: 1
     },
-    cardFeeConfig: { mode: 'fixed', value: 2 },
+    cardFeeConfig: { mode: 'off', value: 0 },
     revenueRules: {
       countGiftCardSale: true,
       countGiftCardUse: false,
@@ -1241,7 +1241,7 @@
           return;
         }
         if (!snap.exists()) { cloudEnabled = false; setDashboardLocked(true); setCloudBadge('⚠️ 云端账本不存在', 'tag-amber'); return; }
-        if (!saveFailed) { const remote=snap.data(); if(remote.paymentConfig&&!snap.metadata.hasPendingWrites){state.paymentConfig=remote.paymentConfig;if(el("checkoutModal").classList.contains("open")){clearCheckoutConfirmation();renderCheckoutSummary();}} if(remote.paymentPending){state.paymentPending=remote.paymentPending;} else if(state.paymentPending && !squareBusy){mergeStateData(remote);ledgerRevision=Number(remote.ledgerRevision||0);} setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green'); setDashboardLocked(false); renderAll(); }
+        if (!saveFailed) { const remote=snap.data(); if(remote.paymentConfig&&!snap.metadata.hasPendingWrites){state.paymentConfig=remote.paymentConfig;if(remote.cardFeeConfig)state.cardFeeConfig=remote.cardFeeConfig;if(el("checkoutModal").classList.contains("open")){clearCheckoutConfirmation();renderCheckoutSummary();}} if(remote.paymentPending){state.paymentPending=remote.paymentPending;} else if(state.paymentPending && !squareBusy){mergeStateData(remote);ledgerRevision=Number(remote.ledgerRevision||0);} setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green'); setDashboardLocked(false); renderAll(); }
       }, error => {
         console.error('Firestore listener error:', error.code);
         cloudEnabled = false;
@@ -1919,6 +1919,7 @@
     const initPoints = Math.round(totalCollected * (state.memberCfg.pointsEnabled===false?0:Number(state.memberCfg.pointsPerDollar ?? 1)));
     const dateVal = document.getElementById('entryDate').value || todayStr();
 
+    const serviceFee=confirmManualFee(payMethod,totalCollected);if(serviceFee===null)return;
     const newMem = {
       id: 'mem_' + Date.now(),
       name, phone, email, birthday, tier, tierLabel, discount, discountType,
@@ -1931,6 +1932,8 @@
     el("memEmail").value="";el("memBirthday").value="";refreshMemberExtras();
 
     const receiptLines = [];
+    recordManualFee(serviceFee,dateVal,'会员办卡 '+name);
+    if(serviceFee)receiptLines.push({name:'服务费 / Service Fee',amount:serviceFee});
     if (fee > 0) {
       state.serviceFees.push({ id: 'sf_mem_' + Date.now(), date: dateVal, category: '会员费', payMethod, amount: +fee.toFixed(2), note: `开通${tierLabel} - ${name}` });
       receiptLines.push({ name: `开通${tierLabel}`, amount: fee });
@@ -1957,8 +1960,8 @@
       time: nowStr(),
       title: '会员办卡与充值收据',
       items: receiptLines.length ? receiptLines : [{ name: tierLabel, amount: 0 }],
-      totalPaid: totalCollected,
-      payments: [{ method: payMethod, amount: totalCollected }],
+      totalPaid: totalCollected+serviceFee,
+      payments: [{ method: payMethod, amount: totalCollected+serviceFee }],
       memberInfo: `${name} (${phone}) · 余额 $${newMem.balance.toFixed(2)} · 积分 ${newMem.points}`
     });
     if(newMem.contract){const area=el('receiptPrintArea');if(area){const button=document.createElement('button');button.textContent='下载 / 发送签署合同';button.onclick=()=>downloadContract(newMem.id);area.append(button);}}
@@ -1974,6 +1977,7 @@
     if (!amt || amt <= 0) return alert('请输入有效充值金额');
 
     const method = prompt('请输入收款方式（银行卡 / 现金 / Venmo）：', '银行卡') || '银行卡';
+    const serviceFee=confirmManualFee(method,amt);if(serviceFee===null)return;recordManualFee(serviceFee,el('entryDate').value||todayStr(),'会员充值 '+m.name);
     m.balance = +((Number(m.balance || 0) + amt).toFixed(2));
     const addedPts = Math.round(amt * (state.memberCfg.pointsEnabled===false?0:Number(state.memberCfg.pointsPerDollar ?? 1)));
     m.points = (Number(m.points || 0) + addedPts);
@@ -1994,9 +1998,9 @@
       receiptNo: 'RC-' + Date.now().toString().slice(-6),
       time: nowStr(),
       title: '会员充值卡续充收据',
-      items: [{ name: `会员充值 (${m.name})`, amount: amt }],
-      totalPaid: amt,
-      payments: [{ method, amount: amt }],
+      items: [{ name: `会员充值 (${m.name})`, amount: amt },...(serviceFee?[{name:"服务费 / Service Fee",amount:serviceFee}]:[])],
+      totalPaid: amt+serviceFee,
+      payments: [{ method, amount: amt+serviceFee }],
       memberInfo: `${m.name} (${m.phone}) · 充值后余额 $${m.balance.toFixed(2)} · 积分 ${m.points}`
     });
   }
@@ -2097,7 +2101,7 @@
     const fee = combinedFee([{method:selectedCheckoutMethod,amount:total}]);
     document.querySelectorAll('#checkoutModal .pay-btn').forEach(b=>{const active=b.dataset.method===selectedCheckoutMethod;b.classList.toggle('selected',active);b.setAttribute('aria-pressed',String(active));});
     document.getElementById('coNext').disabled = selectedCheckoutMethod==='会员充值卡' && document.getElementById('payMemberCardBtn').disabled;
-    document.getElementById('checkoutTotalInfo').innerHTML = `<div><span class="co-muted">项目金额 / Subtotal</span><strong>$${total.toFixed(2)}</strong></div><div><span class="co-muted">银行卡手续费 / Card fee（小费 $${tipTotal().toFixed(2)}）</span><strong>$${fee.toFixed(2)}</strong></div><div class="co-total"><span>最终应收 / Total</span><span>$${(total+fee+tipTotal()).toFixed(2)}</span></div>`;
+    document.getElementById('checkoutTotalInfo').innerHTML = `<div><span class="co-muted">项目金额 / Subtotal</span><strong>$${total.toFixed(2)}</strong></div><div><span class="co-muted">服务费 / Service Fee（小费 $${tipTotal().toFixed(2)}）</span><strong>$${fee.toFixed(2)}</strong></div><div class="co-total"><span>最终应收 / Total</span><span>$${(total+fee+tipTotal()).toFixed(2)}</span></div>`;
   }
   function checkoutMemberMatches(m, query) {
     const q = query.trim().toLowerCase();
@@ -2245,7 +2249,7 @@
   function openPaymentSettings(){
     if(currentUser?.uid!==ADMIN_UID||state.paymentPending||squareBusy)return alert('请先完成待处理交易');
     const cfg=state.cardFeeConfig;
-    showExtra('支付方式与第三方集成 / Payment settings',`<p><label><input id="psSquare" type="checkbox" ${squareEnabled()?'checked':''}> Square Terminal 自动收款</label></p><p>关闭后使用独立刷卡机，人工确认收款。运行环境由 Worker 配置决定。</p>${paymentMethods.map((m,i)=>`<p><label><input type="checkbox" id="psM${i}" ${methodEnabled(m)?'checked':''}>${m}</label></p>`).join('')}<p>银行卡附加费暂不收取（需先核实当地法规）。</p><button onclick="squareSetup()">测试连接 / 配对</button> <button class="btn-primary" onclick="savePaymentSettings()">保存 / Save</button>`);
+    showExtra('支付方式与第三方集成 / Payment settings',`<p><label><input id="psSquare" type="checkbox" ${squareEnabled()?'checked':''}> Square Terminal 自动收款</label></p><p>关闭后使用独立刷卡机，人工确认收款。运行环境由 Worker 配置决定。</p>${paymentMethods.map((m,i)=>`<p><label><input type="checkbox" id="psM${i}" ${methodEnabled(m)?'checked':''}>${m}</label></p>`).join('')}<h3>服务费 / Service Fee</h3><label>计算方式 / Mode <select id="psFeeMode"><option value="off" ${cfg.mode==='off'?'selected':''}>关闭 / Disabled</option><option value="fixed" ${cfg.mode==='fixed'?'selected':''}>固定金额 / Fixed ($)</option><option value="percent" ${cfg.mode==='percent'?'selected':''}>百分比 / Percentage (%)</option></select></label><label> 数值 / Value <input id="psFeeValue" type="number" min="0" step="0.01" value="${Number(cfg.value)||''}"></label><p>仅银行卡交易，每笔一次。启用前确认卡种及当地法规允许收费。</p><button onclick="squareSetup()">测试连接 / 配对</button> <button class="btn-primary" onclick="savePaymentSettings()">保存 / Save</button>`);
   }
   async function savePaymentSettings(){
     if(currentUser?.uid!==ADMIN_UID||state.paymentPending||squareBusy||saveFailed||!initialCloudLoaded)return alert('当前无法修改支付设置');
@@ -2254,7 +2258,7 @@
     const enabled=el('psSquare').checked;
     if(enabled&&!methods['银行卡'])return alert('开启 Square 需要启用银行卡');
     if(enabled&&!squareEnabled()){try{await squareCall('/locations');}catch(e){return alert('连接失败：'+e.message);}}
-    state.paymentConfig={squareEnabled:enabled,methods};state.cardFeeConfig={mode:'off',value:0};
+    const mode=el('psFeeMode').value,value=Number(el('psFeeValue').value);if(!['off','fixed','percent'].includes(mode)||!Number.isFinite(value)||value<0||(mode==='percent'&&value>100))return alert('服务费数值无效');if(mode!=='off'&&value>0&&!confirm('请确认收费符合当地法律及卡组织规定；借记卡和预付卡不得按信用卡附加费处理。'))return;state.paymentConfig={squareEnabled:enabled,methods};state.cardFeeConfig={mode,value:mode==='off'?0:value};
     clearCheckoutConfirmation();addAudit('支付设置',JSON.stringify(state.paymentConfig));
     if(await saveState()){closeModal('extraModal');renderAll();}else alert('设置未确认保存，请刷新核对');
   }
@@ -2275,8 +2279,14 @@
     updateSplitHint();
   }
 
+  function confirmManualFee(method,amount){
+    if(currentUser?.uid!==ADMIN_UID||!initialCloudLoaded||saveFailed||state.paymentPending||squareBusy||!methodEnabled(method)) {alert('当前无法收款或支付方式已关闭');return null;}
+    const fee=cardFeeFor({method,amount});
+    if(!confirm(`原金额 / Subtotal $${amount.toFixed(2)}\n服务费 / Service Fee $${fee.toFixed(2)}\n实收 / Total $${(amount+fee).toFixed(2)}\n确认已实际收款？ / Confirm payment received${method==='银行卡'?' (external terminal, no automatic charge)':''}`))return null;
+    return fee;
+  }
+  function recordManualFee(fee,date,note){if(fee>0)state.serviceFees.push({id:'sf_card_'+crypto.randomUUID(),date,category:'银行卡手续费',payMethod:'银行卡',amount:fee,note});}
   function cardFeeFor(p) {
-    if (p.method === "银行卡") return 0;
     if (p.method !== '银行卡' || p.amount <= 0) return 0;
     const cfg = state.cardFeeConfig;
     const value = Number(cfg.value);
@@ -2291,7 +2301,7 @@
     if(!validTips())return alert("小费金额无效"); const fee = combinedFee(payments);
     const total = getCurrentCheckoutPayable();
     pendingCheckout = {payments, fee, total, signature: checkoutSignature()};
-    document.getElementById('coConfirmDetails').innerHTML = payments.map(p=>`<div><span>${escapeHTML(p.method)}</span><strong>$${(p.amount+cardFeeFor(p)).toFixed(2)}</strong></div>`).join('')+`<div><span>项目合计</span><span>$${total.toFixed(2)}</span></div><div><span>小费</span><span>$${tipTotal().toFixed(2)} (${escapeHTML(el("coTipMethod").value)})</span></div><div><span>手续费</span><span>$${fee.toFixed(2)}</span></div><div class="co-total"><span>确认实收</span><span>$${(total+fee+tipTotal()).toFixed(2)}</span></div>`;
+    document.getElementById('coConfirmDetails').innerHTML = payments.map(p=>`<div><span>${escapeHTML(p.method)}</span><strong>$${(p.amount).toFixed(2)}</strong></div>`).join('')+`<div><span>项目合计</span><span>$${total.toFixed(2)}</span></div><div><span>小费</span><span>$${tipTotal().toFixed(2)} (${escapeHTML(el("coTipMethod").value)})</span></div><div><span>服务费 / Service Fee</span><span>$${fee.toFixed(2)}</span></div><div class="co-total"><span>确认实收</span><span>$${(total+fee+tipTotal()).toFixed(2)}</span></div>`;
     const panel=document.getElementById('coConfirm');panel.hidden=false;panel.scrollIntoView({block:'nearest',behavior:'smooth'});
   }
   function checkoutSignature(){return JSON.stringify([checkoutCart,tipEntries(),el("coTipMethod").value,state.cardFeeConfig,state.paymentConfig,el('checkoutMemberSelect').value,state.members.find(m=>m.id===el('checkoutMemberSelect').value),checkoutCart.map(it=>{const t=state.timers.find(t=>t.id===it.timerId);if(!t)return null;const {status,bellPlayed,checked,...stable}=t;return stable;}),el('entryDate').value]);}
@@ -2946,6 +2956,7 @@
     const amount = presetAmount !== null ? presetAmount : parseFloat(document.getElementById('tipAmount').value);
     if (!amount || amount <= 0) return alert('请输入有效小费金额');
     const note = document.getElementById('tipNote').value.trim();
+    const method=state.tipType==='银行卡小费'?'银行卡':state.tipType.replace(/小费$/,'');const serviceFee=confirmManualFee(method,amount);if(serviceFee===null)return;recordManualFee(serviceFee,el('entryDate').value||todayStr(),'独立小费');
 
     state.tips.push({
       id: 'tip_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
@@ -2975,6 +2986,7 @@
     const category = document.getElementById('sfCategory').value || '服务费';
     if(category==='销售礼卡') return giftStats();
     const note = document.getElementById('sfNote').value.trim();
+    const serviceFee=confirmManualFee(state.sfPayMethod,amount);if(serviceFee===null)return;recordManualFee(serviceFee,el('entryDate').value||todayStr(),category);
     state.serviceFees.push({
       id: 'sf_' + Date.now(),
       date: document.getElementById('entryDate').value || todayStr(),
@@ -3526,7 +3538,7 @@
     <strong>当前统计周期销售明细</strong><div style="overflow:auto"><table><thead><tr><th>日期</th><th>类型</th><th>编号</th><th>面值</th><th>实收</th><th>支付</th><th>备注</th></tr></thead><tbody>${period.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<tr><td>${e(x.date)}</td><td>${x.giftType==='paper'?'纸质':x.giftType==='digital'?'电子':'未分类'}</td><td>${e(x.giftCode||'—')}</td><td>${x.giftFace==null?'—':'$'+Number(x.giftFace).toFixed(2)}</td><td>$${Number(x.amount).toFixed(2)}</td><td>${e(x.payMethod)}</td><td>${e(x.note||'')}</td></tr>`).join('')||'<tr><td colspan="7">暂无记录</td></tr>'}</tbody></table></div>`);
     el('gsFace').addEventListener('input',()=>{el('gsAmount').value=el('gsFace').value;});
   }
-  async function recordGiftSale(event){event.preventDefault();if(currentUser?.uid!==ADMIN_UID||saveFailed||!initialCloudLoaded)return alert('请先确认管理员登录及云端同步状态');const code=el('gsCode').value.trim(),face=Number(el('gsFace').value),amount=Number(el('gsAmount').value),date=el('gsDate').value;if(!code||!date||!Number.isFinite(face)||!Number.isFinite(amount)||face<=0||amount<=0)return alert('请输入有效信息');if(state.serviceFees.some(x=>x.giftCode&&x.giftCode.toLowerCase()===code.toLowerCase()))return alert('编号已存在，请勿重复登记');if(!confirm('确认已实际收到 $'+amount.toFixed(2)+'？'))return;const btn=event.target.querySelector('button');btn.disabled=true;state.serviceFees.push({id:'sf_gift_'+crypto.randomUUID(),category:'销售礼卡',date,payMethod:el('gsPay').value,amount:+amount.toFixed(2),giftFace:+face.toFixed(2),giftType:el('gsType').value,giftCode:code,note:el('gsNote').value.trim()});addAudit('登记礼卡销售',code);const ok=await saveState();renderAll();giftStats();if(!ok)alert('云端保存未确认，请检查同步状态，勿重复登记');}
+  async function recordGiftSale(event){event.preventDefault();if(currentUser?.uid!==ADMIN_UID||saveFailed||!initialCloudLoaded)return alert('请先确认管理员登录及云端同步状态');const code=el('gsCode').value.trim(),face=Number(el('gsFace').value),amount=Number(el('gsAmount').value),date=el('gsDate').value;if(!code||!date||!Number.isFinite(face)||!Number.isFinite(amount)||face<=0||amount<=0)return alert('请输入有效信息');if(state.serviceFees.some(x=>x.giftCode&&x.giftCode.toLowerCase()===code.toLowerCase()))return alert('编号已存在，请勿重复登记');const serviceFee=confirmManualFee(el('gsPay').value,amount);if(serviceFee===null)return;recordManualFee(serviceFee,date,'礼卡 '+code);const btn=event.target.querySelector('button');btn.disabled=true;state.serviceFees.push({id:'sf_gift_'+crypto.randomUUID(),category:'销售礼卡',date,payMethod:el('gsPay').value,amount:+amount.toFixed(2),giftFace:+face.toFixed(2),giftType:el('gsType').value,giftCode:code,note:el('gsNote').value.trim()});addAudit('登记礼卡销售',code);const ok=await saveState();renderAll();giftStats();if(!ok)alert('云端保存未确认，请检查同步状态，勿重复登记');}
   function saveGiftURL(){const v=el('giftURL').value.trim();if(v&&!/^https:\/\//i.test(v))return alert('请输入 HTTPS 链接');state.giftURL=v;saveState();giftStats();}
   window.recordGiftSale=recordGiftSale;
   Object.assign(window,{editMemberProfile,saveMemberProfile,clearSignature,receiptSettings,saveReceiptSettings,giftStats,saveGiftURL});
@@ -3598,7 +3610,7 @@
     if(squareBusy||state.paymentPending)return;
     if(p.payments.length!==1||p.payments[0].method!=='银行卡'||(tipTotal()>0&&el('coTipMethod').value!=='银行卡'))return alert('仅支持整单银行卡支付');
     if(!confirm('发送至 Square Terminal？'))return;
-    const a={key:crypto.randomUUID(),cents:Math.round((p.total+tipTotal())*100),cart:structuredClone(checkoutCart),tips:tipEntries(),tipMethod:el('coTipMethod').value,memberId:el('checkoutMemberSelect').value,date:el('entryDate').value||todayStr(),payments:p.payments,createdAt:Date.now()};
+    const a={key:crypto.randomUUID(),cents:Math.round((p.total+tipTotal()+p.fee)*100),cart:structuredClone(checkoutCart),tips:tipEntries(),tipMethod:el('coTipMethod').value,memberId:el('checkoutMemberSelect').value,date:el('entryDate').value||todayStr(),payments:p.payments,cardFee:p.fee,createdAt:Date.now()};
     if(a.cents<1||a.cents>100000)return alert('金额范围 $0.01–$1000');
     squareBusy=true;
     try{await saveQueue; if(saveFailed)throw Error('Cloud save failed');
@@ -3619,7 +3631,7 @@
   async function squareRelease(a){await runTransaction(db,async tx=>{const snap=await tx.get(cloudDocRef);if(snap.data().paymentPending?.key!==a.key)throw Error('Payment lock changed');tx.update(cloudDocRef,{paymentPending:null,ledgerRevision:Number(snap.data().ledgerRevision||0)+1});tx.set(doc(cloudDocRef,'checkoutOrders',a.key),{...a,status:'canceled',recordedAt:serverTimestamp()});});const snap=await getDocFromServer(cloudDocRef);mergeStateData(snap.data());ledgerRevision=snap.data().ledgerRevision;renderAll();}
   async function squareRecord(a,c){const snap=await getDocFromServer(cloudDocRef);const d=snap.data();if(d.paymentPending?.key!==a.key){if(d.orders.some(o=>o.squareCheckoutId===c.id)){mergeStateData(d);ledgerRevision=d.ledgerRevision;renderAll();return;}throw Error('Payment lock changed');}
     mergeStateData(d);ledgerRevision=d.ledgerRevision;finalizingKey=a.key;finalizingRecord={...a,status:'recorded',squareCheckoutId:c.id,squarePaymentIds:c.payment_ids};
-    try{const ok=await finalizeOrderCheckout(a.payments,0,c,a);if(!ok)throw Error('已收款，入账未确认；刷新后核对');}finally{finalizingKey=null;finalizingRecord=null;}
+    try{const ok=await finalizeOrderCheckout(a.payments,a.cardFee||0,c,a);if(!ok)throw Error('已收款，入账未确认；刷新后核对');}finally{finalizingKey=null;finalizingRecord=null;}
   }
   async function squareRecover(){if(squareBusy)return alert('正在查询');if(localStorage.getItem(squarePendingKey))return alert('旧版浏览器有待核对交易，请先在 Square Dashboard 人工核对，不要重新收费');squareBusy=true;try{const snap=await getDocFromServer(cloudDocRef);mergeStateData(snap.data());ledgerRevision=Number(snap.data().ledgerRevision||0);if(!state.paymentPending)return alert('没有待核对交易');await squareResume(state.paymentPending);}catch(e){alert(e.message);}finally{squareBusy=false;paymentBanner();}}
   async function squareCancel(){if(squareBusy)return alert('正在查询，请等待或刷新后取消');const a=state.paymentPending;if(!a?.id)return alert('请先查询原交易');squareBusy=true;try{const j=await squareCall('/cancel',{id:a.id,key:a.key});if(j.checkout.status==='CANCELED')await squareRelease(a);else alert('取消未确认，请继续查询');}catch(e){alert(e.message);}finally{squareBusy=false;paymentBanner();}}
