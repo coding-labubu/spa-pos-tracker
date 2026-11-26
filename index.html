@@ -488,7 +488,7 @@
     </div>
 
     <div class="card"><details open><summary style="font-size:20px;font-weight:800;cursor:pointer">实时房间与设备看板 / Resources</summary><div id="resourceBoard" style="margin-top:12px"></div></details></div>
-    <!-- 服务计时看板 -->
+    <div class="card"><button onclick="squareTransactions()">交易记录 / Transactions</button><div id="paymentNotice" hidden><strong id="paymentNoticeText"></strong> <button onclick="squareRecover()">查询并恢复</button> <button onclick="squareCancel()">取消支付</button></div></div><!-- 服务计时看板 -->
     <div class="card non-therapist">
       <div class="card-title">
         <span data-i18n="timerBoardTitle">⏱️ 服务计时看板（支持任意分钟加钟 & 任意加钱 & 多选合并结账）</span>
@@ -1025,7 +1025,7 @@
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js';
-  import { doc, setDoc, getDocFromServer, collection, getDocsFromServer, writeBatch, onSnapshot, serverTimestamp, initializeFirestore, Bytes } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
+  import { doc, setDoc, getDocFromServer, collection, getDocsFromServer, writeBatch, runTransaction, onSnapshot, serverTimestamp, initializeFirestore, Bytes } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence, browserLocalPersistence, RecaptchaVerifier, signInWithPhoneNumber, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js';
 
   const FIREBASE_CONFIG = {
@@ -1046,7 +1046,9 @@
   function storeTime(ms){return new Date(ms).toLocaleString('en-US',{timeZone:zone()});}
   function storeHour(){return new Intl.DateTimeFormat('en-GB',{timeZone:zone(),hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());}
 
+  let ledgerRevision = 0;
   let state = {
+    paymentPending: null,
     lang: 'zh',
     role: null,
     therapistViewId: null,
@@ -1167,6 +1169,7 @@
   }
 
   function saveState() {
+    if(state.paymentPending && !finalizingKey)return Promise.resolve(false);
     if (!currentUser || currentUser.uid !== ADMIN_UID || !cloudEnabled || !cloudDocRef || !initialCloudLoaded || isApplyingRemote || saveFailed) {
       return Promise.resolve(false);
     }
@@ -1211,7 +1214,7 @@
       if (activeSession !== sessionVersion) return;
 
       if (snapshot.exists()) {
-        mergeStateData(snapshot.data());
+        mergeStateData(snapshot.data()); ledgerRevision=Number(snapshot.data().ledgerRevision||0);
         state.role = 'boss';
       } else {
         const confirmed = confirm('No cloud ledger was found. Create a new empty store ledger?');
@@ -1237,7 +1240,7 @@
           return;
         }
         if (!snap.exists()) { cloudEnabled = false; setDashboardLocked(true); setCloudBadge('⚠️ 云端账本不存在', 'tag-amber'); return; }
-        if (!saveFailed) { setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green'); setDashboardLocked(false); renderAll(); }
+        if (!saveFailed) { const remote=snap.data(); if(remote.paymentPending){state.paymentPending=remote.paymentPending;} else if(state.paymentPending && !squareBusy){mergeStateData(remote);ledgerRevision=Number(remote.ledgerRevision||0);} setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green'); setDashboardLocked(false); renderAll(); }
       }, error => {
         console.error('Firestore listener error:', error.code);
         cloudEnabled = false;
@@ -1351,7 +1354,17 @@
       });
     }
     existing.forEach(d=>{if(!keep.has(d.id)) batch.delete(d.ref)});
-    batch.set(target,payload); await batch.commit();
+    await runTransaction(db, async tx=>{
+      const snap=await tx.get(target); const old=snap.data()||{};
+      if(Number(old.ledgerRevision||0)!==ledgerRevision)throw Error('Ledger changed; reload before saving');
+      if(old.paymentPending && old.paymentPending.key!==payload.paymentPending?.key && old.paymentPending.key!==finalizingKey)throw Error('Payment locked');
+      if(old.paymentPending && !finalizingKey)throw Error('Payment pending; reconcile first');
+      tx.set(target,{...payload,ledgerRevision:ledgerRevision+1});
+      if(finalizingKey)tx.set(doc(target,'checkoutOrders',finalizingKey),{...finalizingRecord,recordedAt:serverTimestamp()});
+    }); ledgerRevision++;
+    // Staff projections are secondary; never retry a charge if projection fails.
+    try{await batch.commit();}catch(e){console.error('Staff projection sync failed',e);}
+
   }
   async function syncStaffAccounts(){ if(await saveState()) alert('员工账号及个人数据已同步'); }
   function toggleStaffAccess(id){ const e=state.employees.find(x=>x.id===id); if(!e||currentUser?.uid!==ADMIN_UID)return; e.portalDisabled=!e.portalDisabled; addAudit('员工账号权限',e.name); saveState(); renderAll(); }
@@ -1714,6 +1727,7 @@
   }
 
   function canEditTimer() {
+    if(state.paymentPending || squareBusy)return false;
     return currentUser?.uid === ADMIN_UID && cloudEnabled && initialCloudLoaded && !saveFailed && navigator.onLine;
   }
 
@@ -2252,23 +2266,24 @@
     document.getElementById('coConfirmDetails').innerHTML = payments.map(p=>`<div><span>${escapeHTML(p.method)}</span><strong>$${(p.amount+cardFeeFor(p)).toFixed(2)}</strong></div>`).join('')+`<div><span>项目合计</span><span>$${total.toFixed(2)}</span></div><div><span>小费</span><span>$${tipTotal().toFixed(2)} (${escapeHTML(el("coTipMethod").value)})</span></div><div><span>手续费</span><span>$${fee.toFixed(2)}</span></div><div class="co-total"><span>确认实收</span><span>$${(total+fee+tipTotal()).toFixed(2)}</span></div>`;
     const panel=document.getElementById('coConfirm');panel.hidden=false;panel.scrollIntoView({block:'nearest',behavior:'smooth'});
   }
-  function checkoutSignature(){return JSON.stringify([checkoutCart,tipEntries(),el("coTipMethod").value,state.cardFeeConfig,document.getElementById('checkoutMemberSelect').value,state.members.find(m=>m.id===document.getElementById('checkoutMemberSelect').value),checkoutCart.map(it=>state.timers.find(t=>t.id===it.timerId)),document.getElementById('entryDate').value]);}
+  function checkoutSignature(){return JSON.stringify([checkoutCart,tipEntries(),el("coTipMethod").value,state.cardFeeConfig,el('checkoutMemberSelect').value,state.members.find(m=>m.id===el('checkoutMemberSelect').value),checkoutCart.map(it=>{const t=state.timers.find(t=>t.id===it.timerId);if(!t)return null;const {status,bellPlayed,checked,...stable}=t;return stable;}),el('entryDate').value]);}
   async function commitCheckoutConfirmation(){
     const p=pendingCheckout;if(!p)return;
     if(!currentUser || currentUser.uid!==ADMIN_UID || !initialCloudLoaded || !cloudEnabled || saveFailed || p.signature!==checkoutSignature()){clearCheckoutConfirmation();return alert('结账信息或云端状态已变化，请重新核对');}
-    if (squareBusy || localStorage.getItem(squarePendingKey)) return alert('存在未核对 Square 支付，请先查状态 / Reconcile pending payment');
+    if (squareBusy || state.paymentPending || localStorage.getItem(squarePendingKey)) return alert('存在未核对 Square 支付，请先查状态 / Reconcile pending payment');
     if(p.payments.some(x=>x.method==='银行卡') || (tipTotal()>0 && el('coTipMethod').value==='银行卡')) return squareCheckout(p);
     clearCheckoutConfirmation();finalizeOrderCheckout(p.payments,p.fee);
   }
 
-  async function finalizeOrderCheckout(payments, cardFee = 0, square = null) {
+  async function finalizeOrderCheckout(payments, cardFee = 0, square = null, frozen = null) {
     const orderStart = state.orders.length;
-    const dateVal = document.getElementById('entryDate').value || todayStr();
-    const memId = document.getElementById('checkoutMemberSelect')?.value;
+    const cart=frozen?.cart||checkoutCart; const tips=frozen?.tips||tipEntries(); const tipMethod=frozen?.tipMethod||el('coTipMethod').value; const tipsTotal=tips.reduce((n,t)=>n+t.amount,0);
+    const dateVal = frozen?.date || el('entryDate').value || todayStr();
+    const memId = frozen?.memberId ?? el('checkoutMemberSelect').value;
     const member = state.members.find(m => m.id === memId);
-    const totalPayable = getCurrentCheckoutPayable();
+    const totalPayable = cart.reduce((n,it)=>n+Number(it.finalPrice??it.price??0),0);
 
-    const memberCardCharge = payments.filter(p => p.method === '会员充值卡').reduce((s, p) => s + p.amount, 0)+(el('coTipMethod').value==='会员充值卡'?tipTotal():0);
+    const memberCardCharge = payments.filter(p => p.method === '会员充值卡').reduce((s, p) => s + p.amount, 0)+(tipMethod==='会员充值卡'?tipsTotal:0);
     if (memberCardCharge > 0) {
       if (!member) return alert('使用会员充值卡扣款前，请先选择关联会员！');
       if (Number(member.balance) < memberCardCharge) return alert('会员充值卡余额不足！');
@@ -2283,7 +2298,7 @@
 
     // 若为拆分支付，按各支付方式占比拆分记录到订单中，保证总营收分项(现金/卡/Venmo/礼卡/优惠券)完全精准
     if (payments.length === 1) {
-      checkoutCart.forEach((item, idx) => {
+      cart.forEach((item, idx) => {
         const actualPrice = Number(item.finalPrice ?? item.price ?? 0);
         state.orders.push({
           id: `ord_${baseTs}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
@@ -2304,11 +2319,11 @@
         if (item.timerId) finishedTimerIds.add(item.timerId);
       });
     } else {
-      checkoutCart.forEach((item, idx) => {
+      cart.forEach((item, idx) => {
         const itemPrice = Number(item.finalPrice ?? item.price ?? 0);
-        const ratio = totalPayable > 0 ? (itemPrice / totalPayable) : (1 / checkoutCart.length);
+        const ratio = totalPayable > 0 ? (itemPrice / totalPayable) : (1 / cart.length);
         payments.forEach((p, pIdx) => {
-          const prior = checkoutCart.slice(0, idx).reduce((sum, it) => sum + Number(it.finalPrice ?? it.price ?? 0), 0);
+          const prior = cart.slice(0, idx).reduce((sum, it) => sum + Number(it.finalPrice ?? it.price ?? 0), 0);
           const partPrice = totalPayable > 0 ? (Math.round(p.amount * 100 * (prior + itemPrice) / totalPayable) - Math.round(p.amount * 100 * prior / totalPayable)) / 100 : 0;
           const prevPay = payments.slice(0, pIdx).reduce((sum, x) => sum + x.amount, 0);
           const comm = Number(item.commission || 0);
@@ -2336,23 +2351,23 @@
 
     let memberSummaryText = '';
     if (member) {
-      const earnedPts = calcCartEarnedPoints(checkoutCart);
+      const earnedPts = calcCartEarnedPoints(cart);
       member.points = Number(member.points || 0) + earnedPts;
       memberSummaryText = `${member.name} · 剩余余额 $${member.balance.toFixed(2)} · 本次+${earnedPts}分 (总${member.points}分)`;
     }
 
     if (cardFee > 0) state.serviceFees.push({ id: 'sf_card_' + baseTs, date: dateVal, category: '银行卡手续费', payMethod: '银行卡', amount: +cardFee.toFixed(2), note: '结账 RC-' + baseTs.toString().slice(-6) });
-    for(const t of tipEntries().filter(t=>t.amount>0)){const emp=state.employees.find(e=>e.id===t.id);state.tips.push({id:crypto.randomUUID(),date:dateVal,staffId:t.id,staffName:emp?.name||'',type:el('coTipMethod').value+'小费',amount:t.amount,note:'结账小费'});}
+    for(const t of tips.filter(t=>t.amount>0)){const emp=state.employees.find(e=>e.id===t.id);state.tips.push({id:crypto.randomUUID(),date:dateVal,staffId:t.id,staffName:emp?.name||'',type:tipMethod+'小费',amount:t.amount,note:'结账小费'});}
     const receiptPayload = {
       receiptNo: 'RC-' + baseTs.toString().slice(-6),
       time: nowStr(),
       title: '门店服务消费收据',
-      items: checkoutCart.map(it => ({ name: `${it.serviceName} (${it.staffName})`, amount: Number(it.finalPrice ?? it.price ?? 0) })),
-      totalPaid: +(totalPayable + cardFee + tipTotal()).toFixed(2),
-      payments: [...payments.map(p=>({...p})),...(tipTotal()?[{method:el("coTipMethod").value+"小费",amount:tipTotal()}]:[]),...(cardFee?[{method:"银行卡手续费",amount:cardFee}]:[])],
+      items: cart.map(it => ({ name: `${it.serviceName} (${it.staffName})`, amount: Number(it.finalPrice ?? it.price ?? 0) })),
+      totalPaid: +(totalPayable + cardFee + tipsTotal).toFixed(2),
+      payments: [...payments.map(p=>({...p})),...(tipsTotal?[{method:tipMethod+"小费",amount:tipsTotal}]:[]),...(cardFee?[{method:"银行卡手续费",amount:cardFee}]:[])],
       memberInfo: memberSummaryText
     };
-    if(tipTotal())receiptPayload.items.push({name:"小费",amount:tipTotal()});
+    if(tipsTotal)receiptPayload.items.push({name:"小费",amount:tipsTotal});
     if (cardFee > 0) receiptPayload.items.push({ name: '银行卡手续费 / Service fee', amount: +cardFee.toFixed(2) });
     if(square){receiptPayload.squareCheckoutId=square.id;receiptPayload.squarePaymentIds=square.payment_ids; for(const o of state.orders.slice(orderStart)){o.squareCheckoutId=square.id;o.squarePaymentIds=square.payment_ids;}}
     state.receipts.unshift(receiptPayload);
@@ -2365,9 +2380,10 @@
 
     checkoutCart = [];
     closeModal('checkoutModal');
+    if(frozen)state.paymentPending=null;
     const saved=await saveState();
     renderAll();
-    showReceiptModal(receiptPayload);
+    if(saved)showReceiptModal(receiptPayload);
     return saved;
   }
 
@@ -2983,6 +2999,7 @@
     for(const t of state.timers)if(!state.dispatchRecords?.[t.id])trackTimer(t);
 
     const html = state.timers.map(t => {
+      if(state.paymentPending?.cart.some(it=>it.timerId===t.id))return `<div class="timer-box"><strong>${escapeHTML(t.staffName)} · ${escapeHTML(t.serviceName)}</strong><span>支付处理中 / Payment pending</span><button onclick="squareRecover()">查询支付</button></div>`;
       const remMs = t.endTime - now;
       const isDone = remMs <= 0;
       if (isDone && !t.bellPlayed) { t.bellPlayed = true; t.status = 'done'; bellNeeded = true; }
@@ -3060,6 +3077,7 @@
   }
 
   function renderAll() {
+    paymentBanner();
     if(el("appointmentModal")?.classList.contains("open"))renderAppointments();
     if(el("serviceHistoryModal")?.classList.contains("open"))renderServiceHistory();
     document.getElementById("staffAccountList").innerHTML=state.employees.map(e=>`<div>${escapeHTML(e.name)} · ${e.portalDisabled?"已停用":normalizePhone(e.phone)?"允许验证登录":"未登记手机号"} <button class="btn-sm" onclick="toggleStaffAccess('${escapeHTML(e.id)}')">${e.portalDisabled?"启用":"停用"}</button></div>`).join("");
@@ -3542,27 +3560,42 @@
   const sqMsg=m=>{el('squareStatus').textContent=m;};
   const sqRead=()=>JSON.parse(localStorage.getItem(squarePendingKey)||'null');
   const sqWrite=x=>localStorage.setItem(squarePendingKey,JSON.stringify(x));
+  let finalizingKey=null, finalizingRecord=null;
+  function paymentBanner(){const a=state.paymentPending;el('paymentNotice').hidden=!a;el('paymentNoticeText').textContent=a?'订单 '+a.key+' · $'+(a.cents/100).toFixed(2)+' · 待核对 / Pending reconciliation':'';}
   async function squareCheckout(p){
-    if(!SQUARE_API)return alert('请先设置 SQUARE_API');
-    if(p.payments.length!==1||p.payments[0].method!=='银行卡'||(tipTotal()>0&&el('coTipMethod').value!=='银行卡'))return alert('当前 Square 版本仅支持整单银行卡支付，银行卡小费请选择银行卡；暂不支持混合支付');
-    if(!confirm('发送至 Square Terminal？请确认金额及小费。'))return;
-    const a={key:crypto.randomUUID(),cents:Math.round((p.total+tipTotal())*100),signature:p.signature};
-    if(a.cents<1||a.cents>100000)return alert('金额超出测试版本范围 $0.01–$1000');
-    sqWrite(a);squareBusy=true;
-    try{const j=await squareCall('/checkout',a);a.id=j.checkout.id;sqWrite(a);await squarePoll(a,p);}catch(e){sqMsg(e.message);alert('支付结果未确认，勿重复收费：'+e.message);}finally{squareBusy=false;}
+    if(squareBusy||state.paymentPending)return;
+    if(p.payments.length!==1||p.payments[0].method!=='银行卡'||(tipTotal()>0&&el('coTipMethod').value!=='银行卡'))return alert('仅支持整单银行卡支付');
+    if(!confirm('发送至 Square Terminal？'))return;
+    const a={key:crypto.randomUUID(),cents:Math.round((p.total+tipTotal())*100),cart:structuredClone(checkoutCart),tips:tipEntries(),tipMethod:el('coTipMethod').value,memberId:el('checkoutMemberSelect').value,date:el('entryDate').value||todayStr(),payments:p.payments,createdAt:Date.now()};
+    if(a.cents<1||a.cents>100000)return alert('金额范围 $0.01–$1000');
+    squareBusy=true;
+    try{await saveQueue; if(saveFailed)throw Error('Cloud save failed');
+      await runTransaction(db,async tx=>{const snap=await tx.get(cloudDocRef);const d=snap.data();if(d.paymentPending||Number(d.ledgerRevision||0)!==ledgerRevision)throw Error('存在其他交易或账本已更新，请刷新');
+        if(a.cart.some(it=>it.timerId&&!d.timers.some(t=>t.id===it.timerId)))throw Error('服务已不存在');
+        tx.update(cloudDocRef,{paymentPending:a,ledgerRevision:ledgerRevision+1});});
+      ledgerRevision++;state.paymentPending=a;paymentBanner();closeModal('checkoutModal');await squareResume(a);
+    }catch(e){alert('请核对交易，勿重复收费：'+e.message);}finally{squareBusy=false;paymentBanner();}
   }
-  async function squarePoll(a,p){for(let i=0;i<75;i++){const j=await squareCall('/status',{id:a.id,key:a.key});const c=j.checkout;sqMsg('Square: '+c.status);
-    if(c.status==='CANCELED'){localStorage.removeItem(squarePendingKey);alert('Square 已取消，请重新结账');return;}
-    if(c.status==='COMPLETED'){if(!j.verified||c.amount_money.amount!==a.cents)throw Error('金额或支付状态需要人工核对');
-      if(!p||p.signature!==a.signature||checkoutSignature()!==a.signature||saveFailed||!initialCloudLoaded)throw Error('Square 已收款，POS 信息已变化，请人工对账，勿再次收费。支付编号 '+c.id);
-      if(state.orders.some(o=>o.squareCheckoutId===c.id))throw Error('该支付已存在于订单，请人工核对');
-      clearCheckoutConfirmation();const ok=await finalizeOrderCheckout(p.payments,0,c);if(!ok)throw Error('Square 已收款但 POS 保存未确认，请人工对账');localStorage.removeItem(squarePendingKey);return;}
-    await new Promise(r=>setTimeout(r,4000));}throw Error('等待超时，使用状态按钮核对');}
-  async function squareRecover(){if(squareBusy)return alert('正在查询，请稍候');let a=sqRead();if(!a)return alert('本浏览器没有待核对支付');squareBusy=true;try{if(!a.id){if(!confirm('使用原支付请求编号恢复请求，可能发送至设备。继续？'))return;const j=await squareCall('/checkout',a);a.id=j.checkout.id;sqWrite(a);}await squarePoll(a,pendingCheckout);}catch(e){alert(e.message);}finally{squareBusy=false;}}
-  async function squareCancel(){const a=sqRead();if(!a?.id)return alert('请先核对支付请求');try{const j=await squareCall('/cancel',{id:a.id,key:a.key});sqMsg(j.checkout.status);if(j.checkout.status==='CANCELED')localStorage.removeItem(squarePendingKey);else alert('取消尚未确认，请核对状态');}catch(e){alert(e.message);}}
+  async function squareResume(a){
+    if(!a.id){const j=await squareCall('/checkout',{key:a.key,cents:a.cents});a={...a,id:j.checkout.id};
+      await runTransaction(db,async tx=>{const snap=await tx.get(cloudDocRef);if(snap.data().paymentPending?.key!==a.key)throw Error('Payment lock changed');tx.update(cloudDocRef,{paymentPending:a});});state.paymentPending=a;}
+    for(let i=0;i<75;i++){const j=await squareCall('/status',{id:a.id,key:a.key});sqMsg(j.checkout.status);el('paymentNoticeText').textContent='Square: '+j.checkout.status;
+      if(j.checkout.status==='CANCELED'){await squareRelease(a);return;}
+      if(j.checkout.status==='COMPLETED'){if(!j.verified||j.checkout.amount_money.amount!==a.cents)throw Error('支付金额需人工核对');await squareRecord(a,j.checkout);return;}
+      await new Promise(r=>setTimeout(r,4000));}throw Error('等待超时，请查询原交易');
+  }
+  async function squareRelease(a){await runTransaction(db,async tx=>{const snap=await tx.get(cloudDocRef);if(snap.data().paymentPending?.key!==a.key)throw Error('Payment lock changed');tx.update(cloudDocRef,{paymentPending:null,ledgerRevision:Number(snap.data().ledgerRevision||0)+1});tx.set(doc(cloudDocRef,'checkoutOrders',a.key),{...a,status:'canceled',recordedAt:serverTimestamp()});});const snap=await getDocFromServer(cloudDocRef);mergeStateData(snap.data());ledgerRevision=snap.data().ledgerRevision;renderAll();}
+  async function squareRecord(a,c){const snap=await getDocFromServer(cloudDocRef);const d=snap.data();if(d.paymentPending?.key!==a.key){if(d.orders.some(o=>o.squareCheckoutId===c.id)){mergeStateData(d);ledgerRevision=d.ledgerRevision;renderAll();return;}throw Error('Payment lock changed');}
+    mergeStateData(d);ledgerRevision=d.ledgerRevision;finalizingKey=a.key;finalizingRecord={...a,status:'recorded',squareCheckoutId:c.id,squarePaymentIds:c.payment_ids};
+    try{const ok=await finalizeOrderCheckout(a.payments,0,c,a);if(!ok)throw Error('已收款，入账未确认；刷新后核对');}finally{finalizingKey=null;finalizingRecord=null;}
+  }
+  async function squareRecover(){if(squareBusy)return alert('正在查询');if(localStorage.getItem(squarePendingKey))return alert('旧版浏览器有待核对交易，请先在 Square Dashboard 人工核对，不要重新收费');squareBusy=true;try{const snap=await getDocFromServer(cloudDocRef);mergeStateData(snap.data());ledgerRevision=Number(snap.data().ledgerRevision||0);if(!state.paymentPending)return alert('没有待核对交易');await squareResume(state.paymentPending);}catch(e){alert(e.message);}finally{squareBusy=false;paymentBanner();}}
+  async function squareCancel(){if(squareBusy)return alert('正在查询，请等待或刷新后取消');const a=state.paymentPending;if(!a?.id)return alert('请先查询原交易');squareBusy=true;try{const j=await squareCall('/cancel',{id:a.id,key:a.key});if(j.checkout.status==='CANCELED')await squareRelease(a);else alert('取消未确认，请继续查询');}catch(e){alert(e.message);}finally{squareBusy=false;paymentBanner();}}
+  async function squareTransactions(){try{const docs=await getDocsFromServer(collection(cloudDocRef,'checkoutOrders'));alert(docs.docs.map(x=>{const a=x.data();return x.id+' | $'+(a.cents/100).toFixed(2)+' | '+a.status;}).join('\n')||'暂无交易');}catch(e){alert(e.message);}}
   async function squareSetup(){try{const action=prompt('1 = 门店列表 / Locations; 2 = 配对码 / Pair; 3 = 查询配对 / Pair status');const j=action==='1'?await squareCall('/locations'):action==='2'?await squareCall('/pair',{}):action==='3'?await squareCall('/pair-status',{id:prompt('Device code ID')}):null;if(j)alert(JSON.stringify(j,null,2));}catch(e){alert(e.message);}}
-  Object.assign(window,{squareRecover,squareCancel,squareSetup});
+  Object.assign(window,{squareRecover,squareCancel,squareSetup,squareTransactions});
 
+  document.addEventListener('click',e=>{if(!state.paymentPending&&!squareBusy)return;const b=e.target.closest('button,input,select,textarea,[onclick]');if(!b||!b.closest('#appContainer,.modal-backdrop'))return;const action=b.getAttribute('onclick')||'';if(/^(squareRecover|squareCancel|squareTransactions|logout|closeModal)\(/.test(action))return;e.preventDefault();e.stopImmediatePropagation();},true);
   initFirebaseSync();
 </script>
 </body>
