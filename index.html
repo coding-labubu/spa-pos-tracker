@@ -469,7 +469,7 @@
           <button class="btn-outline btn-sm" onclick="openAppointmentModal()">📅 今日预约 (<span id="todayApptBadge">0</span>)</button>
         </div>
       </div>
-      <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px"><div class="inline-inputs"><strong>实时排工看板</strong><button onclick="resetDispatch()">重置今日排工</button><button onclick="clearDispatchOverride()">恢复自动推荐</button></div><p style="color:var(--muted)">未接客按初始顺序；之后按完成单数、空闲时间排序。取消服务不计单。</p><div style="overflow:auto"><table><thead><tr><th>初始顺序</th><th>技师</th><th>今日单数</th><th>空闲时间</th><th>当前状态</th><th>排工顺位</th><th>操作</th></tr></thead><tbody id="dispatchBoard"></tbody></table></div></div>
+      <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px"><div class="inline-inputs"><strong>实时排工看板</strong><button onclick="resetDispatch()">重置今日排工</button><button onclick="clearDispatchOverride()">恢复自动推荐</button></div><p style="color:var(--muted)">当天首次开钟前按初始顺序；之后空闲技师按今日单数少、空闲时间长排序。取消服务不计单。</p><div style="overflow:auto"><table><thead><tr><th>技师</th><th>今日单数</th><th>排工顺位</th><th>当前状态</th><th>空闲时间</th><th>操作</th></tr></thead><tbody id="dispatchBoard"></tbody></table></div></div>
     </div>
 
     <!-- 服务计时看板 -->
@@ -3359,8 +3359,31 @@
   function staffAvailable(e){return staffStatus(e)==='空闲';}
   function control(){state.dispatchControls??={};return state.dispatchControls[todayStr()]??={resetAt:0,override:null,skipped:[]};}
   function trackTimer(t){state.dispatchRecords??={};const old=state.dispatchRecords[t.id];state.dispatchRecords[t.id]={staffId:t.staffId,day:old?.day||dayAt(t.startTime),start:t.startTime,end:t.endTime,cancelled:false};}
-  function dispatchList(){const c=state.dispatchControls?.[todayStr()]||{resetAt:0,skipped:[]};const ids=dispatchIds();return state.employees.map(e=>{const i=ids.indexOf(e.id);const records=Object.values(state.dispatchRecords||{}).filter(r=>r.staffId===e.id&&r.day===todayStr()&&!r.cancelled&&r.start>=c.resetAt);const done=records.filter(r=>r.end<=Date.now());return {e,i,count:records.length,last:Math.max(0,...done.map(r=>r.end)),status:staffStatus(e)};}).sort((a,b)=>a.count-b.count||(a.count===0?0:a.last-b.last)||a.i-b.i);}
-  function renderDispatch(){const c=state.dispatchControls?.[todayStr()]||{skipped:[]};const rows=dispatchList();let eligible=rows.filter(x=>x.status==='空闲');const unskipped=eligible.filter(x=>!c.skipped.includes(x.e.id));if(unskipped.length)eligible=unskipped;eligible.sort((a,b)=>Number(b.e.id===c.override)-Number(a.e.id===c.override));const next=eligible[0];el('dispatchNext').textContent=next?`下一位：${next.e.name} · 已开 ${next.count} 单`:'暂无可排工员工';const html=rows.sort((a,b)=>(a.i<0?99999:a.i)-(b.i<0?99999:b.i)).map(x=>{const rank=eligible.indexOf(x);const id=escapeHTML(x.e.id);return `<tr><td class="${x.i>=0?'dispatch-bold':''}">${x.i<0?'—':x.i+1}</td><td><button class="dispatch-name ${x.i>=0?'dispatch-bold':''}" onclick="quickStart('${id}')">${escapeHTML(x.e.name)}</button></td><td>${x.count}</td><td>${x.status==='服务中'?'—':x.last?Math.max(0,Math.floor((Date.now()-x.last)/60000))+' 分钟':'未开工'}</td><td>${x.status}${c.skipped.includes(x.e.id)?' · 已跳过':''}</td><td>${rank<0?'—':rank===0?'<span class="tag tag-green">第1位</span>':'第'+(rank+1)+'位'}</td><td><button class="btn-sm" onclick="overrideDispatch('${id}')" ${x.status!=='空闲'?'disabled':''}>指定下一位</button> <button class="btn-sm" onclick="skipDispatch('${id}')" ${x.status!=='空闲'?'disabled':''}>跳过</button></td></tr>`}).join('');if(el('dispatchBoard').dataset.markup!==html){el('dispatchBoard').innerHTML=html;el('dispatchBoard').dataset.markup=html;}el('storeClock').textContent='门店 '+nowStr()+' · 设备 '+new Date().toLocaleString();}
+  function dispatchList(){
+    const now=Date.now(), day=todayStr(), c=state.dispatchControls?.[day]||{resetAt:0,skipped:[]}, ids=dispatchIds();
+    const records=Object.values(state.dispatchRecords||{}).filter(r=>r.day===day&&r.start>=(c.resetAt||0));
+    const opened=records.length>0||state.timers.some(t=>dayAt(t.startTime)===day);
+    const rows=state.employees.map(e=>{
+      const own=records.filter(r=>r.staffId===e.id), valid=own.filter(r=>!r.cancelled);
+      const active=state.timers.filter(t=>t.staffId===e.id&&t.endTime>now);
+      const last=Math.max(0,...own.filter(r=>r.end<=now).map(r=>r.end));
+      return {e,i:ids.indexOf(e.id),count:valid.length,last,status:active.length?'服务中':staffStatus(e),remaining:active.length?Math.max(...active.map(t=>t.endTime-now)):0};
+    });
+    const initial=x=>x.i<0?99999:x.i;
+    return rows.sort((a,b)=>opened?(a.count-b.count||a.last-b.last||initial(a)-initial(b)):(initial(a)-initial(b)));
+  }
+  function renderDispatch(){
+    const c=state.dispatchControls?.[todayStr()]||{skipped:[]}, skipped=c.skipped||[], rows=dispatchList();
+    let eligible=rows.filter(x=>x.status==='空闲');
+    const unskipped=eligible.filter(x=>!skipped.includes(x.e.id));if(unskipped.length)eligible=unskipped;
+    eligible.sort((a,b)=>Number(b.e.id===c.override)-Number(a.e.id===c.override));
+    const next=eligible[0];el('dispatchNext').textContent=next?`下一位：${next.e.name} · 已开 ${next.count} 单`:'暂无可排工员工';
+    const rest=rows.filter(x=>!eligible.includes(x));const group=x=>x.status==='空闲'?0:x.status==='服务中'?1:x.status==='休息中'?2:3;
+    rest.sort((a,b)=>group(a)-group(b)||(a.status==='服务中'?a.remaining-b.remaining:0));
+    const countdown=ms=>{const sec=Math.ceil(ms/1000);return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');};
+    const html=[...eligible,...rest].map(x=>{const rank=eligible.indexOf(x),id=escapeHTML(x.e.id);return `<tr><td><button class="dispatch-name ${rank===0?'dispatch-bold':''}" onclick="quickStart('${id}')">${escapeHTML(x.e.name)}</button></td><td>${x.count}</td><td>${rank<0?'—':rank===0?'<span class="tag tag-green">第1位</span>':'第'+(rank+1)+'位'}</td><td>${x.status==='服务中'?'<span class="tag tag-blue">服务中 · '+countdown(x.remaining)+'</span>':x.status}${skipped.includes(x.e.id)?' · 已跳过':''}</td><td>${x.status!=='空闲'?'—':x.last?Math.max(0,Math.floor((Date.now()-x.last)/60000))+' 分钟':'未开工'}</td><td><button class="btn-sm" onclick="overrideDispatch('${id}')" ${x.status!=='空闲'?'disabled':''}>指定下一位</button> <button class="btn-sm" onclick="skipDispatch('${id}')" ${x.status!=='空闲'?'disabled':''}>跳过</button></td></tr>`}).join('');
+    if(el('dispatchBoard').dataset.markup!==html){el('dispatchBoard').innerHTML=html;el('dispatchBoard').dataset.markup=html;}el('storeClock').textContent='门店 '+nowStr()+' · 设备 '+new Date().toLocaleString();
+  }
   function resetDispatch(){if(!canEditTimer()||!confirm('仅重置今日排工统计？营业及工资记录不变。'))return;Object.assign(control(),{resetAt:Date.now(),override:null,skipped:[]});saveState();renderDispatch();}
   function overrideDispatch(id){if(!canEditTimer())return;const c=control();c.override=id;c.skipped=c.skipped.filter(x=>x!==id);saveState();renderDispatch();}
   function skipDispatch(id){if(!canEditTimer())return;const c=control();if(!c.skipped.includes(id))c.skipped.push(id);if(c.override===id)c.override=null;saveState();renderDispatch();}
@@ -3368,7 +3391,7 @@
   function openStoreZone(){showExtra('门店营业设置',`<p>时区（IANA 名称，自动适应夏令时）</p><input id="zoneInput" value="${escapeHTML(zone())}" list="zoneOptions"><datalist id="zoneOptions">${['America/Los_Angeles','America/New_York','America/Chicago','America/Denver','Asia/Shanghai','Asia/Tokyo','Pacific/Honolulu'].map(z=>`<option value="${z}">`).join('')}</datalist><p>营业日期切换：当地 00:00；排工依据：门店时间。</p><button onclick="saveStoreZone()">保存</button>`);}
   function saveStoreZone(){if(!canEditTimer())return;const z=el('zoneInput').value.trim();try{new Intl.DateTimeFormat('en-US',{timeZone:z});}catch{return alert('无效时区');}if(!confirm('修改时区仅影响后续日期及显示，历史账目不迁移。继续？'))return;state.storeZone=z;for(const id of ['entryDate','statDate','apptDate','leaveDate'])if(el(id))el(id).value=todayStr();saveState();closeModal('extraModal');renderAll();}
   Object.assign(window,{resetDispatch,overrideDispatch,skipDispatch,clearDispatchOverride,openStoreZone,saveStoreZone});
-  function openDispatch(){const ids=state.dispatchDays?.[todayStr()]||state.employees.map(e=>e.id);const all=[...ids,...state.employees.map(e=>e.id).filter(id=>!ids.includes(id))];showExtra('今日排工顺序', '<p>按开单数量少、空闲时间长、初始顺序排序。取消勾选表示今日不上工。</p><div id="dispatchRows">'+all.map(id=>{const e=state.employees.find(x=>x.id===id);return e?`<div class="inline-inputs" data-id="${escapeHTML(id)}"><label><input type="checkbox" ${ids.includes(id)?'checked':''}>${escapeHTML(e.name)}</label><button onclick="moveDispatch(this,-1)">↑</button><button onclick="moveDispatch(this,1)">↓</button></div>`:''}).join('')+'</div><button class="btn-primary" onclick="saveDispatch()">保存今日顺序</button>');}
+  function openDispatch(){const ids=state.dispatchDays?.[todayStr()]||state.employees.map(e=>e.id);const all=[...ids,...state.employees.map(e=>e.id).filter(id=>!ids.includes(id))];showExtra('今日排工顺序', '<p>仅首次开钟前使用初始顺序；开钟后按单数、空闲时间排序，完全相同时按初始顺序。取消勾选表示今日不上工。</p><div id="dispatchRows">'+all.map(id=>{const e=state.employees.find(x=>x.id===id);return e?`<div class="inline-inputs" data-id="${escapeHTML(id)}"><label><input type="checkbox" ${ids.includes(id)?'checked':''}>${escapeHTML(e.name)}</label><button onclick="moveDispatch(this,-1)">↑</button><button onclick="moveDispatch(this,1)">↓</button></div>`:''}).join('')+'</div><button class="btn-primary" onclick="saveDispatch()">保存今日顺序</button>');}
   function moveDispatch(b,d){const row=b.parentElement,p=row.parentElement;if(d<0&&row.previousElementSibling)p.insertBefore(row,row.previousElementSibling);if(d>0&&row.nextElementSibling)p.insertBefore(row.nextElementSibling,row);}
   function saveDispatch(){state.dispatchDays??={};state.dispatchDays[todayStr()]=[...el('dispatchRows').children].filter(x=>x.querySelector('input').checked).map(x=>x.dataset.id);saveState();renderDispatch();closeModal('extraModal');}
   function showExtra(title,html){el('extraTitle').textContent=title;el('extraBody').innerHTML=html;el('extraModal').classList.add('open');}
