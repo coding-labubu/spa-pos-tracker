@@ -449,7 +449,7 @@
         <button class="btn-outline btn-sm" onclick="resSettings()">房间与设备设置</button><button class="btn-outline btn-sm" onclick="openContracts()">会员合同</button><button class="btn-primary btn-sm boss-only" onclick="openServiceHistory()">📋 服务历史 / History</button>
         <button class="btn-primary btn-sm" onclick="openAppointmentModal()">📅 预约中心 / Appointments</button>
         <button class="btn-warning btn-sm" onclick="openExpenseModal()">💸 门店支出</button>
-        <button class="btn-outline btn-sm" onclick="receiptSettings()">小票设置</button><button class="btn-outline btn-sm" onclick="giftStats()">🎁 礼卡销售与管理</button><button class="btn-outline btn-sm boss-only" onclick="configureCardFee()">💳 手续费设置</button>
+        <button class="btn-outline btn-sm" onclick="receiptSettings()">小票设置</button><button class="btn-outline btn-sm" onclick="giftStats()">🎁 礼卡销售与管理</button><button class="btn-outline btn-sm boss-only" onclick="openPaymentSettings()">💳 支付设置 / Payments</button>
         <button class="btn-outline btn-sm" onclick="openCardCouponModal()">🎁 礼卡/优惠券设置</button>
         <button class="btn-outline btn-sm" id="soundToggleBtn" onclick="toggleSound()">🔔 铃声:开</button>
         <button class="btn-outline btn-sm" onclick="playBell()">🔊 试听</button>
@@ -959,7 +959,7 @@
         <div id="checkoutMemberHint" style="font-size:0.86em; color:#166534; margin-top:4px;"></div>
       </div>
 
-<strong>选择支付方式 / Payment Method</strong><div class="pay-grid"><button class="pay-btn" data-method="现金"  onclick="selectCheckoutMethod('现金')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>现金</button><button class="pay-btn" data-method="银行卡"  onclick="selectCheckoutMethod('银行卡')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>银行卡</button><button class="pay-btn" data-method="Venmo"  onclick="selectCheckoutMethod('Venmo')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Venmo</button><button class="pay-btn" data-method="会员充值卡" id="payMemberCardBtn" onclick="selectCheckoutMethod('会员充值卡')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M15 12h6"/></svg>会员充值卡</button><button class="pay-btn" data-method="礼品卡"  onclick="selectCheckoutMethod('礼品卡')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="8" width="16" height="13" rx="1"/><path d="M2 8h20M12 8v13M12 8C3 8 5 0 12 8C19 0 21 8 12 8"/></svg>礼品卡</button><button class="pay-btn" data-method="优惠券"  onclick="selectCheckoutMethod('优惠券')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4zM15 6v12"/></svg>优惠券</button></div><div class="split-box"><strong>添加小费（任意支付方式）</strong><div id="checkoutTips"></div><label>小费支付方式 <select id="coTipMethod" onchange="updateCheckoutTotalDisplay()"><option value="现金">现金</option><option value="银行卡">银行卡</option><option value="Venmo">Venmo</option><option value="会员充值卡">会员充值卡</option><option value="礼品卡">礼品卡</option><option value="优惠券">优惠券</option></select></label></div><div id="checkoutTotalInfo" class="co-summary"></div><button onclick="squareSetup()">Square 设置 / Setup</button> <button onclick="squareRecover()">核对未完成 Square 支付</button><button id="coNext" class="btn-primary co-next" onclick="beginSelectedCheckout()">下一步：确认收款</button>
+<strong>选择支付方式 / Payment Method</strong><div class="pay-grid"><button class="pay-btn" data-method="现金"  onclick="selectCheckoutMethod('现金')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>现金</button><button class="pay-btn" data-method="银行卡"  onclick="selectCheckoutMethod('银行卡')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>银行卡</button><button class="pay-btn" data-method="Venmo"  onclick="selectCheckoutMethod('Venmo')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Venmo</button><button class="pay-btn" data-method="会员充值卡" id="payMemberCardBtn" onclick="selectCheckoutMethod('会员充值卡')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M15 12h6"/></svg>会员充值卡</button><button class="pay-btn" data-method="礼品卡"  onclick="selectCheckoutMethod('礼品卡')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="8" width="16" height="13" rx="1"/><path d="M2 8h20M12 8v13M12 8C3 8 5 0 12 8C19 0 21 8 12 8"/></svg>礼品卡</button><button class="pay-btn" data-method="优惠券"  onclick="selectCheckoutMethod('优惠券')" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4zM15 6v12"/></svg>优惠券</button></div><div class="split-box"><strong>添加小费（任意支付方式）</strong><div id="checkoutTips"></div><label>小费支付方式 <select id="coTipMethod" onchange="updateCheckoutTotalDisplay()"><option value="现金">现金</option><option value="银行卡">银行卡</option><option value="Venmo">Venmo</option><option value="会员充值卡">会员充值卡</option><option value="礼品卡">礼品卡</option><option value="优惠券">优惠券</option></select></label></div><div id="checkoutTotalInfo" class="co-summary"></div><p id="squareModeHint" class="co-muted"></p><button id="squareSetupCheckout" onclick="squareSetup()">Square 设置 / Setup</button> <button onclick="squareRecover()">核对未完成 Square 支付</button><button id="coNext" class="btn-primary co-next" onclick="beginSelectedCheckout()">下一步：确认收款</button>
       <!-- 第10项：拆分结账 -->
       <div class="split-box">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -1049,6 +1049,7 @@
   let ledgerRevision = 0;
   let state = {
     paymentPending: null,
+    paymentConfig: {squareEnabled:true, methods:{}},
     lang: 'zh',
     role: null,
     therapistViewId: null,
@@ -1240,7 +1241,7 @@
           return;
         }
         if (!snap.exists()) { cloudEnabled = false; setDashboardLocked(true); setCloudBadge('⚠️ 云端账本不存在', 'tag-amber'); return; }
-        if (!saveFailed) { const remote=snap.data(); if(remote.paymentPending){state.paymentPending=remote.paymentPending;} else if(state.paymentPending && !squareBusy){mergeStateData(remote);ledgerRevision=Number(remote.ledgerRevision||0);} setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green'); setDashboardLocked(false); renderAll(); }
+        if (!saveFailed) { const remote=snap.data(); if(remote.paymentConfig&&!snap.metadata.hasPendingWrites){state.paymentConfig=remote.paymentConfig;if(el("checkoutModal").classList.contains("open")){clearCheckoutConfirmation();renderCheckoutSummary();}} if(remote.paymentPending){state.paymentPending=remote.paymentPending;} else if(state.paymentPending && !squareBusy){mergeStateData(remote);ledgerRevision=Number(remote.ledgerRevision||0);} setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green'); setDashboardLocked(false); renderAll(); }
       }, error => {
         console.error('Firestore listener error:', error.code);
         cloudEnabled = false;
@@ -2083,10 +2084,16 @@
   let selectedCheckoutMethod = '现金';
   let pendingCheckout = null;
   function clearCheckoutConfirmation() { pendingCheckout = null; document.getElementById('coConfirm').hidden = true; }
-  function selectCheckoutMethod(method) { selectedCheckoutMethod = method; clearCheckoutConfirmation(); renderCheckoutSummary(); }
+  function selectCheckoutMethod(method) { if(!methodEnabled(method))return; selectedCheckoutMethod = method; clearCheckoutConfirmation(); renderCheckoutSummary(); }
   function beginSelectedCheckout() { completeCheckout(selectedCheckoutMethod); }
   function renderCheckoutSummary() {
     const total = getCurrentCheckoutPayable();
+    document.querySelectorAll('#checkoutModal .pay-btn').forEach(b=>{b.hidden=!methodEnabled(b.dataset.method);});
+    document.querySelectorAll('#checkoutModal select.split-method option,#coTipMethod option').forEach(o=>{o.disabled=!methodEnabled(o.value);});
+    document.querySelectorAll('#checkoutModal select.split-method,#coTipMethod').forEach(sel=>{if(!methodEnabled(sel.value))sel.value=paymentMethods.find(methodEnabled)||'';});
+    if(!methodEnabled(selectedCheckoutMethod))selectedCheckoutMethod=paymentMethods.find(methodEnabled)||'';
+    el('squareModeHint').textContent=squareEnabled()?'Square Terminal 自动收款 / Automatic card payment':'独立刷卡机：确认实际收款后记账 / Manual card payment';
+    el('squareSetupCheckout').hidden=!squareEnabled();
     const fee = combinedFee([{method:selectedCheckoutMethod,amount:total}]);
     document.querySelectorAll('#checkoutModal .pay-btn').forEach(b=>{const active=b.dataset.method===selectedCheckoutMethod;b.classList.toggle('selected',active);b.setAttribute('aria-pressed',String(active));});
     document.getElementById('coNext').disabled = selectedCheckoutMethod==='会员充值卡' && document.getElementById('payMemberCardBtn').disabled;
@@ -2232,6 +2239,26 @@
     updateCheckoutTotalDisplay();
   }
 
+  const paymentMethods=['现金','银行卡','Venmo','会员充值卡','礼品卡','优惠券'];
+  function squareEnabled(){return state.paymentConfig?.squareEnabled!==false;}
+  function methodEnabled(m){return state.paymentConfig?.methods?.[m]!==false;}
+  function openPaymentSettings(){
+    if(currentUser?.uid!==ADMIN_UID||state.paymentPending||squareBusy)return alert('请先完成待处理交易');
+    const cfg=state.cardFeeConfig;
+    showExtra('支付方式与第三方集成 / Payment settings',`<p><label><input id="psSquare" type="checkbox" ${squareEnabled()?'checked':''}> Square Terminal 自动收款</label></p><p>关闭后使用独立刷卡机，人工确认收款。运行环境由 Worker 配置决定。</p>${paymentMethods.map((m,i)=>`<p><label><input type="checkbox" id="psM${i}" ${methodEnabled(m)?'checked':''}>${m}</label></p>`).join('')}<p>银行卡附加费暂不收取（需先核实当地法规）。</p><button onclick="squareSetup()">测试连接 / 配对</button> <button class="btn-primary" onclick="savePaymentSettings()">保存 / Save</button>`);
+  }
+  async function savePaymentSettings(){
+    if(currentUser?.uid!==ADMIN_UID||state.paymentPending||squareBusy||saveFailed||!initialCloudLoaded)return alert('当前无法修改支付设置');
+    const methods=Object.fromEntries(paymentMethods.map((m,i)=>[m,el('psM'+i).checked]));
+    if(!Object.values(methods).some(Boolean))return alert('至少启用一种支付方式');
+    const enabled=el('psSquare').checked;
+    if(enabled&&!methods['银行卡'])return alert('开启 Square 需要启用银行卡');
+    if(enabled&&!squareEnabled()){try{await squareCall('/locations');}catch(e){return alert('连接失败：'+e.message);}}
+    state.paymentConfig={squareEnabled:enabled,methods};state.cardFeeConfig={mode:'off',value:0};
+    clearCheckoutConfirmation();addAudit('支付设置',JSON.stringify(state.paymentConfig));
+    if(await saveState()){closeModal('extraModal');renderAll();}else alert('设置未确认保存，请刷新核对');
+  }
+  Object.assign(window,{openPaymentSettings,savePaymentSettings});
   function configureCardFee() {
     if (state.role !== 'boss') return;
     const cfg = state.cardFeeConfig;
@@ -2260,19 +2287,23 @@
   function confirmCheckoutPayments(payments) {
     if (!currentUser || currentUser.uid !== ADMIN_UID || !initialCloudLoaded || !cloudEnabled || saveFailed) return alert('云端不可用，无法结账');
     if (!checkoutCart.length || checkoutCart.some(it => it.timerId && !state.timers.some(t => t.id === it.timerId))) return alert('服务已变更，请重新打开结账');
+    if(payments.some(p=>!methodEnabled(p.method))||(tipTotal()>0&&!methodEnabled(el("coTipMethod").value)))return alert("支付方式已停用");
     if(!validTips())return alert("小费金额无效"); const fee = combinedFee(payments);
     const total = getCurrentCheckoutPayable();
     pendingCheckout = {payments, fee, total, signature: checkoutSignature()};
     document.getElementById('coConfirmDetails').innerHTML = payments.map(p=>`<div><span>${escapeHTML(p.method)}</span><strong>$${(p.amount+cardFeeFor(p)).toFixed(2)}</strong></div>`).join('')+`<div><span>项目合计</span><span>$${total.toFixed(2)}</span></div><div><span>小费</span><span>$${tipTotal().toFixed(2)} (${escapeHTML(el("coTipMethod").value)})</span></div><div><span>手续费</span><span>$${fee.toFixed(2)}</span></div><div class="co-total"><span>确认实收</span><span>$${(total+fee+tipTotal()).toFixed(2)}</span></div>`;
     const panel=document.getElementById('coConfirm');panel.hidden=false;panel.scrollIntoView({block:'nearest',behavior:'smooth'});
   }
-  function checkoutSignature(){return JSON.stringify([checkoutCart,tipEntries(),el("coTipMethod").value,state.cardFeeConfig,el('checkoutMemberSelect').value,state.members.find(m=>m.id===el('checkoutMemberSelect').value),checkoutCart.map(it=>{const t=state.timers.find(t=>t.id===it.timerId);if(!t)return null;const {status,bellPlayed,checked,...stable}=t;return stable;}),el('entryDate').value]);}
+  function checkoutSignature(){return JSON.stringify([checkoutCart,tipEntries(),el("coTipMethod").value,state.cardFeeConfig,state.paymentConfig,el('checkoutMemberSelect').value,state.members.find(m=>m.id===el('checkoutMemberSelect').value),checkoutCart.map(it=>{const t=state.timers.find(t=>t.id===it.timerId);if(!t)return null;const {status,bellPlayed,checked,...stable}=t;return stable;}),el('entryDate').value]);}
   async function commitCheckoutConfirmation(){
     const p=pendingCheckout;if(!p)return;
     if(!currentUser || currentUser.uid!==ADMIN_UID || !initialCloudLoaded || !cloudEnabled || saveFailed || p.signature!==checkoutSignature()){clearCheckoutConfirmation();return alert('结账信息或云端状态已变化，请重新核对');}
     if (squareBusy || state.paymentPending || localStorage.getItem(squarePendingKey)) return alert('存在未核对 Square 支付，请先查状态 / Reconcile pending payment');
-    if(p.payments.some(x=>x.method==='银行卡') || (tipTotal()>0 && el('coTipMethod').value==='银行卡')) return squareCheckout(p);
-    clearCheckoutConfirmation();finalizeOrderCheckout(p.payments,p.fee);
+    if(p.payments.some(x=>!methodEnabled(x.method))||(tipTotal()>0&&!methodEnabled(el('coTipMethod').value)))return alert('支付方式已停用');
+    const hasCard=p.payments.some(x=>x.method==='银行卡')||(tipTotal()>0&&el('coTipMethod').value==='银行卡');
+    if(hasCard&&squareEnabled())return squareCheckout(p);
+    if(hasCard&&!confirm('请确认独立刷卡机已成功收款，系统不会实际扣款。 / Confirm external card payment received.'))return;
+    clearCheckoutConfirmation();await finalizeOrderCheckout(p.payments,p.fee);
   }
 
   async function finalizeOrderCheckout(payments, cardFee = 0, square = null, frozen = null) {
@@ -2369,6 +2400,7 @@
     };
     if(tipsTotal)receiptPayload.items.push({name:"小费",amount:tipsTotal});
     if (cardFee > 0) receiptPayload.items.push({ name: '银行卡手续费 / Service fee', amount: +cardFee.toFixed(2) });
+    for(const o of state.orders.slice(orderStart)){o.paymentProvider=square?'square_terminal':o.payMethod==='银行卡'?'manual_card':'manual';}
     if(square){receiptPayload.squareCheckoutId=square.id;receiptPayload.squarePaymentIds=square.payment_ids; for(const o of state.orders.slice(orderStart)){o.squareCheckoutId=square.id;o.squarePaymentIds=square.payment_ids;}}
     state.receipts.unshift(receiptPayload);
     if (state.receipts.length > 100) state.receipts.pop();
@@ -3570,7 +3602,7 @@
     if(a.cents<1||a.cents>100000)return alert('金额范围 $0.01–$1000');
     squareBusy=true;
     try{await saveQueue; if(saveFailed)throw Error('Cloud save failed');
-      await runTransaction(db,async tx=>{const snap=await tx.get(cloudDocRef);const d=snap.data();if(d.paymentPending||Number(d.ledgerRevision||0)!==ledgerRevision)throw Error('存在其他交易或账本已更新，请刷新');
+      await runTransaction(db,async tx=>{const snap=await tx.get(cloudDocRef);const d=snap.data();if(d.paymentConfig?.squareEnabled===false)throw Error('Square 已关闭');if(d.paymentPending||Number(d.ledgerRevision||0)!==ledgerRevision)throw Error('存在其他交易或账本已更新，请刷新');
         if(a.cart.some(it=>it.timerId&&!d.timers.some(t=>t.id===it.timerId)))throw Error('服务已不存在');
         tx.update(cloudDocRef,{paymentPending:a,ledgerRevision:ledgerRevision+1});});
       ledgerRevision++;state.paymentPending=a;paymentBanner();closeModal('checkoutModal');await squareResume(a);
