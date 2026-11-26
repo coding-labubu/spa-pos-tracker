@@ -444,7 +444,7 @@
         <button class="btn-outline btn-sm" onclick="openStoreZone()">⚙️ 门店营业设置</button><span id="storeClock" class="tag tag-blue"></span><span id="currentUserEmail" class="tag tag-blue"></span>
         <button class="btn-sm logout-btn" onclick="logout()">🚪 退出登录</button>
         <button class="btn-purple btn-sm" onclick="openMemberModal()">👑 年费会员 & 充值卡</button>
-        <button class="btn-outline btn-sm" onclick="openContracts()">会员合同</button>
+        <button class="btn-outline btn-sm" onclick="openContracts()">会员合同</button><button class="btn-primary btn-sm boss-only" onclick="openServiceHistory()">📋 服务历史 / History</button>
         <button class="btn-primary btn-sm" onclick="openAppointmentModal()">📅 预约排班</button>
         <button class="btn-warning btn-sm" onclick="openExpenseModal()">💸 门店支出</button>
         <button class="btn-outline btn-sm" onclick="receiptSettings()">小票设置</button><button class="btn-outline btn-sm" onclick="giftStats()">🎁 礼卡销售与管理</button><button class="btn-outline btn-sm boss-only" onclick="configureCardFee()">💳 手续费设置</button>
@@ -959,6 +959,7 @@
     </div>
   </div>
 
+<div class="modal-backdrop" id="serviceHistoryModal"><div class="modal" style="max-width:1400px;width:98%;padding:22px"><div class="card-title"><span style="font-size:1.3em">📋 服务历史 / Service History</span><button onclick="closeModal('serviceHistoryModal')">✕</button></div><div class="inline-inputs" style="margin-bottom:14px"><label>开始 / From <input type="date" id="histFrom" onchange="renderServiceHistory()"></label><label>结束 / To <input type="date" id="histTo" onchange="renderServiceHistory()"></label><button onclick="historyToday()">今日 / Today</button><button onclick="historyAll()">全部 / All</button><input id="histSearch" placeholder="技师、会员、项目 / Search" oninput="renderServiceHistory()" style="flex:1;min-width:180px"><select id="histPay" onchange="renderServiceHistory()"><option value="">全部付款方式 / All payments</option><option>现金</option><option>银行卡</option><option>Venmo</option><option>会员充值卡</option><option>礼品卡</option><option>优惠券</option></select></div><div id="histSummary" class="stat-grid"></div><div style="overflow:auto"><table style="font-size:16px;white-space:nowrap"><thead><tr><th>记账日期 / Date</th><th>技师 / Staff</th><th>项目 / Service</th><th>上钟 / Start</th><th>下钟 / End</th><th>结账 / Paid at</th><th>分钟 / Min</th><th>付款方式 / Payment</th><th>会员 / Member</th><th>金额 / Amount</th></tr></thead><tbody id="histRows"></tbody></table></div><p class="co-muted">时间按门店时区显示；— 表示未记录。旧订单可能缺少上钟、下钟或会员信息。直接结账不推算服务时间。合并结账保留每项服务，拆分支付合并为一行。金额沿用项目账目，不含独立小费及手续费。</p></div></div>
   <!-- 10. 结账模态框（含合并结账、会员卡扣款、拆分结账、打印收据） -->
   <div class="modal-backdrop" id="checkoutModal">
     <div class="modal">
@@ -2270,7 +2271,11 @@
         const actualPrice = Number(item.finalPrice ?? item.price ?? 0);
         state.orders.push({
           id: `ord_${baseTs}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
-          date: dateVal, dispatchKey: `${baseTs}_${idx}`, serviceEnd: state.timers.find(t=>t.id===item.timerId)?.endTime || baseTs,
+          date: dateVal, dispatchKey: `${baseTs}_${idx}`,
+          serviceStart: state.timers.find(t=>t.id===item.timerId)?.startTime ?? null,
+          serviceEnd: item.timerId ? Math.min(state.timers.find(t=>t.id===item.timerId)?.endTime ?? baseTs, baseTs) : null,
+          checkoutAt: baseTs, memberId: member?.id ?? null, memberName: member?.name ?? null,
+          historyServiceName: item.serviceName, historyVersion: 1,
           staffId: item.staffId,
           staffName: item.staffName,
           serviceId: item.serviceId,
@@ -2294,7 +2299,11 @@
           const partComm = totalPayable > 0 ? (Math.round(comm * 100 * (prevPay + p.amount) / totalPayable) - Math.round(comm * 100 * prevPay / totalPayable)) / 100 : 0;
           state.orders.push({
             id: `ord_${baseTs}_${idx}_${pIdx}_${Math.random().toString(36).slice(2, 6)}`,
-            date: dateVal, dispatchKey: `${baseTs}_${idx}`, serviceEnd: state.timers.find(t=>t.id===item.timerId)?.endTime || baseTs,
+            date: dateVal, dispatchKey: `${baseTs}_${idx}`,
+          serviceStart: state.timers.find(t=>t.id===item.timerId)?.startTime ?? null,
+          serviceEnd: item.timerId ? Math.min(state.timers.find(t=>t.id===item.timerId)?.endTime ?? baseTs, baseTs) : null,
+          checkoutAt: baseTs, memberId: member?.id ?? null, memberName: member?.name ?? null,
+          historyServiceName: item.serviceName, historyVersion: 1,
             staffId: item.staffId,
             staffName: item.staffName,
             serviceId: item.serviceId,
@@ -3088,6 +3097,7 @@
   }
 
   function renderAll() {
+    if(el("serviceHistoryModal")?.classList.contains("open"))renderServiceHistory();
     document.getElementById("staffAccountList").innerHTML=state.employees.map(e=>`<div>${escapeHTML(e.name)} · ${e.portalDisabled?"已停用":normalizePhone(e.phone)?"允许验证登录":"未登记手机号"} <button class="btn-sm" onclick="toggleStaffAccess('${escapeHTML(e.id)}')">${e.portalDisabled?"启用":"停用"}</button></div>`).join("");
     renderQuickTips();
     renderTimers(); renderDispatch();
@@ -3468,6 +3478,14 @@
       renderTimers(); renderDispatch();
     }
   }, 1000);
+
+
+  function openServiceHistory(){if(state.role!=='boss')return;el('histSearch').value='';el('histPay').value='';historyToday();el('serviceHistoryModal').classList.add('open');}
+  function historyToday(){el('histFrom').value=el('histTo').value=todayStr();renderServiceHistory();}
+  function historyAll(){el('histFrom').value=el('histTo').value='';renderServiceHistory();}
+  function historyRows(){const groups=new Map();for(const o of state.orders){const key=o.dispatchKey||o.id;let g=groups.get(key);if(!g){const oldMember=String(o.serviceName||'').match(/\[会员:(.*?)\]/);const ts=Number(String(o.id||'').match(/^ord_(\d{13})_/)?.[1])||null;g={date:o.date,staff:o.staffName||'',service:o.historyServiceName||String(o.serviceName||'').replace(/\s*\[会员:.*?\]/,'').replace(/\s*\[拆分\(.*?\)\]/,''),start:o.serviceStart??null,end:o.historyVersion?o.serviceEnd:null,paid:o.checkoutAt??ts,member:o.memberName??oldMember?.[1]??'',duration:0,amount:0,methods:new Map()};groups.set(key,g);}g.duration+=Number(o.duration||0);g.amount+=Number(o.price||0);g.methods.set(o.payMethod||'—',(g.methods.get(o.payMethod||'—')||0)+Number(o.price||0));}return [...groups.values()];}
+  function renderServiceHistory(){if(state.role!=='boss')return;const from=el('histFrom').value,to=el('histTo').value,q=el('histSearch').value.trim().toLowerCase(),pay=el('histPay').value;const rows=historyRows().filter(r=>(!from||r.date>=from)&&(!to||r.date<=to)&&(!pay||r.methods.has(pay))&&(!q||[r.staff,r.service,r.member].some(v=>String(v).toLowerCase().includes(q)))).sort((a,b)=>(b.paid||0)-(a.paid||0)||String(b.date).localeCompare(String(a.date)));const fmt=t=>t&&Number.isFinite(Number(t))?escapeHTML(storeTime(Number(t))):'—';const e=escapeHTML;el('histSummary').innerHTML=`<div class="stat-box"><div class="stat-label">服务单数 / Services</div><div class="stat-val">${rows.length}</div></div><div class="stat-box"><div class="stat-label">项目金额 / Service total</div><div class="stat-val">$${rows.reduce((n,r)=>n+r.amount,0).toFixed(2)}</div></div>`;el('histRows').innerHTML=rows.map(r=>`<tr><td>${e(r.date)}</td><td><strong>${e(r.staff)}</strong></td><td style="white-space:normal;min-width:140px">${e(r.service)}</td><td>${fmt(r.start)}</td><td>${fmt(r.end)}</td><td>${fmt(r.paid)}</td><td>${r.duration}</td><td>${[...r.methods].map(([m,a])=>e(m)+(r.methods.size>1?' $'+a.toFixed(2):'')).join('<br>')}</td><td>${e(r.member||'—')}</td><td><strong>$${r.amount.toFixed(2)}</strong></td></tr>`).join('')||'<tr><td colspan="10" style="text-align:center;padding:24px">没有匹配记录 / No records</td></tr>';}
+  Object.assign(window,{openServiceHistory,historyToday,historyAll,renderServiceHistory});
 
   initFirebaseSync();
 </script>
