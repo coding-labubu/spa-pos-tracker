@@ -372,6 +372,8 @@
 .dispatch-table .dispatch-inactive td{color:#64748b;background:#f8fafc}
 .dispatch-table .tag{font-size:1em;padding:6px 10px}
 .dispatch-table .btn-sm{font-size:.78em;padding:7px 10px}
+
+.ap-modal{max-width:none!important;width:98vw;height:95vh;display:flex;flex-direction:column;background:#f8fafc}.ap-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}.ap-toolbar strong{font-size:20px;flex:1}.ap-month{display:grid;grid-template-columns:repeat(7,minmax(110px,1fr));gap:1px;background:#dbe3ee;border:1px solid #dbe3ee}.ap-month>div{background:white;padding:8px;min-height:115px;cursor:pointer}.ap-month .ap-week{min-height:0;text-align:center;font-weight:bold;background:#eef2f7}.ap-month .ap-out{background:#f1f5f9;color:#94a3b8}.ap-month .ap-today{box-shadow:inset 0 0 0 2px #2563eb}.ap-chip{display:block;margin:4px 0;padding:4px 6px;border-radius:5px;background:#dbeafe;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ap-scroll{overflow:auto;max-height:70vh;border:1px solid #cbd5e1;background:white}.ap-grid{display:grid;min-width:max-content;position:relative}.ap-head{position:sticky;top:0;z-index:5;background:#eaf0f8;padding:12px;text-align:center;font-weight:800;border-right:1px solid #cbd5e1}.ap-rail{position:relative;background:#f8fafc;border-right:1px solid #cbd5e1;position:sticky;left:0;z-index:3}.ap-lane{position:relative;border-right:1px solid #cbd5e1;background:repeating-linear-gradient(to bottom,#fff 0px,#fff 27px,#e2e8f0 27px,#e2e8f0 28px)}.ap-time{height:28px;font-size:12px;padding:4px;text-align:center}.ap-block{position:absolute;overflow:hidden;border:1px solid #0002;border-left:4px solid #0004;border-radius:7px;padding:4px 6px;cursor:grab;color:#172554;font-size:12px;line-height:1.25;z-index:2;box-shadow:0 1px 3px #0002}.ap-block b{font-size:14px}.ap-block:focus{outline:2px solid #2563eb}.ap-editor{position:fixed;inset:0;background:#0f172a66;z-index:1100;display:grid;place-items:center;padding:12px}.ap-form{background:white;border-radius:16px;padding:20px;width:min(600px,100%);max-height:90vh;overflow:auto}.ap-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.ap-fields label{display:grid;gap:4px}.ap-fields input,.ap-fields select{width:100%}.ap-settings{padding:12px;background:white;border:1px solid #cbd5e1;margin-bottom:10px}.ap-closed{padding:12px;color:#92400e}#apCalendar{overflow:auto;flex:1;min-height:0}
 </style>
 </head>
 <body>
@@ -445,7 +447,7 @@
         <button class="btn-sm logout-btn" onclick="logout()">🚪 退出登录</button>
         <button class="btn-purple btn-sm" onclick="openMemberModal()">👑 年费会员 & 充值卡</button>
         <button class="btn-outline btn-sm" onclick="openContracts()">会员合同</button><button class="btn-primary btn-sm boss-only" onclick="openServiceHistory()">📋 服务历史 / History</button>
-        <button class="btn-primary btn-sm" onclick="openAppointmentModal()">📅 预约排班</button>
+        <button class="btn-primary btn-sm" onclick="openAppointmentModal()">📅 预约中心 / Appointments</button>
         <button class="btn-warning btn-sm" onclick="openExpenseModal()">💸 门店支出</button>
         <button class="btn-outline btn-sm" onclick="receiptSettings()">小票设置</button><button class="btn-outline btn-sm" onclick="giftStats()">🎁 礼卡销售与管理</button><button class="btn-outline btn-sm boss-only" onclick="configureCardFee()">💳 手续费设置</button>
         <button class="btn-outline btn-sm" onclick="openCardCouponModal()">🎁 礼卡/优惠券设置</button>
@@ -909,31 +911,7 @@
   </div>
 
   <!-- 9. 预约排班弹窗 -->
-  <div class="modal-backdrop" id="appointmentModal">
-    <div class="modal" style="max-width:860px;">
-      <div class="card-title">
-        <span>📅 客户预约排班中心</span>
-        <button class="btn-outline btn-sm" onclick="closeModal('appointmentModal')">✕</button>
-      </div>
-      <div class="inline-inputs" style="margin-bottom:12px;">
-        <input type="date" id="apptDate" />
-        <input type="time" id="apptTime" value="10:00" />
-        <input type="text" id="apptCustName" placeholder="客人姓名" style="width:110px;" />
-        <input type="tel" id="apptCustPhone" placeholder="客人电话" style="width:120px;" />
-        <select id="apptStaffId"></select>
-        <select id="apptServiceId"></select>
-        <input type="text" id="apptNote" placeholder="备注" style="width:110px;" />
-        <button class="btn-primary btn-sm" onclick="addAppointment()">+ 添加预约</button>
-      </div>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead><tr><th>日期时间</th><th>客人</th><th>指定技师</th><th>预约项目</th><th>状态</th><th>快捷操作</th></tr></thead>
-          <tbody id="appointmentTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
+<div class="modal-backdrop" id="appointmentModal"><div class="modal ap-modal"><div class="card-title"><span>预约中心 / Appointments</span><button onclick="closeModal('appointmentModal')">返回收银 / POS ✕</button></div><div class="ap-toolbar"><button onclick="apMove(-1)">‹</button><button onclick="apToday()">今天 / Today</button><button onclick="apMove(1)">›</button><input type="date" id="apDay" onchange="apSetDate(this.value)"><strong id="apHeading"></strong><button onclick="apMode('month')">月历 / Month</button><button onclick="apMode('day')">日历 / Day</button><button class="btn-primary" onclick="apEdit()">＋ 预约</button><button onclick="apSettings()">营业时间 / Hours</button></div><div id="apSettings" hidden></div><div id="apCalendar"></div><div id="apEditor" hidden></div></div></div>
   <!-- 11. 员工排班休息设置弹窗 -->
   <div class="modal-backdrop" id="staffLeaveModal">
     <div class="modal">
@@ -2622,92 +2600,36 @@
   /* =========================================================
      第9项：预约排班程序
   ========================================================= */
-  function openAppointmentModal() {
-    const staffSel = document.getElementById('apptStaffId');
-    staffSel.innerHTML = `<option value="">-- 不指定技师 --</option>` +
-      state.employees.map(e => `<option value="${e.id}">${escapeHTML(e.name)}</option>`).join('');
-    const srvSel = document.getElementById('apptServiceId');
-    srvSel.innerHTML = state.services.map(s => `<option value="${s.id}">${escapeHTML(s.name)} ($${Number(s.price).toFixed(2)})</option>`).join('');
-    renderAppointments();
-    document.getElementById('appointmentModal').classList.add('open');
-  }
-
-  function addAppointment() {
-    const date = document.getElementById('apptDate').value || todayStr();
-    const time = document.getElementById('apptTime').value || '10:00';
-    const custName = document.getElementById('apptCustName').value.trim();
-    if (!custName) return alert('请输入客人姓名');
-    const custPhone = document.getElementById('apptCustPhone').value.trim();
-    const staffId = document.getElementById('apptStaffId').value;
-    const serviceId = document.getElementById('apptServiceId').value;
-    const note = document.getElementById('apptNote').value.trim();
-
-    const emp = state.employees.find(e => e.id === staffId);
-    const srv = state.services.find(s => s.id === serviceId);
-
-    // 检查该技师在该日期时间是否排班休息
-    if (emp && Array.isArray(emp.leaves)) {
-      const conflict = emp.leaves.find(l => l.date === date && time >= l.start && time <= l.end);
-      if (conflict && !confirm(`提醒：技师【${emp.name}】在 ${date} ${conflict.start}-${conflict.end} 设有排班休息（${conflict.reason || '休息'}），仍要继续预约吗？`)) {
-        return;
-      }
-    }
-
-    state.appointments.unshift({
-      id: 'appt_' + Date.now(),
-      date, time, custName, custPhone,
-      staffId: emp ? emp.id : '',
-      staffName: emp ? emp.name : '待分配',
-      serviceId: srv ? srv.id : '',
-      serviceName: srv ? srv.name : '常规项目',
-      status: '已预约',
-      note
-    });
-    document.getElementById('apptCustName').value = '';
-    document.getElementById('apptCustPhone').value = '';
-    document.getElementById('apptNote').value = '';
-    saveState();
-    renderAppointments();
-    renderAll();
-  }
-
-  function startApptTimer(apptId) {
-    const ap = state.appointments.find(a => a.id === apptId);
-    if (!ap) return;
-    const targetStaff = ap.staffId || state.selectedStaffId;
-    if (!targetStaff) return alert('请先为该预约分配技师或在主界面选择「当前技师」');
-    if (!ap.serviceId) return alert('预约未绑定具体项目');
-    ap.status = '已开钟';
-    closeModal('appointmentModal');
-    startServiceTimer(ap.serviceId, targetStaff);
-    renderAll();
-  }
-
-  function deleteAppointment(id) {
-    state.appointments = state.appointments.filter(a => a.id !== id);
-    saveState();
-    renderAppointments();
-    renderAll();
-  }
-
-  function renderAppointments() {
-    const tbody = document.getElementById('appointmentTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = state.appointments.map(a => `
-      <tr>
-        <td><strong>${escapeHTML(a.date)}</strong> ${escapeHTML(a.time)}</td>
-        <td>${escapeHTML(a.custName)}<br><small style="color:var(--muted);">${escapeHTML(a.custPhone || '')}</small></td>
-        <td>${escapeHTML(a.staffName)}</td>
-        <td>${escapeHTML(a.serviceName)}${a.note ? `<br><small>${escapeHTML(a.note)}</small>` : ''}</td>
-        <td><span class="tag ${a.status === '已开钟' ? 'tag-green' : 'tag-blue'}">${escapeHTML(a.status)}</span></td>
-        <td>
-          <button class="btn-success btn-sm" onclick="startApptTimer('${a.id}')">⏱️ 到店开钟</button>
-          <button class="btn-danger btn-sm" onclick="deleteAppointment('${a.id}')">删</button>
-        </td>
-      </tr>
-    `).join('') || '<tr><td colspan="6">暂无预约排班记录</td></tr>';
-  }
-
+  let apDate='', apView='month', apEditing=null, apDrag=null;
+  const apColors=['#bfdbfe','#bbf7d0','#fde68a','#e9d5ff','#fecdd3','#fed7aa'];
+  const apMin=t=>{const [h,m]=String(t||'00:00').split(':').map(Number);return h*60+m;};
+  const apTime=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
+  const apHours=()=>state.appointmentHours||{start:'09:00',end:'21:00',name:'门店 / Store'};
+  const apDuration=a=>Math.max(15,Number(a.duration)||Number(state.services.find(s=>s.id===a.serviceId)?.duration)||60);
+  const apCount=a=>Math.max(1,Number(a.clientCount)||1);
+  const apActive=a=>a.status!=='已取消';
+  const apDateObj=d=>new Date(d+'T12:00:00');
+  const apISO=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const apColor=a=>apColors.includes(a.color)?a.color:apColors[0];
+  function openAppointmentModal(){if(state.role!=='boss')return;apDate=todayStr();apView='month';el('appointmentModal').classList.add('open');renderAppointments();}
+  function apMode(v){apView=v;renderAppointments();} function apToday(){apDate=todayStr();renderAppointments();}
+  function apMove(n){let d=apDateObj(apDate);if(apView==='month'){d.setDate(1);d.setMonth(d.getMonth()+n);}else d.setDate(d.getDate()+n);apDate=apISO(d);renderAppointments();}
+  function apSelect(d){apDate=d;apView='day';renderAppointments();}
+  function apSettings(){const h=apHours();el('apSettings').hidden=false;el('apSettings').className='ap-settings';el('apSettings').innerHTML=`<label>店名 <input id="apStore" value="${escapeHTML(h.name)}"></label> <label>开始 <input type="time" step="900" id="apOpen" value="${h.start}"></label> <label>结束 <input type="time" step="900" id="apClose" value="${h.end}"></label> <button onclick="apSaveHours()">保存</button> <button onclick="document.getElementById('apSettings').hidden=true">关闭</button>`;}
+  function apSaveHours(){if(!canEditTimer())return;const start=el('apOpen').value,end=el('apClose').value;if(!start||!end||apMin(start)%15||apMin(end)%15||apMin(end)<=apMin(start))return alert('请选择同一天内有效的15分钟营业时段');state.appointmentHours={start,end,name:el('apStore').value.trim()||'门店 / Store'};saveState();el('apSettings').hidden=true;renderAppointments();}
+  function renderAppointments(){if(!el('appointmentModal')?.classList.contains('open'))return;apDate=apDate||todayStr();el('apDay').value=apDate;el('apHeading').textContent=apView==='month'?apDate.slice(0,7):apDate;const e=escapeHTML, all=state.appointments.filter(apActive);const root=el('apCalendar');if(apView==='month'){let d=apDateObj(apDate);d.setDate(1);const month=d.getMonth();d.setDate(1-d.getDay());let html='<div class="ap-month">'+['日 Sun','一 Mon','二 Tue','三 Wed','四 Thu','五 Fri','六 Sat'].map(x=>`<div class="ap-week">${x}</div>`).join('');for(let i=0;i<42;i++,d.setDate(d.getDate()+1)){const day=apISO(d),rows=all.filter(a=>a.date===day).sort((a,b)=>a.time.localeCompare(b.time));html+=`<div class="${d.getMonth()!==month?'ap-out':''} ${day===todayStr()?'ap-today':''}" onclick="apSelect('${day}')"><b>${d.getDate()}</b> <small>${rows.reduce((n,a)=>n+apCount(a),0)}人</small>${rows.slice(0,5).map(a=>`<span class="ap-chip" style="background:${apColor(a)}">${e(a.time)} ${e(a.custName)} · ${apCount(a)}人</span>`).join('')}${rows.length>5?`<small>+${rows.length-5} 更多</small>`:''}</div>`;}root.innerHTML=html+'</div>';return;}
+  const h=apHours(),lo=apMin(h.start),hi=apMin(h.end),height=(hi-lo)/15*28,rows=all.filter(a=>a.date===apDate),lanes=[{id:'',name:h.name},...state.employees];let html=`<div class="ap-scroll"><div class="ap-grid" style="grid-template-columns:76px repeat(${lanes.length},minmax(190px,1fr))"><div class="ap-head">时间</div>${lanes.map(l=>`<div class="ap-head">${e(l.name)}</div>`).join('')}<div class="ap-rail">`;for(let t=lo;t<hi;t+=15)html+=`<div class="ap-time">${apTime(t)}</div>`;html+='</div>';for(let j=0;j<lanes.length;j++){const l=lanes[j],items=rows.filter(a=>String(a.staffId||'')===String(l.id)).filter(a=>apMin(a.time)<hi&&apMin(a.time)+apDuration(a)>lo).sort((a,b)=>apMin(a.time)-apMin(b.time));const tracks=[];const placed=items.map(a=>{let t=tracks.findIndex(x=>x<=apMin(a.time));if(t<0)t=tracks.length;tracks[t]=apMin(a.time)+apDuration(a);return [a,t];});html+=`<div class="ap-lane" data-lane="${j}" style="height:${height}px" onclick="apLaneClick(event,${j})" ondragover="event.preventDefault()" ondrop="apDrop(event,${j})">`;for(const [a,t] of placed){const top=(Math.max(lo,apMin(a.time))-lo)/15*28,ht=(Math.min(hi,apMin(a.time)+apDuration(a))-Math.max(lo,apMin(a.time)))/15*28;html+=`<div tabindex="0" class="ap-block" draggable="${a.status!=='已开钟'}" data-id="${e(a.id)}" ondragstart="apDragStart(event)" onclick="event.stopPropagation();apEdit(this.dataset.id)" onkeydown="if(event.key==='Enter')apEdit(this.dataset.id)" style="top:${top}px;height:${Math.max(26,ht-2)}px;left:${t/tracks.length*100}%;width:calc(${100/tracks.length}% - 3px);background:${apColor(a)}"><b>${e(a.custName)} · ${apCount(a)}人</b><br>${e(a.time)}–${apTime(apMin(a.time)+apDuration(a))}<br>${e(a.custPhone||'—')}<br>${e(a.serviceName||'待定')} ${a.memberId?' · 会员':''} ${e(a.status||'')}</div>`;}html+='</div>';}root.innerHTML=html+'</div></div>';const outside=rows.filter(a=>apMin(a.time)<lo||apMin(a.time)+apDuration(a)>hi||!lanes.some(l=>String(l.id)===String(a.staffId||'')));if(outside.length)root.innerHTML+=`<div class="ap-closed">营业时间外或未匹配员工：${outside.map(a=>`<button data-id="${e(a.id)}" onclick="apEdit(this.dataset.id)">${e(a.time)} ${e(a.custName)}</button>`).join(' ')}</div>`;}
+  function apLaneClick(ev,j){if(ev.target!==ev.currentTarget)return;const t=apMin(apHours().start)+Math.floor((ev.clientY-ev.currentTarget.getBoundingClientRect().top)/28)*15;apEdit(null,apTime(t),j?state.employees[j-1].id:'');}
+  function apDragStart(ev){apDrag={id:ev.currentTarget.dataset.id,offset:ev.clientY-ev.currentTarget.getBoundingClientRect().top};ev.dataTransfer.setData('text/plain',apDrag.id);ev.dataTransfer.effectAllowed='move';}
+  function apDrop(ev,j){ev.preventDefault();const a=state.appointments.find(x=>x.id===ev.dataTransfer.getData('text/plain'));if(!a||a.status==='已开钟'||!canEditTimer())return;const time=apTime(apMin(apHours().start)+Math.max(0,Math.round((ev.clientY-ev.currentTarget.getBoundingClientRect().top-(apDrag?.offset||0))/28))*15),staffId=j?state.employees[j-1].id:'';apDrag=null;const next={...a,date:apDate,time,staffId,staffName:state.employees.find(e=>e.id===staffId)?.name||'待分配'};const err=apValidate(next);if(err)return alert(err);Object.assign(a,next);saveState();renderAll();}
+  function apValidate(a){const start=apMin(a.time),end=start+apDuration(a),h=apHours();if(!a.date||!a.time||start%15||start<apMin(h.start)||end>apMin(h.end))return '预约必须在营业时间内，开始时间为15分钟倍数';if(a.staffId&&apCount(a)>1)return '多人预约请先拆分，再分配员工';if(a.staffId){const emp=state.employees.find(e=>e.id===a.staffId);if(!emp)return '员工不存在';if((emp.leaves||[]).some(l=>l.date===a.date&&start<apMin(l.end)&&end>apMin(l.start)))return '该员工在预约期间休息';if(state.appointments.some(x=>x.id!==a.id&&apActive(x)&&x.date===a.date&&x.staffId===a.staffId&&start<apMin(x.time)+apDuration(x)&&end>apMin(x.time)))return '该员工已有重叠预约';}return '';}
+  function apEdit(id=null,time=null,staffId=''){const a=state.appointments.find(x=>x.id===id)||{date:apDate,time:time||apHours().start,staffId,clientCount:1,duration:60};apEditing=id;const e=escapeHTML,opt=(v,n,sel)=>`<option value="${e(v)}" ${String(v)===String(sel)?'selected':''}>${e(n)}</option>`;el('apEditor').hidden=false;el('apEditor').className='ap-editor';el('apEditor').innerHTML=`<div class="ap-form"><div class="card-title">${id?'编辑预约':'新增预约'}<button onclick="apCloseEditor()">✕</button></div><div class="ap-fields"><label>日期<input id="aeDate" type="date" value="${e(a.date)}"></label><label>开始时间<input id="aeTime" type="time" step="900" value="${e(a.time)}"></label><label>姓名<input id="aeName" value="${e(a.custName)}"></label><label>电话<input id="aePhone" type="tel" value="${e(a.custPhone)}"></label><label>人数<input id="aeCount" type="number" min="1" max="30" value="${apCount(a)}"></label><label>时长（分钟）<input id="aeDuration" type="number" min="15" max="720" value="${apDuration(a)}"></label><label>员工<select id="aeStaff">${opt('','门店 / 未分配',a.staffId)}${state.employees.map(x=>opt(x.id,x.name,a.staffId)).join('')}</select></label><label>项目<select id="aeService" onchange="apServiceChanged()">${opt('','待定',a.serviceId)}${state.services.map(x=>opt(x.id,x.name,a.serviceId)).join('')}</select></label><label>会员（可选）<select id="aeMember" onchange="apMemberChanged()">${opt('','非会员 / 未知',a.memberId)}${state.members.map(x=>opt(x.id,(x.name||'')+' · '+(x.phone||''),a.memberId)).join('')}</select></label><label>颜色<select id="aeColor">${apColors.map((c,i)=>opt(c,['蓝色','绿色','黄色','紫色','粉色','橙色'][i],apColor(a))).join('')}</select></label><label style="grid-column:1/-1">备注<textarea id="aeNote">${e(a.note)}</textarea></label></div><div class="inline-inputs" style="margin-top:16px">${a.status==='已开钟'?'<strong>已开钟，不可修改</strong>':`<button class="btn-primary" onclick="addAppointment()">保存预约</button>${id&&apCount(a)>1?'<button onclick="apSplit()">拆分预约</button>':''}${id?'<button class="btn-danger" onclick="apCancelCurrent()">取消预约</button><button class="btn-success" onclick="apStartCurrent()">到店开钟</button>':''}`}</div></div>`;}
+  function apCloseEditor(){el('apEditor').hidden=true;apEditing=null;}function apServiceChanged(){const s=state.services.find(x=>x.id===el('aeService').value);if(s)el('aeDuration').value=s.duration||60;}function apMemberChanged(){const m=state.members.find(x=>x.id===el('aeMember').value);if(m){el('aeName').value=m.name||'';el('aePhone').value=m.phone||'';}}
+  function addAppointment(){if(!canEditTimer())return;const old=state.appointments.find(x=>x.id===apEditing);if(old?.status==='已开钟')return;const v=id=>el(id).value,staffId=v('aeStaff'),serviceId=v('aeService'),count=Number(v('aeCount')),duration=Number(v('aeDuration'));if(!v('aeName').trim()||!Number.isInteger(count)||count<1||count>30||!Number.isInteger(duration)||duration<15||duration>720)return alert('请填写姓名、有效人数和时长');const a={...old,id:old?.id||'appt_'+crypto.randomUUID(),date:v('aeDate'),time:v('aeTime'),custName:v('aeName').trim(),custPhone:v('aePhone').trim(),staffId,staffName:state.employees.find(x=>x.id===staffId)?.name||'待分配',serviceId,serviceName:state.services.find(x=>x.id===serviceId)?.name||'待定',memberId:v('aeMember'),clientCount:count,duration,color:v('aeColor'),note:v('aeNote'),status:'已预约'};const err=apValidate(a);if(err)return alert(err);if(old)Object.assign(old,a);else state.appointments.push(a);apDate=a.date;apView='day';apCloseEditor();saveState();renderAll();}
+  function apSplit(){if(!canEditTimer())return;const a=state.appointments.find(x=>x.id===apEditing);if(!a||a.status!=='已预约'||apCount(a)<2||!confirm('按已保存的预约拆分为单人预约？未保存的修改不会应用。'))return;const n=apCount(a),group=a.groupId||a.id;state.appointments=state.appointments.filter(x=>x.id!==a.id);for(let i=0;i<n;i++)state.appointments.push({...a,id:'appt_'+crypto.randomUUID(),groupId:group,groupIndex:i+1,clientCount:1,staffId:'',staffName:'待分配'});apCloseEditor();saveState();renderAll();}
+  async function deleteAppointment(id){if(!canEditTimer())return alert('请先连接云端并登录店长账号 / Connect to cloud and sign in as admin');const a=state.appointments.find(x=>x.id===id);if(!a)return alert('预约不存在 / Appointment not found');if(a.status==='已开钟')return alert('已开钟的预约不可取消');if(a.status==='已取消')return alert('预约已取消');if(!confirm('确认取消预约？ / Cancel this appointment?'))return;a.status='已取消';apCloseEditor();renderAppointments();const saved=await saveState();renderAll();if(!saved)alert('取消状态尚未同步到云端，请检查连接及保存状态。 / Cancellation not synced. Check cloud status.');}
+  function startApptTimer(id){const a=state.appointments.find(x=>x.id===id);if(!a||a.status!=='已预约'||!canEditTimer())return;if(a.date!==todayStr()||apCount(a)!==1||!a.staffId||!a.serviceId)return alert('仅当天已分配员工及项目的单人预约可以开钟');const before=state.timers.length;startServiceTimer(a.serviceId,a.staffId);if(state.timers.length===before)return;const t=state.timers.at(-1);t.appointmentId=a.id;t.durationMins=apDuration(a);t.endTime=t.startTime+t.durationMins*60000;trackTimer(t);a.status='已开钟';saveState();apCloseEditor();closeModal('appointmentModal');renderAll();}
+  Object.assign(window,{apCancelCurrent:()=>deleteAppointment(apEditing),apStartCurrent:()=>startApptTimer(apEditing),apMode,apToday,apMove,apSelect,apSettings,apSaveHours,apLaneClick,apDragStart,apDrop,apEdit,apCloseEditor,apServiceChanged,apMemberChanged,apSplit,apSetDate:v=>{apDate=v;renderAppointments();}});
   /* =========================================================
      第11项：员工管理（排班休息 + 密码保护敏感信息：地址/SSN/紧急联系人）
   ========================================================= */
@@ -3097,13 +3019,14 @@
   }
 
   function renderAll() {
+    if(el("appointmentModal")?.classList.contains("open"))renderAppointments();
     if(el("serviceHistoryModal")?.classList.contains("open"))renderServiceHistory();
     document.getElementById("staffAccountList").innerHTML=state.employees.map(e=>`<div>${escapeHTML(e.name)} · ${e.portalDisabled?"已停用":normalizePhone(e.phone)?"允许验证登录":"未登记手机号"} <button class="btn-sm" onclick="toggleStaffAccess('${escapeHTML(e.id)}')">${e.portalDisabled?"启用":"停用"}</button></div>`).join("");
     renderQuickTips();
     renderTimers(); renderDispatch();
 
     const today = document.getElementById('entryDate')?.value || todayStr();
-    const todayAppts = state.appointments.filter(a => a.date === today && a.status !== '已开钟');
+    const todayAppts = state.appointments.filter(a => a.date === today && a.status !== '已开钟' && a.status !== '已取消');
     const apptBadge = document.getElementById('todayApptBadge');
     if (apptBadge) apptBadge.textContent = todayAppts.length;
 
