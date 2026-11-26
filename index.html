@@ -1853,7 +1853,7 @@
     alert('会员与积分规则已保存');
   }
 
-  function createMember() {
+  async function createMember() {
     const name = document.getElementById('memName').value.trim();
     const phone = document.getElementById('memPhone').value.trim();
     if (!name || !phone) return alert('请输入会员姓名和手机号/卡号');
@@ -1913,7 +1913,7 @@
     document.getElementById('memCustomDisc').placeholder = '使用默认优惠';
     document.getElementById('memInitBalance').value = '';
     addAudit('开通会员/充值卡', `${name} (${tierLabel}, 充值$${initBalance})`);
-    saveState();
+    const memberSaved = await saveState();
     renderMembers();
     renderAll();
 
@@ -1927,6 +1927,7 @@
       memberInfo: `${name} (${phone}) · 余额 $${newMem.balance.toFixed(2)} · 积分 ${newMem.points}`
     });
     if(newMem.contract){const area=el('receiptPrintArea');if(area){const button=document.createElement('button');button.textContent='下载 / 发送签署合同';button.onclick=()=>downloadContract(newMem.id);area.append(button);}}
+    if(memberSaved && newMem.contract && MAIL_ENDPOINT) sendContractMail(newMem.id).catch(e=>alert("合同邮件："+e.message));
   }
 
   function topupMember(memId) {
@@ -3360,7 +3361,7 @@
   function quickStartService(sid,id){const n=state.timers.length;startServiceTimer(sid,id);if(state.timers.length>n){closeModal('extraModal');el('serviceGrid').scrollIntoView({behavior:'smooth'});}}
   function refreshMemberExtras(){el('pointsEnabled').checked=state.memberCfg.pointsEnabled!==false;el('pointsRate').value=state.memberCfg.pointsRate||100;const select=el('memTier'),old=select.value;select.querySelectorAll('[data-custom]').forEach(x=>x.remove());for(const t of state.memberCfg.extraTiers||[]){const o=new Option(t.name,t.id);o.dataset.custom='1';select.add(o);}if([...select.options].some(o=>o.value===old))select.value=old;const t=state.contractTemplate;el('contractSign').innerHTML=t?`<details open><summary>会员合同：${escapeHTML(t.name)}</summary><pre style="white-space:pre-wrap;max-height:240px;overflow:auto">${t.format==='pdf'?'':escapeHTML(t.text)}</pre>${t.format==='pdf'?`<button id="contractPreview" onclick="previewContract()">打开 PDF / Open PDF</button><div id="pdfPreviewArea"></div>`:''}</details><label><input id="contractAgree" type="checkbox">我已阅读并同意合同，接受电子签名</label><input id="contractSignature" placeholder="会员本人输入完整姓名"><p>请在下方手写签名</p><canvas id="signaturePad" width="420" height="140"></canvas><button onclick="clearSignature()">清除重签</button>`:'本店尚未设置合同';setupSignature();}
   function editTier(){const list=state.memberCfg.extraTiers??=[];const key=prompt('输入新增等级名称，或输入现有等级名称进行修改：\n'+list.map(t=>t.name).join(' / '));if(!key?.trim())return;const old=list.find(t=>t.name===key.trim());const f=prompt('年费 ($)',old?.fee??99),d=prompt('优惠百分比 (0–100)',old?.discount??10);if(f===null||d===null||!validMemberDiscount(d,'percent')||!validMemberDiscount(f,'fixed'))return alert('金额无效');const t={id:old?.id||crypto.randomUUID(),name:key.trim(),fee:Number(f),discount:Number(d),type:'percent'};if(old)Object.assign(old,t);else list.push(t);saveState();refreshMemberExtras();}
-  function openContracts(){showExtra('会员合同管理',`<p>上传 PDF (10 MiB) 或 UTF-8 TXT (20 KB) 合同；保留历史版本。可生成签署版 PDF、下载或打开邮件草稿。邮件附件需手动添加；支持文件分享的设备可直接分享。</p><input type="file" accept=".pdf,application/pdf,.txt,text/plain" onchange="uploadContract(this)"><button onclick="removeContract()">停用新合同</button><p>当前：${escapeHTML(state.contractTemplate?.name||'未设置')}</p>`+state.members.filter(m=>m.contract).map(m=>`<div class="staff-line">${escapeHTML(m.name)} · ${escapeHTML(maskEmail(m.email))} · ${escapeHTML(storeTime(Date.parse(m.contract.signedAt)))} <button onclick="downloadContract('${m.id}')">查看/下载/发送签署合同</button></div>`).join(''));}
+  function openContracts(){showExtra('会员合同管理',`<p>上传 PDF (10 MiB) 或 UTF-8 TXT (20 KB) 合同；保留历史版本。可生成签署版 PDF、下载或打开邮件草稿。支持自动邮件发送、状态查询及失败重试。</p><input type="file" accept=".pdf,application/pdf,.txt,text/plain" onchange="uploadContract(this)"><button onclick="removeContract()">停用新合同</button><p>当前：${escapeHTML(state.contractTemplate?.name||'未设置')}</p>`+state.members.filter(m=>m.contract).map(m=>`<div class="staff-line">${escapeHTML(m.name)} · ${escapeHTML(maskEmail(m.email))} · ${escapeHTML(storeTime(Date.parse(m.contract.signedAt)))} <button onclick="downloadContract('${m.id}')">查看/下载/发送签署合同</button> <button onclick="showMailStatus('${m.id}')">邮件状态</button> <button onclick="sendContractMail('${m.id}')">发送/重试</button></div>`).join(''));}
   const pdfCache=new Map();
   const templateRef=id=>doc(db,'pos_systems','default_store','contractTemplates',id);
   async function readContractPDF(t){
@@ -3379,11 +3380,10 @@
   async function uploadContract(input){const f=input.files[0];if(!f)return;input.disabled=true;try{if(currentUser?.uid!==ADMIN_UID)throw Error('Unauthorized');const version=crypto.randomUUID();let t;if(/\.pdf$/i.test(f.name)){if(!f.size||f.size>10*1024*1024)throw Error('PDF limit: 10 MiB');const bytes=new Uint8Array(await f.arrayBuffer());await PDFLib.PDFDocument.load(bytes);const ref=templateRef(version),batch=writeBatch(db),chunkCount=Math.ceil(bytes.length/512000);batch.set(ref,{name:f.name,version,format:'pdf',fileSize:bytes.length,chunkCount,uploadedAt:serverTimestamp()});for(let i=0;i<chunkCount;i++)batch.set(doc(ref,'chunks',String(i)),{data:Bytes.fromUint8Array(bytes.slice(i*512000,(i+1)*512000))});await batch.commit();t={name:f.name,version,format:'pdf'};pdfCache.set(version,bytes);}else{if(!/\.txt$/i.test(f.name)||f.size>20000)throw Error('TXT limit: 20 KB');const text=await f.text();if(!text.trim())throw Error('Empty contract');t={name:f.name,version,text,format:'txt'};}const previous=state.contractTemplate;state.contractTemplate=t;if(!await saveState()){state.contractTemplate=previous;throw Error('Template activation failed');}openContracts();}catch(e){alert('Upload failed: '+e.message);}finally{input.disabled=false;input.value='';}}
   function removeContract(){if(confirm('停用新注册合同？历史签署记录保留。')){state.contractTemplate=null;saveState();openContracts();}}
   let signedContractURL;
-  async function downloadContract(id){
-    const m=state.members.find(x=>x.id===id),c=m?.contract;if(!c)return;
-    showExtra('签署合同 / Signed agreement','<p>正在生成 PDF…</p>');
-    const target=el('extraBody');
-    try{
+  const MAIL_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyf6WFolxfSIfutLvcrLmYRQi8YmVsTVVdIasKUA1bnhIVvDF6k6n75R2NIIjxN5HwOYw/exec'; // Paste deployed Apps Script /exec URL here
+  const mailRef=id=>doc(db,'pos_systems','default_store','contractMail',id);
+  const mailBusy=new Set();
+  async function buildSignedContract(m){const c=m.contract;
       const lib=window.PDFLib || await import('https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm');
       const pdf=c.format==='pdf'?await lib.PDFDocument.load(await readContractPDF(c)):await lib.PDFDocument.create();
       const lines=[...(c.format==='pdf'?[]:String(c.text||'').split(/\r?\n/)), '', 'Electronic signature / 电子签名','Signer: '+(c.signature||m.name),'Signed at: '+c.signedAt,'Version: '+c.version,'Member email: '+(c.memberEmail||m.email||''),'Store email: '+(c.ownerEmail||''),'Consent: agreed to contract and electronic signature'];
@@ -3392,13 +3392,39 @@
       async function flush(){const page=pdf.addPage([600,750]);page.drawImage(await pdf.embedPng(canvas.toDataURL('image/png')),{x:0,y:0,width:600,height:750});}
       start();for(const line of lines){let row='';for(const ch of line){if(ctx.measureText(row+ch).width>1080){if(y>1400){await flush();start();}ctx.fillText(row,60,y);y+=48;row='';}row+=ch;}if(y>1400){await flush();start();}ctx.fillText(row,60,y);y+=48;}
       if(c.signatureImage){if(y>1100){await flush();start();}const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('Signature image cannot be loaded'));img.src=c.signatureImage;});ctx.drawImage(img,60,y,840,280);}await flush();
-      const blob=new Blob([await pdf.save()],{type:'application/pdf'}),filename='signed-'+id+'.pdf';
+      return new Blob([await pdf.save()],{type:'application/pdf'});
+  }
+  async function sendContractMail(id){
+    if(!MAIL_ENDPOINT)throw Error('请先配置 Google Apps Script URL');
+    if(currentUser?.uid!==ADMIN_UID || mailBusy.has(id))return;
+    const m=state.members.find(x=>x.id===id);if(!m?.contract)throw Error('合同不存在');
+    mailBusy.add(id);
+    try{
+      const prior=(await getDocFromServer(mailRef(id))).data();
+      if(prior?.member==='sent' && prior?.store==='sent'){alert('双方邮件已发送');return;}
+      if(prior?.member==='sending'||prior?.store==='sending')throw Error('上次发送结果不确定，请先核对 Gmail 已发送邮件，避免重复发送');
+      const blob=await buildSignedContract(m);if(blob.size>15*1024*1024)throw Error('签署 PDF 超过 15 MiB，请手动发送');
+      const base64=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result.split(',')[1]);r.onerror=reject;r.readAsDataURL(blob);});
+      const token=await currentUser.getIdToken();const attempt=crypto.randomUUID();
+      await fetch(MAIL_ENDPOINT,{method:'POST',mode:'no-cors',credentials:'omit',headers:{'Content-Type':'text/plain'},body:JSON.stringify({token,id,attempt,pdf:base64})});
+      for(let i=0;i<30;i++){await new Promise(r=>setTimeout(r,2000));const result=(await getDocFromServer(mailRef(id))).data();if(result?.attempt===attempt && result.finished){alert('会员：'+result.member+'；门店：'+result.store+(result.error?'；'+result.error:''));return;}}
+      throw Error('暂未收到发送确认，请在合同管理中查询状态，不要立即重复发送');
+    }finally{mailBusy.delete(id);}
+  }
+  async function showMailStatus(id){try{const r=(await getDocFromServer(mailRef(id))).data();alert(r?'会员：'+r.member+'；门店：'+r.store+(r.error?'；'+r.error:''):'尚未发送');}catch(e){alert(e.message);}}
+  window.sendContractMail=id=>sendContractMail(id).catch(e=>alert(e.message));window.showMailStatus=showMailStatus;
+  async function downloadContract(id){
+    const m=state.members.find(x=>x.id===id),c=m?.contract;if(!c)return;
+    showExtra('签署合同 / Signed agreement','<p>正在生成 PDF…</p>');
+    const target=el('extraBody');
+    try{
+      const blob=await buildSignedContract(m),filename='signed-'+id+'.pdf';
       if(signedContractURL)URL.revokeObjectURL(signedContractURL);signedContractURL=URL.createObjectURL(blob);
       target.replaceChildren();const info=document.createElement('p');info.textContent='会员 / Member: '+m.name;target.append(info);
       const member=document.createElement('input');member.type='email';member.value=c.memberEmail||m.email||'';member.placeholder='Member email';const store=document.createElement('input');store.type='email';store.value=c.ownerEmail||currentUser?.email||'';store.placeholder='Store email';target.append('会员邮箱 ',member,document.createElement('br'),'门店邮箱 ',store,document.createElement('br'));
       const link=document.createElement('a');link.href=signedContractURL;link.download=filename;link.textContent='⬇ 下载签署 PDF';link.className='btn-primary';link.style='display:inline-block;padding:12px;margin:8px;border-radius:8px';target.append(link);
       const view=document.createElement('a');view.href=signedContractURL;view.target='_blank';view.rel='noopener';view.textContent='打开 PDF / Preview';target.append(view);
-      const mail=document.createElement('button');mail.textContent='打开 Gmail 邮件草稿';mail.onclick=()=>{if(!member.value||!store.value||!member.checkValidity()||!store.checkValidity())return alert('请输入双方有效邮箱');const q=new URLSearchParams({view:'cm',fs:'1',to:member.value,bcc:store.value,su:'Signed membership agreement',body:'Thank you for joining. Please find your signed membership agreement attached.'});window.open('https://mail.google.com/mail/?'+q.toString(),'_blank','noopener');};target.append(mail);
+      const mail=document.createElement('button');mail.textContent='打开 Gmail 邮件草稿';mail.onclick=()=>{if(!member.value||!store.value||!member.checkValidity()||!store.checkValidity())return alert('请输入双方有效邮箱');const q=new URLSearchParams({view:'cm',fs:'1',to:member.value,bcc:store.value,su:'Signed membership agreement',body:'Thank you for joining. Please find your signed membership agreement attached.'});window.open('https://mail.google.com/mail/?'+q.toString(),'_blank','noopener');};target.append(mail);const auto=document.createElement('button');auto.textContent='自动发送 / 重试';auto.onclick=()=>window.sendContractMail(id);target.append(auto);
       const file=new File([blob],filename,{type:'application/pdf'});if(navigator.canShare?.({files:[file]})){const share=document.createElement('button');share.textContent='分享 PDF 附件';share.onclick=async()=>{try{await navigator.share({files:[file],title:'Signed membership agreement'});}catch(e){if(e.name!=='AbortError')alert(e.message);}};target.append(share);}
       const note=document.createElement('p');note.textContent='请先下载 PDF，再在 Gmail 草稿中添加附件并发送。门店邮箱为密送。打开草稿不代表邮件已发送。';target.append(note);
       const back=document.createElement('button');back.textContent='返回合同列表';back.onclick=openContracts;target.append(back);
