@@ -2087,7 +2087,7 @@
   Object.assign(window,{searchCheckoutMembers,clearCheckoutMember});
 
   function showCheckoutModal() {
-    selectedCheckoutMethod = '现金'; clearCheckoutConfirmation(); el('checkoutTips').innerHTML=[...new Map(checkoutCart.map(x=>[x.staffId,x.staffName]))].map(([id,name])=>`<label style="display:block;margin:6px">${escapeHTML(name)} <input class="co-tip" data-id="${escapeHTML(id)}" type="number" min="0" step="0.01" value="0" oninput="updateCheckoutTotalDisplay()"></label>`).join('');
+    selectedCheckoutMethod = '现金'; clearCheckoutConfirmation(); el('checkoutTips').innerHTML=[...new Map(checkoutCart.map(x=>[x.staffId,x.staffName]))].map(([id,name])=>`<label style="display:block;margin:6px">${escapeHTML(name)} <input class="co-tip" data-id="${escapeHTML(id)}" type="number" min="0" step="0.01" oninput="updateCheckoutTotalDisplay()"></label>`).join('');
     el('checkoutMemberSelect').replaceChildren(new Option('非会员',''));
     el('checkoutMemberSearch').value = '';
     searchCheckoutMembers();
