@@ -472,7 +472,7 @@
     </div>
 
     <!-- 记账日期与当前技师快捷切换 -->
-    <div class="card">
+    <div class="card" id="dispatchPanel">
       <div class="inline-inputs" style="justify-content:space-between;">
         <div class="inline-inputs">
           <strong data-i18n="entryDate">📅 记账日期：</strong>
@@ -489,7 +489,7 @@
     </div>
 
     <!-- 录入订单 -->
-    <div class="card non-therapist">
+    <div class="card non-therapist" id="orderEntryPanel">
       <div class="card-title">
         <span data-i18n="orderEntryTitle">📋 录入订单（点项目结账 / 点时间开钟）</span>
         <div class="inline-inputs">
@@ -500,8 +500,8 @@
       <div class="service-grid" id="serviceGrid"></div>
     </div>
 
-    <div class="card"><details open><summary style="font-size:20px;font-weight:800;cursor:pointer">实时房间与设备看板 / Resources</summary><div id="resourceBoard" style="margin-top:12px"></div></details></div>
-    <div class="card"><button onclick="squareTransactions()">交易记录 / Transactions</button><div id="paymentNotice" hidden><strong id="paymentNoticeText"></strong> <button onclick="squareRecover()">查询并恢复</button> <button onclick="squareCancel()">取消支付</button></div></div><!-- 服务计时看板 -->
+    <div class="card" id="resourcePanel"><details open><summary style="font-size:20px;font-weight:800;cursor:pointer">实时房间与设备看板 / Resources</summary><div id="resourceBoard" style="margin-top:12px"></div></details></div>
+<!-- 服务计时看板 -->
     <div class="card non-therapist">
       <div class="card-title">
         <span data-i18n="timerBoardTitle">⏱️ 服务计时看板（支持任意分钟加钟 & 任意加钱 & 多选合并结账）</span>
@@ -519,6 +519,7 @@
       <div class="timer-grid" id="timerGrid"></div>
     </div>
 
+    <div class="card"><button onclick="squareTransactions()">交易记录 / Transactions</button><div id="paymentNotice" hidden><strong id="paymentNoticeText"></strong> <button onclick="squareRecover()">查询并恢复</button> <button onclick="squareCancel()">取消支付</button></div></div>
     <!-- 小费与服务费/礼卡录入 -->
     <div class="grid-2 non-therapist">
       <div class="card">
@@ -1623,7 +1624,8 @@
      第2项 & 第3项：计时任意加钟、任意加钱随结账一起结、合并结账
   ========================================================= */
   let pendingResourceStart = null;
-  function cancelResourceStart(){pendingResourceStart=null;renderResources();}
+  function goWorkflowPanel(id){const panel=el(id);if(!panel)return;panel.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});}
+  function cancelResourceStart(){pendingResourceStart=null;renderResources();goWorkflowPanel("orderEntryPanel");}
   function chooseResourceStart(id){
     const p=pendingResourceStart;if(!p)return;
     const a=p.appointmentId?state.appointments.find(x=>x.id===p.appointmentId):null;
@@ -1650,7 +1652,7 @@
     if(selectedResource===null && rule && rule!=='none'){
       pendingResourceStart={serviceId,staffId:targetStaff,appointmentId:appointment?.id||null,group};
       if(appointment){apCloseEditor();closeModal('appointmentModal');}
-      const board=el('resourceBoard');board.closest('details').open=true;renderResources();board.closest('.card').scrollIntoView({behavior:'smooth',block:'start'});return;
+      const board=el('resourceBoard');board.closest('details').open=true;renderResources();goWorkflowPanel("resourcePanel");return;
     }
     const preferred=selectedResource!==null?selectedResource:(appointment?.resourcePreferred||'');
     const allocation=resAllocate({serviceId,start:now,end:now+mins*60000,group,exclude:appointment?[appointment.id]:[],preferred,comboMode:comboOptions.mode,preferredBed:comboOptions.bed});
@@ -1676,7 +1678,7 @@
     });
     trackTimer(state.timers.at(-1)); const c=control(); c.override=null;c.skipped=[];
     saveState();
-    renderTimers(); renderDispatch(); renderResources(); el("timerGrid").closest(".card").scrollIntoView({behavior:"smooth",block:"start"});
+    renderTimers(); renderDispatch(); renderResources(); goWorkflowPanel("dispatchPanel");
   }
 
   function extendTimerCustom(timerId) {
@@ -3482,7 +3484,7 @@
     const rest=rows.filter(x=>!eligible.includes(x));const group=x=>x.status==='空闲'?0:x.status==='服务中'?1:x.status==='休息中'?2:3;
     rest.sort((a,b)=>group(a)-group(b)||(a.status==='服务中'?a.remaining-b.remaining:0));
     const countdown=ms=>{const sec=Math.ceil(ms/1000);return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');};
-    const html=[...eligible,...rest].map(x=>{const rank=eligible.indexOf(x),id=escapeHTML(x.e.id);return `<tr class="${rank===0?'dispatch-first':x.status==='服务中'?'dispatch-busy':rank<0?'dispatch-inactive':''}"><td><button class="dispatch-name ${rank===0?'dispatch-bold':''}" onclick="quickStart('${id}')">${escapeHTML(x.e.name)}</button></td><td>${x.count}</td><td>${rank<0?'—':rank===0?'<span class="tag tag-green">第1位</span>':'第'+(rank+1)+'位'}</td><td>${x.status==='服务中'?'<span class="tag tag-blue">服务中 · '+countdown(x.remaining)+'</span>':x.status==='待结账'?`<button class="btn-warning" onclick="quickStart('${id}')">待结账 / Checkout</button>`:x.status}${skipped.includes(x.e.id)?' · 已跳过':''}</td><td>${x.status!=='空闲'?'—':x.last?Math.max(0,Math.floor((Date.now()-x.last)/60000))+' 分钟':'未开工'}</td><td><button class="btn-sm" onclick="overrideDispatch('${id}')" ${x.status!=='空闲'?'disabled':''}>指定下一位</button> <button class="btn-sm" onclick="skipDispatch('${id}')" ${x.status!=='空闲'?'disabled':''}>跳过</button></td></tr>`}).join('');
+    const html=[...eligible,...rest].map(x=>{const rank=eligible.indexOf(x),id=escapeHTML(x.e.id);return `<tr class="${rank===0?'dispatch-first':x.status==='服务中'?'dispatch-busy':rank<0?'dispatch-inactive':''}"><td><button class="dispatch-name ${rank===0?'dispatch-bold':''}" onclick="quickStart('${id}')">${escapeHTML(x.e.name)}</button></td><td>${x.count}</td><td>${rank<0?'—':rank===0?'<span class="tag tag-green">第1位</span>':'第'+(rank+1)+'位'}</td><td>${x.status==='服务中'?'<span class="tag tag-blue">服务中 · '+countdown(x.remaining)+'</span>':x.status==='待结账'?`<button class="btn-warning" onclick="dispatchCheckout('${id}')">待结账 / Checkout</button>`:x.status}${skipped.includes(x.e.id)?' · 已跳过':''}</td><td>${x.status!=='空闲'?'—':x.last?Math.max(0,Math.floor((Date.now()-x.last)/60000))+' 分钟':'未开工'}</td><td><button class="btn-sm" onclick="overrideDispatch('${id}')" ${x.status!=='空闲'?'disabled':''}>指定下一位</button> <button class="btn-sm" onclick="skipDispatch('${id}')" ${x.status!=='空闲'?'disabled':''}>跳过</button></td></tr>`}).join('');
     if(el('dispatchBoard').dataset.markup!==html){el('dispatchBoard').innerHTML=html;el('dispatchBoard').dataset.markup=html;}el('storeClock').textContent='门店 '+nowStr()+' · 设备 '+new Date().toLocaleString();
   }
   function resetDispatch(){if(!canEditTimer()||!confirm('仅重置今日排工统计？营业及工资记录不变。'))return;Object.assign(control(),{resetAt:Date.now(),override:null,skipped:[]});saveState();renderDispatch();}
@@ -3496,9 +3498,14 @@
   function moveDispatch(b,d){const row=b.parentElement,p=row.parentElement;if(d<0&&row.previousElementSibling)p.insertBefore(row,row.previousElementSibling);if(d>0&&row.nextElementSibling)p.insertBefore(row.nextElementSibling,row);}
   function saveDispatch(){state.dispatchDays??={};state.dispatchDays[todayStr()]=[...el('dispatchRows').children].filter(x=>x.querySelector('input').checked).map(x=>x.dataset.id);saveState();renderDispatch();closeModal('extraModal');}
   function showExtra(title,html){el('extraTitle').textContent=title;el('extraBody').innerHTML=html;el('extraModal').classList.add('open');}
-  function quickStart(id){const due=state.timers.filter(t=>t.staffId===id&&t.endTime<=Date.now());if(due.length){checkoutCart=due.map(buildCartItemFromTimer);showCheckoutModal();return;}state.selectedStaffId=id;state.filterStaffId=id;renderAll();el('serviceGrid').closest('.card').scrollIntoView({behavior:'smooth',block:'start'});}
+  function quickStart(id){
+    if(!state.employees.some(e=>e.id===id))return;
+    pendingResourceStart=null;state.selectedStaffId=id;state.filterStaffId=id;renderAll();goWorkflowPanel('orderEntryPanel');
+  }
+  function dispatchCheckout(id){const due=state.timers.filter(t=>t.staffId===id&&t.endTime<=Date.now());if(due.length){checkoutCart=due.map(buildCartItemFromTimer);showCheckoutModal();}}
+  window.dispatchCheckout=dispatchCheckout;
+  function quickStartService(sid,id){const n=state.timers.length;startServiceTimer(sid,id);if(state.timers.length>n||pendingResourceStart?.serviceId===sid&&pendingResourceStart?.staffId===id)closeModal('extraModal');}
 
-  function quickStartService(sid,id){const n=state.timers.length;startServiceTimer(sid,id);if(state.timers.length>n){closeModal('extraModal');el('serviceGrid').scrollIntoView({behavior:'smooth'});}}
   function refreshMemberExtras(){el('pointsEnabled').checked=state.memberCfg.pointsEnabled!==false;el('pointsRate').value=state.memberCfg.pointsRate||100;const select=el('memTier'),old=select.value;select.querySelectorAll('[data-custom]').forEach(x=>x.remove());for(const t of state.memberCfg.extraTiers||[]){const o=new Option(t.name,t.id);o.dataset.custom='1';select.add(o);}if([...select.options].some(o=>o.value===old))select.value=old;const t=state.contractTemplate;el('contractSign').innerHTML=t?`<details open><summary>会员合同：${escapeHTML(t.name)}</summary><pre style="white-space:pre-wrap;max-height:240px;overflow:auto">${t.format==='pdf'?'':escapeHTML(t.text)}</pre>${t.format==='pdf'?`<button id="contractPreview" onclick="previewContract()">打开 PDF / Open PDF</button><div id="pdfPreviewArea"></div>`:''}</details><label><input id="contractAgree" type="checkbox">我已阅读并同意合同，接受电子签名</label><input id="contractSignature" placeholder="会员本人输入完整姓名"><p>请在下方手写签名</p><canvas id="signaturePad" width="420" height="140"></canvas><button onclick="clearSignature()">清除重签</button>`:'本店尚未设置合同';setupSignature();}
   function editTier(){const list=state.memberCfg.extraTiers??=[];const key=prompt('输入新增等级名称，或输入现有等级名称进行修改：\n'+list.map(t=>t.name).join(' / '));if(!key?.trim())return;const old=list.find(t=>t.name===key.trim());const f=prompt('年费 ($)',old?.fee??99),d=prompt('优惠百分比 (0–100)',old?.discount??10);if(f===null||d===null||!validMemberDiscount(d,'percent')||!validMemberDiscount(f,'fixed'))return alert('金额无效');const t={id:old?.id||crypto.randomUUID(),name:key.trim(),fee:Number(f),discount:Number(d),type:'percent'};if(old)Object.assign(old,t);else list.push(t);saveState();refreshMemberExtras();}
   function openContracts(){showExtra('会员合同管理',`<p>上传 PDF (10 MiB) 或 UTF-8 TXT (20 KB) 合同；保留历史版本。可生成签署版 PDF、下载或打开邮件草稿。支持自动邮件发送、状态查询及失败重试。</p><input type="file" accept=".pdf,application/pdf,.txt,text/plain" onchange="uploadContract(this)"><button onclick="removeContract()">停用新合同</button><p>当前：${escapeHTML(state.contractTemplate?.name||'未设置')}</p>`+state.members.filter(m=>m.contract).map(m=>`<div class="staff-line">${escapeHTML(m.name)} · ${escapeHTML(maskEmail(m.email))} · ${escapeHTML(storeTime(Date.parse(m.contract.signedAt)))} <button onclick="downloadContract('${m.id}')">查看/下载/发送签署合同</button> <button onclick="showMailStatus('${m.id}')">邮件状态</button> <button onclick="sendContractMail('${m.id}')">发送/重试</button></div>`).join(''));}
