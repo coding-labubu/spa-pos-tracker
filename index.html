@@ -389,12 +389,12 @@
       <div class="login-field"><label for="loginPassword" data-l="密码|Password"></label><input type="password" id="loginPassword" autocomplete="current-password" required data-p="请输入密码|Enter password"></div>
       <button id="loginSubmitBtn" class="login-submit" disabled data-l="安全登录|Secure sign in"></button><button type="button" id="resetPasswordBtn" class="login-reset" disabled data-l="忘记密码？|Forgot password?"></button></form>
     <form id="staffLoginForm" hidden onsubmit="staffAuth(event,'login')"><h2 data-l="欢迎回来|Welcome back"></h2><p class="login-help" data-l="登录您的员工个人工作台|Sign in to your employee workspace"></p>
-      <div class="login-field"><label for="staffStore" data-l="门店代码|Store code"></label><input id="staffStore" required pattern="[A-Za-z0-9_-]{3,32}" placeholder="COMFIGLOW"><small data-l="请向店长获取门店代码|Ask your manager for your store code"></small></div>
+      <div class="login-field"><label for="staffStore" data-l="门店代码|Store code"></label><input id="staffStore" required pattern="[A-Za-z0-9_-]{3,32}" placeholder="Store code"><small data-l="请向店长获取门店代码|Ask your manager for your store code"></small></div>
       <div class="login-field"><label for="staffEmail" data-l="电子邮箱|Email address"></label><input id="staffEmail" type="email" autocomplete="username" required placeholder="name@example.com"></div>
       <div class="login-field"><label for="staffPassword" data-l="密码|Password"></label><div class="login-phone"><input id="staffPassword" type="password" autocomplete="current-password" required data-p="请输入密码|Enter password"><button type="button" onclick="const p=document.getElementById('staffPassword');p.type=p.type==='password'?'text':'password'" data-l="显示/隐藏|Show/hide"></button></div></div>
       <div class="login-remember" style="justify-content:space-between"><label><input type="checkbox" id="staffRemember" checked> <span data-l="记住此设备|Remember me"></span></label><button type="button" class="login-reset" style="margin:0" onclick="staffReset()" data-l="忘记密码？|Forgot password?"></button></div>
       <button class="login-submit" id="staffSubmit" disabled data-l="安全登录|Sign in"></button><div class="login-or" data-l="或者|or"></div><button type="button" class="login-google" onclick="staffAuth(event,'google')"><b style="color:#4285f4;font-size:20px">G</b> <span data-l="使用 Google 账号登录|Continue with Google"></span></button><button type="button" class="login-reset" onclick="staffAuth(event,'activate')" data-l="首次登录？激活员工账号|First time? Activate employee account"></button></form>
-    <section id="registerPanel" hidden><h2 data-l="创建商家账号|Create your business account"></h2><p data-l="商家自助注册尚未开放。现有门店请使用商家登录。|Self-service registration is not yet available. Existing businesses can sign in."></p></section>
+    <section id="registerPanel" hidden><h2 data-l="创建商家账号|Create your business account"></h2><form id="businessRegisterForm"><div class="login-field"><label data-l="电子邮箱|Email address"></label><input id="registerEmail" type="email" required autocomplete="email"></div><div class="login-field"><label data-l="密码（至少12位）|Password (at least 12 characters)"></label><input id="registerPassword" type="password" minlength="12" required autocomplete="new-password"></div><button class="login-submit" data-l="注册测试商家|Register pilot business"></button></form><p data-l="测试版本：验证邮箱后使用商家登录。新商家暂不支持 Square 自动收款。|Pilot version: verify your email, then sign in as a business. Square is unavailable for new businesses."></p></section>
     <div id="loginError" class="login-error" role="status" data-l="正在加载 Firebase…|Loading Firebase…"></div><div class="login-footer" data-l="安全认证 · 独立门店 · 数据隔离|Secure authentication · Private business data"></div>
   </div></div>
   <!-- 员工手机号自助看板 (第11项) -->
@@ -656,13 +656,13 @@
     <div class="grid-2 boss-only">
       <div class="card">
         <div class="card-title">
-          <span>👥 员工管理、排班休息与隐私档案</span><button onclick="syncStaffAccounts()">同步员工账号</button><span class="tag tag-blue">门店代码：COMFIGLOW</span>
+          <span>👥 员工管理、排班休息与隐私档案</span><button onclick="syncStaffAccounts()">同步员工账号</button><span class="tag tag-blue">门店代码：<span class="active-store-code"></span></span>
           <div class="inline-inputs">
             <button class="btn-warning btn-sm" id="unlockSensitiveBtn" onclick="toggleSensitiveStaffLock()">🔐 解锁敏感档案</button>
             <button class="btn-outline btn-sm" onclick="changeSensitivePassword()">🔑 改档案密码</button>
           </div>
         </div>
-        <div class="account-panel"><h3>员工账号与权限管理 / Staff access</h3><p>门店代码：<strong>COMFIGLOW</strong> · 为现有员工登记邮箱后，将门店代码告知员工。</p><div id="staffAccountList"></div></div><input type="hidden" id="editEmpId" />
+        <div class="account-panel"><h3>员工账号与权限管理 / Staff access</h3><p>门店代码：<strong class="active-store-code"></strong> · 为现有员工登记邮箱后，将门店代码告知员工。</p><div id="staffAccountList"></div></div><input type="hidden" id="editEmpId" />
         <div class="inline-inputs" style="margin-bottom:8px;">
           <input type="text" id="empName" placeholder="技师姓名 *" style="width:110px;" />
           <input type="text" id="empRole" placeholder="职级" value="按摩师" style="width:95px;" />
@@ -1017,8 +1017,12 @@
     appId: '1:799158416407:web:9a0de7a73583e7ddd45852'
   };
 
-  const ADMIN_UID = '8qzT5mvmg6SX9MkEhywAb5iVB8u2';
-  const FIRESTORE_DOC_PATH = ['pos_systems', 'default_store'];
+  const LEGACY_ADMIN_UID = '8qzT5mvmg6SX9MkEhywAb5iVB8u2';
+  let ADMIN_UID = null;
+  let FIRESTORE_DOC_PATH = ['pos_systems', 'default_store'];
+  let activeStoreCode = 'COMFIGLOW';
+  const legacyOwner = () => currentUser?.uid === LEGACY_ADMIN_UID;
+  const ownerMode = () => sessionStorage.getItem('posLoginMode') === 'owner';
   const zone = () => staffView?.storeZone || state.storeZone || 'America/Los_Angeles';
   function dayAt(ms=Date.now(), tz=zone()) { const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(ms).map(x=>[x.type,x.value]));return `${p.year}-${p.month}-${p.day}`; }
   const todayStr = () => dayAt();
@@ -1104,6 +1108,7 @@
   function sanitizeStateData(incoming) {
     if (!incoming || typeof incoming !== 'object') return {};
     const clean = structuredClone(incoming);
+    if(currentUser && !legacyOwner()) { for(const e of (clean.employees||[])) { delete e.ssn; delete e.address; delete e.emergency; } if(clean.paymentConfig)clean.paymentConfig.squareEnabled=false; }
     delete clean.passwords;
     delete clean.updatedAt;
     delete clean.role;
@@ -1201,6 +1206,7 @@
         const confirmed = confirm('No cloud ledger was found. Create a new empty store ledger?');
         if (!confirmed) { await signOut(auth); return; }
         state = structuredClone(EMPTY_STATE);
+        if (!legacyOwner()) { state.paymentConfig.squareEnabled=false; state.resources=[]; state.sensitivePassword=''; }
         state.role = 'boss';
         await setDoc(targetDoc, getCloudPayload());
       }
@@ -1247,6 +1253,7 @@
       await setPersistence(auth, browserSessionPersistence);
 
       document.getElementById('loginForm').addEventListener('submit', login);
+      document.getElementById('businessRegisterForm').addEventListener('submit', registerBusiness);
       document.getElementById('resetPasswordBtn').addEventListener('click', resetPassword);
       document.getElementById('loginSubmitBtn').disabled = false; loginEl('staffSubmit').disabled=false;
       document.getElementById('resetPasswordBtn').disabled = false;
@@ -1254,8 +1261,16 @@
       onAuthStateChanged(auth, async user => {
         clearSessionData();
         if (!user) { showLogin(); return; }
-        if (user.uid !== ADMIN_UID) { currentUser = user; await startStaffPortal(user); return; }
         currentUser = user;
+        if (user.uid !== LEGACY_ADMIN_UID && !ownerMode()) { await startStaffPortal(user); return; }
+        if (user.uid !== LEGACY_ADMIN_UID && !user.emailVerified) {
+          try { await sendEmailVerification(user); } catch(e) { console.error(e); }
+          await signOut(auth); showLogin('请验证邮箱后重新登录 / Verify your email before signing in'); return;
+        }
+        if (!/^[A-Za-z0-9_-]{3,32}$/.test(user.uid)) { await signOut(auth); showLogin('Unsupported account ID'); return; }
+        ADMIN_UID = user.uid;
+        activeStoreCode = user.uid === LEGACY_ADMIN_UID ? 'COMFIGLOW' : user.uid;
+        FIRESTORE_DOC_PATH = ['pos_systems', user.uid === LEGACY_ADMIN_UID ? 'default_store' : 'tenant_'+user.uid];
         await startCloudSync(user);
       });
     } catch (error) {
@@ -1275,6 +1290,7 @@
     document.getElementById('loginScreen').hidden = true;
     document.getElementById('staffPortalContainer').hidden = true;
     document.getElementById('appContainer').hidden = false;
+    document.querySelectorAll('.active-store-code').forEach(e=>e.textContent=activeStoreCode);
     document.getElementById('currentUserEmail').textContent = currentUser?.email || '';
     document.getElementById('loginPassword').value = '';
   }
@@ -1289,7 +1305,7 @@
     initialCloudLoaded = false;
     isApplyingRemote = false;
     saveFailed = false;
-    currentUser = null;
+    currentUser = null; ADMIN_UID=null; activeStoreCode='COMFIGLOW';
     cloudDocRef = null;
     checkoutCart = [];
     sensitiveUnlocked = false;
@@ -1315,7 +1331,7 @@
   }
   // Only explicit allowlisted fields leave the administrator ledger.
   async function publishLedger(target, payload) {
-    const existing = await getDocsFromServer(collection(db,'store_codes','COMFIGLOW','email_portals'));
+    const existing = await getDocsFromServer(collection(db,'store_codes',activeStoreCode,'email_portals'));
     const batch = writeBatch(db), keep = new Set();
     const employees = payload.employees || [];
     for (const e of employees) {
@@ -1326,7 +1342,7 @@
       if(prior && prior.data().employeeId!==e.id) throw Error("Revoke previous email assignment and sync before reuse");
       const own = key => (payload[key]||[]).filter(x=>x.staffId===e.id);
       const clean = (arr, fields) => arr.map(x=>Object.fromEntries(fields.filter(k=>x[k]!==undefined).map(k=>[k,x[k]])));
-      batch.set(doc(db,'store_codes','COMFIGLOW','email_portals',phone), {
+      batch.set(doc(db,'store_codes',activeStoreCode,'email_portals',phone), {
         email:phone, storeZone:payload.storeZone||"America/Los_Angeles", employeeId:e.id, name:e.name, role:e.role||'技师',
         timers:clean(own('timers'),['id','serviceName','startTime','endTime','durationMins','status','earlyEndedAt']),
         orders:clean(own('orders'),['id','date','duration','commission','payMethod']),
@@ -1350,16 +1366,16 @@
   }
   async function syncStaffAccounts(){ if(await saveState()) alert('员工账号及个人数据已同步'); }
   function toggleStaffAccess(id){ const e=state.employees.find(x=>x.id===id); if(!e||currentUser?.uid!==ADMIN_UID)return; e.portalDisabled=!e.portalDisabled; addAudit('员工账号权限',e.name); saveState(); renderAll(); }
-  function storeCode(){return loginEl('staffStore').value.trim().toUpperCase();}
+  function storeCode(){return loginEl('staffStore').value.trim();}
   function staffEmailKey(v){const e=String(v||'').trim().toLowerCase();return /^[^\s/@]+@[^\s/@]+\.[^\s/@]+$/.test(e)&&e.length<250?e:'';}
-  async function staffAuth(event,mode){event.preventDefault();if(!auth||staffBusy)return;const code=storeCode(),email=staffEmailKey(loginEl('staffEmail').value),password=loginEl('staffPassword').value;if(!/^[A-Z0-9_-]{3,32}$/.test(code)|| (mode!=='google'&&(!email||!password))){notice('请填写门店代码、邮箱及密码','Enter store code, email and password');return;}staffBusy=true;loginEl('staffSubmit').disabled=true;try{await setPersistence(auth,loginEl('staffRemember').checked?browserLocalPersistence:browserSessionPersistence);sessionStorage.setItem('posStaffStore',code);if(loginEl('staffRemember').checked)localStorage.setItem('posStaffStore',code);else localStorage.removeItem('posStaffStore');if(mode==='google')await signInWithPopup(auth,new GoogleAuthProvider());else if(mode==='activate')await createUserWithEmailAndPassword(auth,email,password);else await signInWithEmailAndPassword(auth,email,password);loginEl('staffPassword').value='';}catch(e){authNotice(e);}finally{staffBusy=false;loginEl('staffSubmit').disabled=false;}}
+  async function staffAuth(event,mode){event.preventDefault();if(!auth||staffBusy)return;const code=storeCode(),email=staffEmailKey(loginEl('staffEmail').value),password=loginEl('staffPassword').value;if(!/^[A-Za-z0-9_-]{3,32}$/.test(code)|| (mode!=='google'&&(!email||!password))){notice('请填写门店代码、邮箱及密码','Enter store code, email and password');return;}staffBusy=true;loginEl('staffSubmit').disabled=true;try{await setPersistence(auth,loginEl('staffRemember').checked?browserLocalPersistence:browserSessionPersistence);sessionStorage.setItem('posLoginMode','staff');sessionStorage.setItem('posStaffStore',code);if(loginEl('staffRemember').checked)localStorage.setItem('posStaffStore',code);else localStorage.removeItem('posStaffStore');if(mode==='google')await signInWithPopup(auth,new GoogleAuthProvider());else if(mode==='activate')await createUserWithEmailAndPassword(auth,email,password);else await signInWithEmailAndPassword(auth,email,password);loginEl('staffPassword').value='';}catch(e){authNotice(e);}finally{staffBusy=false;loginEl('staffSubmit').disabled=false;}}
   async function staffReset(){const email=staffEmailKey(loginEl('staffEmail').value);if(!email)return notice('请先填写邮箱','Enter your email first');try{await sendPasswordResetEmail(auth,email);notice('如账号存在，将收到重置邮件','If the account exists, a reset email will be sent');}catch(e){authNotice(e);}}
   async function inviteStaff(id){if(currentUser?.uid!==ADMIN_UID||state.paymentPending)return;const e=state.employees.find(x=>x.id===id);if(!e)return;const raw=prompt('员工登录邮箱 / Employee login email (留空撤销 / blank to revoke)',e.loginEmail||'');if(raw===null)return;const email=staffEmailKey(raw);if(raw.trim()&&!email)return alert('Invalid email');if(email&&state.employees.some(x=>x.id!==id&&staffEmailKey(x.loginEmail)===email))return alert('Email already assigned');if(email!==e.loginEmail&&!confirm('确认修改登录授权？ / Change access?'))return;e.loginEmail=email;await saveState();renderAll();}
   async function startStaffPortal(user){
     const phone=staffEmailKey(user.email), version=sessionVersion;
     if(!phone||!user.emailVerified){try{if(phone)await sendEmailVerification(user);}catch(e){console.error(e);}await signOut(auth);showLogin();switchLoginTab('staff');notice('请验证邮箱后重新登录（检查收件箱或垃圾邮件）','Verify your email, then sign in again. Check inbox or spam.');return;}
     const code=sessionStorage.getItem('posStaffStore')||localStorage.getItem('posStaffStore');
-    if(!code||!/^[A-Z0-9_-]{3,32}$/.test(code)){await signOut(auth);notice('请输入门店代码后重新登录','Enter your store code and sign in again');return;}
+    if(!code||!/^[A-Za-z0-9_-]{3,32}$/.test(code)){await signOut(auth);notice('请输入门店代码后重新登录','Enter your store code and sign in again');return;}
     const ref=doc(db,'store_codes',code,'email_portals',phone);
     try{
       const snap=await getDocFromServer(ref); if(version!==sessionVersion)return;
@@ -1404,6 +1420,14 @@
   async function logoutStaffPortal(){await signOut(auth);showLogin('已退出员工工作台');}
   setInterval(()=>{if(staffView&&staffTab==='home')renderStaffPortal()},1000);
 
+  async function registerBusiness(event) {
+    event.preventDefault(); if(!auth || auth.currentUser) return;
+    const button=event.target.querySelector('button'); button.disabled=true;
+    try { sessionStorage.setItem('posLoginMode','owner'); await setPersistence(auth,browserSessionPersistence);
+      await createUserWithEmailAndPassword(auth,loginEl('registerEmail').value.trim(),loginEl('registerPassword').value);
+      loginEl('registerPassword').value='';
+    } catch(e) { authNotice(e); } finally { button.disabled=false; }
+  }
   async function login(event) {
     event.preventDefault();
     if (!auth) return;
@@ -1415,6 +1439,7 @@
     button.textContent = L('登录中…','Signing in…');
     errorBox.textContent = '';
     try {
+      sessionStorage.setItem('posLoginMode','owner');
       await signInWithEmailAndPassword(auth, email, password);
       document.getElementById('loginPassword').value = '';
     } catch (error) {
@@ -1942,7 +1967,7 @@
       memberInfo: `${name} (${phone}) · 余额 $${newMem.balance.toFixed(2)} · 积分 ${newMem.points}`
     });
     if(newMem.contract){const area=el('receiptPrintArea');if(area){const button=document.createElement('button');button.textContent='下载 / 发送签署合同';button.onclick=()=>downloadContract(newMem.id);area.append(button);}}
-    if(memberSaved && newMem.contract && MAIL_ENDPOINT) sendContractMail(newMem.id).catch(e=>alert("合同邮件："+e.message));
+    if(memberSaved && newMem.contract && MAIL_ENDPOINT && legacyOwner()) sendContractMail(newMem.id).catch(e=>alert("合同邮件："+e.message));
   }
 
   function topupMember(memId) {
@@ -2250,7 +2275,7 @@
   }
 
   const paymentMethods=['现金','银行卡','Venmo','会员充值卡','礼品卡','优惠券'];
-  function squareEnabled(){return state.paymentConfig?.squareEnabled!==false;}
+  function squareEnabled(){return legacyOwner() && state.paymentConfig?.squareEnabled!==false;}
   function methodEnabled(m){return state.paymentConfig?.methods?.[m]!==false;}
   function openPaymentSettings(){
     if(currentUser?.uid!==ADMIN_UID||state.paymentPending||squareBusy)return alert('请先完成待处理交易');
@@ -2761,6 +2786,7 @@
      第11项：员工管理（排班休息 + 密码保护敏感信息：地址/SSN/紧急联系人）
   ========================================================= */
   function toggleSensitiveStaffLock() {
+    if(!legacyOwner())return alert('Sensitive employee records are disabled in the pilot');
     if (sensitiveUnlocked) {
       sensitiveUnlocked = false;
       document.getElementById('sensitiveInputRow').style.display = 'none';
@@ -2780,6 +2806,7 @@
   }
 
   function changeSensitivePassword() {
+    if(!legacyOwner())return alert('Sensitive employee records are disabled in the pilot');
     const oldPwd = prompt('请输入当前档案密码（默认 123456）：');
     if (oldPwd !== (state.sensitivePassword || '123456')) return alert('原密码错误');
     const newPwd = prompt('请输入新的管理员档案密码：');
@@ -2843,7 +2870,7 @@
     const tax = parseFloat(document.getElementById('empTax').value) || 0;
     const phone = document.getElementById('empPhone').value.trim();
     const address = document.getElementById('empAddress').value.trim();
-    const ssn = document.getElementById('empSSN').value.trim();
+    const ssn = legacyOwner() ? document.getElementById('empSSN').value.trim() : ''; 
     const emergency = document.getElementById('empEmergency').value.trim();
     const editId = document.getElementById('editEmpId').value;
     if(phone && (!normalizePhone(phone)||state.employees.some(e=>e.id!==editId&&normalizePhone(e.phone)===normalizePhone(phone)))) return alert("手机号无效或已被其他员工使用");
@@ -3484,7 +3511,7 @@
   function editTier(){const list=state.memberCfg.extraTiers??=[];const key=prompt('输入新增等级名称，或输入现有等级名称进行修改：\n'+list.map(t=>t.name).join(' / '));if(!key?.trim())return;const old=list.find(t=>t.name===key.trim());const f=prompt('年费 ($)',old?.fee??99),d=prompt('优惠百分比 (0–100)',old?.discount??10);if(f===null||d===null||!validMemberDiscount(d,'percent')||!validMemberDiscount(f,'fixed'))return alert('金额无效');const t={id:old?.id||crypto.randomUUID(),name:key.trim(),fee:Number(f),discount:Number(d),type:'percent'};if(old)Object.assign(old,t);else list.push(t);saveState();refreshMemberExtras();}
   function openContracts(){showExtra('会员合同管理',`<p>上传 PDF (10 MiB) 或 UTF-8 TXT (20 KB) 合同；保留历史版本。可生成签署版 PDF、下载或打开邮件草稿。支持自动邮件发送、状态查询及失败重试。</p><input type="file" accept=".pdf,application/pdf,.txt,text/plain" onchange="uploadContract(this)"><button onclick="removeContract()">停用新合同</button><p>当前：${escapeHTML(state.contractTemplate?.name||'未设置')}</p>`+state.members.filter(m=>m.contract).map(m=>`<div class="staff-line">${escapeHTML(m.name)} · ${escapeHTML(maskEmail(m.email))} · ${escapeHTML(storeTime(Date.parse(m.contract.signedAt)))} <button onclick="downloadContract('${m.id}')">查看/下载/发送签署合同</button> <button onclick="showMailStatus('${m.id}')">邮件状态</button> <button onclick="sendContractMail('${m.id}')">发送/重试</button></div>`).join(''));}
   const pdfCache=new Map();
-  const templateRef=id=>doc(db,'pos_systems','default_store','contractTemplates',id);
+  const templateRef=id=>doc(db,...FIRESTORE_DOC_PATH,'contractTemplates',id);
   async function readContractPDF(t){
     if(currentUser?.uid!==ADMIN_UID)throw Error('Unauthorized');
     if(pdfCache.has(t.version))return pdfCache.get(t.version);
@@ -3502,7 +3529,7 @@
   function removeContract(){if(confirm('停用新注册合同？历史签署记录保留。')){state.contractTemplate=null;saveState();openContracts();}}
   let signedContractURL;
   const MAIL_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyf6WFolxfSIfutLvcrLmYRQi8YmVsTVVdIasKUA1bnhIVvDF6k6n75R2NIIjxN5HwOYw/exec'; // Paste deployed Apps Script /exec URL here
-  const mailRef=id=>doc(db,'pos_systems','default_store','contractMail',id);
+  const mailRef=id=>doc(db,...FIRESTORE_DOC_PATH,'contractMail',id);
   const mailBusy=new Set();
   async function buildSignedContract(m){const c=m.contract;
       const lib=window.PDFLib || await import('https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm');
@@ -3516,7 +3543,7 @@
       return new Blob([await pdf.save()],{type:'application/pdf'});
   }
   async function sendContractMail(id){
-    if(!MAIL_ENDPOINT)throw Error('请先配置 Google Apps Script URL');
+    if(!legacyOwner())throw Error('Contract email delivery is not configured for this business');if(!MAIL_ENDPOINT)throw Error('请先配置 Google Apps Script URL');
     if(currentUser?.uid!==ADMIN_UID || mailBusy.has(id))return;
     const m=state.members.find(x=>x.id===id);if(!m?.contract)throw Error('合同不存在');
     mailBusy.add(id);
@@ -3640,9 +3667,9 @@
 
 
   const SQUARE_API = 'https://spa-pos-square-api.comfootmassage.workers.dev'; // Cloudflare Worker URL, no trailing slash
-  const squarePendingKey='spa-square-pending-v1';
+  const squarePendingKey='spa-square-pending-v1'; // Legacy-only payment recovery; pilot tenants cannot use Square.
   let squareBusy=false;
-  async function squareCall(path,body){if(!SQUARE_API||!currentUser)throw Error('请配置 Square Worker 并登录');const r=await fetch(SQUARE_API+path,{method:body===undefined?'GET':'POST',headers:{Authorization:'Bearer '+await currentUser.getIdToken(),'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});const j=await r.json();if(!r.ok)throw Error(j.error||'Square error');return j;}
+  async function squareCall(path,body){if(!legacyOwner())throw Error('Square merchant connection not available for this business');if(!SQUARE_API||!currentUser)throw Error('请配置 Square Worker 并登录');const r=await fetch(SQUARE_API+path,{method:body===undefined?'GET':'POST',headers:{Authorization:'Bearer '+await currentUser.getIdToken(),'Content-Type':'application/json','X-POS-Tenant':activeStoreCode},...(body===undefined?{}:{body:JSON.stringify(body)})});const j=await r.json();if(!r.ok)throw Error(j.error||'Square error');return j;}
   const sqMsg=m=>{el('squareStatus').textContent=m;};
   const sqRead=()=>JSON.parse(localStorage.getItem(squarePendingKey)||'null');
   const sqWrite=x=>localStorage.setItem(squarePendingKey,JSON.stringify(x));
