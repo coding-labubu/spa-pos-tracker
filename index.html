@@ -376,49 +376,26 @@
 .ap-modal{max-width:none!important;width:98vw;height:95vh;display:flex;flex-direction:column;background:#f8fafc}.ap-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}.ap-toolbar strong{font-size:20px;flex:1}.ap-month{display:grid;grid-template-columns:repeat(7,minmax(110px,1fr));gap:1px;background:#dbe3ee;border:1px solid #dbe3ee}.ap-month>div{background:white;padding:8px;min-height:115px;cursor:pointer}.ap-month .ap-week{min-height:0;text-align:center;font-weight:bold;background:#eef2f7}.ap-month .ap-out{background:#f1f5f9;color:#94a3b8}.ap-month .ap-today{box-shadow:inset 0 0 0 2px #2563eb}.ap-chip{display:block;margin:4px 0;padding:4px 6px;border-radius:5px;background:#dbeafe;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ap-scroll{overflow:auto;max-height:70vh;border:1px solid #cbd5e1;background:white}.ap-grid{display:grid;min-width:max-content;position:relative}.ap-head{position:sticky;top:0;z-index:5;background:#eaf0f8;padding:12px;text-align:center;font-weight:800;border-right:1px solid #cbd5e1}.ap-rail{position:relative;background:#f8fafc;border-right:1px solid #cbd5e1;position:sticky;left:0;z-index:3}.ap-lane{position:relative;border-right:1px solid #cbd5e1;background:repeating-linear-gradient(to bottom,#fff 0px,#fff 27px,#e2e8f0 27px,#e2e8f0 28px)}.ap-time{height:28px;font-size:12px;padding:4px;text-align:center}.ap-block{position:absolute;overflow:hidden;border:1px solid #0002;border-left:4px solid #0004;border-radius:7px;padding:4px 6px;cursor:grab;color:#172554;font-size:12px;line-height:1.25;z-index:2;box-shadow:0 1px 3px #0002}.ap-block b{font-size:14px}.ap-block:focus{outline:2px solid #2563eb}.ap-editor{position:fixed;inset:0;background:#0f172a66;z-index:1100;display:grid;place-items:center;padding:12px}.ap-form{background:white;border-radius:16px;padding:20px;width:min(600px,100%);max-height:90vh;overflow:auto}.ap-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.ap-fields label{display:grid;gap:4px}.ap-fields input,.ap-fields select{width:100%}.ap-settings{padding:12px;background:white;border:1px solid #cbd5e1;margin-bottom:10px}.ap-closed{padding:12px;color:#92400e}#apCalendar{overflow:auto;flex:1;min-height:0}
  .res-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}.res-tile{padding:14px;border:1px solid #bbf7d0;border-radius:12px;background:#f0fdf4;color:#166534}.res-tile.busy{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}.res-tile.locked{background:#f5f3ff;color:#6b21a8}.res-tile strong{font-size:18px}.res-tile div{font-size:16px;margin:6px 0} </style>
 <style>.ps-panel{display:grid;gap:14px;color:var(--text)}.ps-panel h3{margin:4px 0 0;font-size:16px}.ps-panel small{display:block;color:var(--muted);font-size:12px;font-weight:400}.ps-head{display:flex;align-items:center;justify-content:space-between;gap:14px}.ps-head strong{font-size:17px}.ps-switch{position:relative;display:inline-block;width:48px;height:28px;flex:none}.ps-switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}.ps-switch span{display:block;background:#94a3b8;border-radius:20px;height:28px;pointer-events:none}.ps-switch span:after{content:'';display:block;background:white;width:22px;height:22px;border-radius:50%;position:absolute;top:3px;left:3px;transition:transform .15s}.ps-switch input:checked+span{background:#16a34a}.ps-switch input:checked+span:after{transform:translateX(20px)}.ps-switch input:focus-visible+span{outline:2px solid #2563eb}.ps-device,.ps-fees{border:1px solid var(--border);border-radius:16px;padding:16px;display:grid;gap:12px}.ps-terminal{background:#f1f5f9;border-radius:12px;padding:5px 12px}.ps-info{white-space:pre-wrap;overflow-wrap:anywhere;border-top:1px solid var(--border);padding-top:12px;line-height:1.8}.ps-pair{white-space:pre-wrap;overflow-wrap:anywhere;background:#f1f5f9;border-radius:12px;padding:14px;text-align:center;font-size:16px;font-weight:600}.ps-pair:empty{display:none}.ps-actions,.ps-methods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ps-actions button,.ps-wide{min-height:42px;width:100%;white-space:normal}.ps-field{display:grid;gap:6px;font-weight:600}.ps-field input,.ps-field select{width:100%;min-height:40px}.ps-methods label{display:flex;align-items:center;flex-wrap:wrap;gap:7px;border:1px solid var(--border);padding:10px;border-radius:10px}.ps-example{display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:12px;border-radius:10px}.ps-example strong{font-size:20px;color:#166534}@media(max-width:420px){.ps-actions,.ps-methods{grid-template-columns:1fr}}</style>
-</head>
+<style>.login-screen{background:radial-gradient(ellipse at top,#e0eaff,#f5f7fb 65%);align-items:safe center}.login-card{max-width:470px;padding:30px;box-shadow:0 20px 65px #233d7020}.login-languages{display:flex;justify-content:flex-end;gap:4px;margin-bottom:18px}.login-languages button{border:0;background:#f1f5f9}.login-languages .active{background:#dbeafe;color:#1d4ed8}.login-tabs{grid-template-columns:repeat(3,1fr)}.login-card h2{font-size:20px;margin:18px 0 8px}.login-help,.login-field small{color:#64748b}.login-phone{display:flex;gap:8px}.login-phone input{min-width:0;flex:1}.login-phone button,.login-phone select{flex:none}.login-remember{display:flex;gap:8px;align-items:center;margin:18px 0}.login-submit{min-height:48px}.login-logo{background:#e8efff;color:#2563eb;font-size:36px}.login-error{white-space:pre-wrap}.login-card input:focus{outline:2px solid #93c5fd}@media(max-width:480px){.login-screen{padding:12px}.login-card{padding:20px}.login-phone button{padding:6px}}</style></head>
 <body>
 
-  <!-- Login Screen (Admin Email + Staff Phone Self-Service) -->
-  <div id="loginScreen" class="login-screen">
-    <div class="login-card">
-      <div class="login-logo">💆</div>
-      <h1 class="login-title">Spa POS System</h1>
-      <div class="login-subtitle">门店收银与技师提成管理系统</div>
-
-      <div class="login-tabs">
-        <button type="button" class="login-tab active" id="tabAdminLogin" onclick="switchLoginTab('admin')">👑 管理员登录</button>
-        <button type="button" class="login-tab" id="tabStaffLogin" onclick="switchLoginTab('staff')">📱 员工手机号登录</button>
-      </div>
-
-      <!-- 管理员登录表单 -->
-      <form id="loginForm">
-        <div class="login-field">
-          <label for="loginEmail">邮箱 / Email</label>
-          <input type="email" id="loginEmail" placeholder="Enter your email" autocomplete="username" required />
-        </div>
-        <div class="login-field">
-          <label for="loginPassword">密码 / Password</label>
-          <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password" required />
-        </div>
-        <button type="submit" id="loginSubmitBtn" class="login-submit" disabled>登录 / Sign In</button>
-        <button type="button" id="resetPasswordBtn" class="login-reset" disabled>忘记密码 / Forgot Password?</button>
-      </form>
-
-      <!-- 员工手机号自助登录表单 (第11项) -->
-      <form id="staffLoginForm" hidden onsubmit="loginAsEmployeePhone(event)">
-        <div class="login-field">
-          <label for="staffPhoneInput">员工注册手机号 / Phone Number</label>
-          <input type="tel" id="staffPhoneInput" placeholder="+1 831 555 0123" required />
-        </div>
-        <button type="submit" class="login-submit" style="background:var(--purple);">发送短信验证码</button>
-      <div id="staffCaptcha"></div><div id="staffOtpRow" hidden class="login-field"><label>短信验证码</label><input id="staffOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" /></div><label><input type="checkbox" id="staffRemember" checked /> 记住此设备</label></form>
-
-      <div id="loginError" class="login-error" role="status">正在加载 / Loading Firebase...</div>
-      <div class="login-footer">🔒 Authorized Personnel Only · 仅限授权人员使用</div>
-    </div>
-  </div>
-
+  <div id="loginScreen" class="login-screen"><div class="login-card">
+    <div class="login-languages"><button type="button" data-lang="zh">中文</button><button type="button" data-lang="en">English</button></div>
+    <div class="login-logo">✦</div><h1 class="login-title">Spa POS System</h1>
+    <div class="login-subtitle" data-l="专业门店经营与员工管理平台|Business & Workforce Management"></div>
+    <div class="login-tabs"><button class="login-tab active" id="tabAdminLogin" onclick="switchLoginTab('admin')" data-l="商家登录|Business"></button><button class="login-tab" id="tabStaffLogin" onclick="switchLoginTab('staff')" data-l="员工登录|Staff"></button><button class="login-tab" id="tabRegisterLogin" onclick="switchLoginTab('register')" data-l="注册商家|Register"></button></div>
+    <form id="loginForm"><h2 data-l="商家管理中心|Business dashboard"></h2>
+      <div class="login-field"><label for="loginEmail" data-l="电子邮箱|Email address"></label><input type="email" id="loginEmail" autocomplete="username" required placeholder="owner@example.com"></div>
+      <div class="login-field"><label for="loginPassword" data-l="密码|Password"></label><input type="password" id="loginPassword" autocomplete="current-password" required data-p="请输入密码|Enter password"></div>
+      <button id="loginSubmitBtn" class="login-submit" disabled data-l="安全登录|Secure sign in"></button><button type="button" id="resetPasswordBtn" class="login-reset" disabled data-l="忘记密码？|Forgot password?"></button></form>
+    <form id="staffLoginForm" hidden onsubmit="loginAsEmployeePhone(event)"><h2 data-l="欢迎回来|Welcome back"></h2><p class="login-help" data-l="登录您的员工个人工作台|Sign in to your staff workspace"></p>
+      <div class="login-field"><label for="staffStore" data-l="门店代码|Store code"></label><input id="staffStore" required pattern="[A-Za-z0-9_-]{3,32}" placeholder="COMFIGLOW" autocapitalize="characters"><small data-l="请向店长获取门店代码|Ask your manager for your store code"></small></div>
+      <div class="login-field"><label for="staffPhoneInput" data-l="手机号码|Phone number"></label><div class="login-phone"><select id="staffCountry" aria-label="Country code"><option value="+1">US/CA +1</option><option value="+86">CN +86</option><option value="+886">TW +886</option><option value="+81">JP +81</option><option value="+82">KR +82</option><option value="+44">UK +44</option></select><input type="tel" id="staffPhoneInput" autocomplete="tel-national" placeholder="831 555 0123" required></div></div>
+      <div class="login-field"><label for="staffOtp" data-l="短信验证码|Verification code"></label><div class="login-phone"><input id="staffOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" data-p="6位验证码|6-digit code"><button type="button" id="sendOtp" disabled data-l="发送验证码|Send code"></button></div></div><div id="staffCaptcha"></div>
+      <label class="login-remember"><input type="checkbox" id="staffRemember" checked><span data-l="记住此设备及门店|Remember this device and store"></span></label><button class="login-submit" id="verifyOtp" disabled data-l="安全登录|Secure sign in"></button></form>
+    <section id="registerPanel" hidden><h2 data-l="创建商家账号|Create your business account"></h2><p data-l="商家自助注册尚未开放。现有门店请使用商家登录。|Self-service registration is not yet available. Existing businesses can sign in."></p></section>
+    <div id="loginError" class="login-error" role="status" data-l="正在加载 Firebase…|Loading Firebase…"></div><div class="login-footer" data-l="安全认证 · 独立门店 · 数据隔离|Secure authentication · Private business data"></div>
+  </div></div>
   <!-- 员工手机号自助看板 (第11项) -->
   <div class="container" id="staffPortalContainer" hidden>
     <div class="topbar">
@@ -678,7 +655,7 @@
     <div class="grid-2 boss-only">
       <div class="card">
         <div class="card-title">
-          <span>👥 员工管理、排班休息与隐私档案</span><button onclick="syncStaffAccounts()">同步员工账号</button><div id="staffAccountList"></div>
+          <span>👥 员工管理、排班休息与隐私档案</span><button onclick="syncStaffAccounts()">同步员工账号</button><span class="tag tag-blue">门店代码：COMFIGLOW</span><div id="staffAccountList"></div>
           <div class="inline-inputs">
             <button class="btn-warning btn-sm" id="unlockSensitiveBtn" onclick="toggleSensitiveStaffLock()">🔐 解锁敏感档案</button>
             <button class="btn-outline btn-sm" onclick="changeSensitivePassword()">🔑 改档案密码</button>
@@ -1026,9 +1003,9 @@
 <div class="modal-backdrop" id="extraModal" style="z-index:1100"><div class="modal"><div class="card-title"><span id="extraTitle"></span><button onclick="closeModal('extraModal')">关闭</button></div><div id="extraBody"></div></div></div>
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js';
-  import { doc, setDoc, getDocFromServer, collection, getDocsFromServer, writeBatch, runTransaction, onSnapshot, serverTimestamp, initializeFirestore, Bytes } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
-  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence, browserLocalPersistence, RecaptchaVerifier, signInWithPhoneNumber, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js';
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
+  import { doc, setDoc, getDocFromServer, collection, getDocsFromServer, writeBatch, runTransaction, onSnapshot, serverTimestamp, initializeFirestore, Bytes } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence, browserLocalPersistence, RecaptchaVerifier, signInWithPhoneNumber, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 
   const FIREBASE_CONFIG = {
     apiKey: 'AIzaSyCwcwtECiFjZYiny6RruwV0qt7D6kGPcjU',
@@ -1264,7 +1241,7 @@
     try {
       if (!isFirebaseConfigured()) throw new Error('Firebase configuration is missing.');
       const app = initializeApp(FIREBASE_CONFIG);
-      auth = getAuth(app);
+      auth = getAuth(app); auth.languageCode=L('zh-CN','en');
       db = initializeFirestore(app, { experimentalForceLongPolling: true });
       await setPersistence(auth, browserSessionPersistence);
 
@@ -1289,7 +1266,7 @@
     document.getElementById('appContainer').hidden = true;
     document.getElementById('staffPortalContainer').hidden = true;
     document.getElementById('loginScreen').hidden = false;
-    document.getElementById('loginError').textContent = message;
+    loginNotice=null; document.getElementById('loginError').textContent = message.includes(' / ')?message.split(' / ')[loginLang==='zh'?0:1]:message;
     document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
   }
 
@@ -1319,14 +1296,14 @@
     state = structuredClone(EMPTY_STATE);
   }
 
-  function switchLoginTab(tab) {
-    document.getElementById('tabAdminLogin').classList.toggle('active', tab === 'admin');
-    document.getElementById('tabStaffLogin').classList.toggle('active', tab === 'staff');
-    document.getElementById('loginForm').hidden = tab !== 'admin';
-    document.getElementById('staffLoginForm').hidden = tab !== 'staff';
-    document.getElementById('loginError').textContent = '';
-  }
-
+  const L=(zh,en)=>loginLang==='zh'?zh:en;
+  let loginLang=localStorage.getItem('posLoginLang')==='en'?'en':'zh', loginNotice=null, otpBusy=false, resendAt=0, otpContext=null;
+  const loginEl=id=>document.getElementById(id);
+  function notice(zh,en){loginNotice=[zh,en];loginEl('loginError').textContent=L(zh,en);}
+  function paintLogin(){document.documentElement.lang=L('zh-CN','en');document.querySelectorAll('#loginScreen [data-l]').forEach(e=>e.textContent=e.dataset.l.split('|')[loginLang==='zh'?0:1]);document.querySelectorAll('#loginScreen [data-p]').forEach(e=>e.placeholder=e.dataset.p.split('|')[loginLang==='zh'?0:1]);document.querySelectorAll('[data-lang]').forEach(e=>e.classList.toggle('active',e.dataset.lang===loginLang));if(loginNotice)notice(...loginNotice);if(auth)auth.languageCode=L('zh-CN','en');paintOtp();}
+  function switchLoginTab(tab){for(const [id,t] of [['tabAdminLogin','admin'],['tabStaffLogin','staff'],['tabRegisterLogin','register']])loginEl(id).classList.toggle('active',tab===t);loginEl('loginForm').hidden=tab!=='admin';loginEl('staffLoginForm').hidden=tab!=='staff';loginEl('registerPanel').hidden=tab!=='register';notice('','');}
+  function paintOtp(){const seconds=Math.max(0,Math.ceil((resendAt-Date.now())/1000));loginEl('sendOtp').disabled=!auth||otpBusy||seconds>0;loginEl('sendOtp').textContent=seconds?L(`重新发送 (${seconds}s)`,`Resend (${seconds}s)`):L('发送验证码','Send code');loginEl('verifyOtp').disabled=!smsConfirmation||otpBusy;}
+  function authNotice(e){const map={'auth/invalid-phone-number':['手机号格式不正确','Invalid phone number'],'auth/invalid-verification-code':['验证码错误','Incorrect verification code'],'auth/code-expired':['验证码已过期，请重新发送','Code expired. Resend it.'],'auth/too-many-requests':['请求过多，请稍后再试','Too many requests. Try again later.'],'auth/quota-exceeded':['短信额度不足，请检查 Firebase 计费','SMS quota exceeded. Check Firebase billing.'],'auth/operation-not-allowed':['请启用 Firebase 手机认证并检查短信地区政策','Enable Phone Auth and check SMS region policy.'],'auth/unauthorized-domain':['请在 Firebase 添加网站授权域名','Add this website to Firebase authorized domains.'],'auth/captcha-check-failed':['人机验证失败，请刷新页面','CAPTCHA failed. Refresh the page.'],'auth/billing-not-enabled':['请启用 Firebase 计费','Enable Firebase billing.'],'auth/invalid-credential':['邮箱或密码错误','Incorrect email or password.'],'auth/network-request-failed':['网络连接失败','Network connection failed.']};const m=map[e.code]||['认证失败','Authentication failed'];notice(m[0]+' ('+(e.code||e.message)+')',m[1]+' ('+(e.code||e.message)+')');}
   /* 第11项：员工手机号自助登录查看自己的排班、状态与业绩 */
   let staffView = null, staffTab = 'home', staffPeriod = 'today', smsConfirmation = null, captcha = null;
   function normalizePhone(value) {
@@ -1338,7 +1315,7 @@
   }
   // Only explicit allowlisted fields leave the administrator ledger.
   async function publishLedger(target, payload) {
-    const existing = await getDocsFromServer(collection(db,'staff_portals'));
+    const existing = await getDocsFromServer(collection(db,'store_codes','COMFIGLOW','staff_portals'));
     const batch = writeBatch(db), keep = new Set();
     const employees = payload.employees || [];
     for (const e of employees) {
@@ -1347,7 +1324,7 @@
       keep.add(phone);
       const own = key => (payload[key]||[]).filter(x=>x.staffId===e.id);
       const clean = (arr, fields) => arr.map(x=>Object.fromEntries(fields.filter(k=>x[k]!==undefined).map(k=>[k,x[k]])));
-      batch.set(doc(db,'staff_portals',phone), {
+      batch.set(doc(db,'store_codes','COMFIGLOW','staff_portals',phone), {
         storeZone:payload.storeZone||"America/Los_Angeles", employeeId:e.id, name:e.name, role:e.role||'技师',
         timers:clean(own('timers'),['id','serviceName','startTime','endTime','durationMins','status','earlyEndedAt']),
         orders:clean(own('orders'),['id','date','duration','commission','payMethod']),
@@ -1371,27 +1348,19 @@
   }
   async function syncStaffAccounts(){ if(await saveState()) alert('员工账号及个人数据已同步'); }
   function toggleStaffAccess(id){ const e=state.employees.find(x=>x.id===id); if(!e||currentUser?.uid!==ADMIN_UID)return; e.portalDisabled=!e.portalDisabled; addAudit('员工账号权限',e.name); saveState(); renderAll(); }
-  async function loginAsEmployeePhone(event) {
-    event.preventDefault(); if(!auth)return;
-    const errorBox=document.getElementById('loginError'), btn=event.target.querySelector('button'); btn.disabled=true;
-    try {
-      if(smsConfirmation){ await smsConfirmation.confirm(document.getElementById('staffOtp').value.trim()); smsConfirmation=null; document.getElementById('staffOtpRow').hidden=true; btn.textContent='发送短信验证码'; }
-      else {
-        const phone=normalizePhone(document.getElementById('staffPhoneInput').value); if(!phone)throw Error('请输入有效手机号及国家区号');
-        await setPersistence(auth,document.getElementById('staffRemember').checked?browserLocalPersistence:browserSessionPersistence);
-        if(captcha)captcha.clear(); captcha=new RecaptchaVerifier(auth,'staffCaptcha',{size:'invisible'});
-        smsConfirmation=await signInWithPhoneNumber(auth,phone,captcha);
-        document.getElementById('staffOtpRow').hidden=false; btn.textContent='验证并登录'; errorBox.textContent='验证码已发送';
-      }
-    } catch(e){errorBox.textContent=e.message; if(!smsConfirmation&&captcha){captcha.clear();captcha=null;}} finally{btn.disabled=false;}
-  }
+  function storeCode(){return loginEl('staffStore').value.trim().toUpperCase();}
+  function staffPhone(){const raw=loginEl('staffPhoneInput').value.trim();return normalizePhone(raw.startsWith('+')?raw:loginEl('staffCountry').value+raw.replace(/\D/g,'').replace(/^0/,''));}
+  async function sendStaffOtp(){if(!auth||otpBusy||Date.now()<resendAt)return;const code=storeCode(),phone=staffPhone();if(!/^[A-Z0-9_-]{3,32}$/.test(code)||!phone){notice('请输入有效门店代码和手机号','Enter a valid store code and phone number');return;}otpBusy=true;smsConfirmation=null;paintOtp();try{await setPersistence(auth,loginEl('staffRemember').checked?browserLocalPersistence:browserSessionPersistence);if(captcha)captcha.clear();captcha=new RecaptchaVerifier(auth,'staffCaptcha',{size:'invisible'});await captcha.render();smsConfirmation=await signInWithPhoneNumber(auth,phone,captcha);otpContext={code,phone};resendAt=Date.now()+60000;notice('验证码已发送','Verification code sent');loginEl('staffOtp').focus();}catch(e){authNotice(e);}finally{if(captcha){captcha.clear();captcha=null;}otpBusy=false;paintOtp();}}
+  async function loginAsEmployeePhone(event){event.preventDefault();if(!smsConfirmation||otpBusy)return;if(otpContext.code!==storeCode()||otpContext.phone!==staffPhone()){notice('门店或手机号已改变，请重新发送验证码','Store or phone changed. Request a new code.');return;}const otp=loginEl('staffOtp').value.trim();if(!/^\d{6}$/.test(otp)){notice('请输入6位验证码','Enter the six-digit code');return;}otpBusy=true;paintOtp();try{sessionStorage.setItem('posStaffStore',otpContext.code);if(loginEl('staffRemember').checked)localStorage.setItem('posStaffStore',otpContext.code);else localStorage.removeItem('posStaffStore');await smsConfirmation.confirm(otp);smsConfirmation=null;loginEl('staffOtp').value='';}catch(e){authNotice(e);}finally{otpBusy=false;paintOtp();}}
   async function startStaffPortal(user){
     const phone=normalizePhone(user.phoneNumber), version=sessionVersion;
     if(!phone){await signOut(auth);return;}
-    const ref=doc(db,'staff_portals',phone);
+    const code=sessionStorage.getItem('posStaffStore')||localStorage.getItem('posStaffStore');
+    if(!code||!/^[A-Z0-9_-]{3,32}$/.test(code)){await signOut(auth);notice('请输入门店代码后重新登录','Enter your store code and sign in again');return;}
+    const ref=doc(db,'store_codes',code,'staff_portals',phone);
     try{
       const snap=await getDocFromServer(ref); if(version!==sessionVersion)return;
-      if(!snap.exists())throw Error('账号未激活或已停用，请联系店长');
+      if(!snap.exists())throw Error('staff-not-authorized');
       document.getElementById('loginScreen').hidden=true; document.getElementById('appContainer').hidden=true; document.getElementById('staffPortalContainer').hidden=false;
       unsubscribeCloud=onSnapshot(ref,{includeMetadataChanges:true},snap=>{
         if(version!==sessionVersion)return;
@@ -1399,7 +1368,7 @@
         if(!snap.exists()){logoutStaffPortal();return;}
         staffView=snap.data();loggedInStaffId=staffView.employeeId;renderStaffPortal();
       },()=>{staffView=null;renderStaffPortal();});
-    }catch(e){await signOut(auth);showLogin(e.message);}
+    }catch(e){await signOut(auth);showLogin();notice('门店或员工账号未授权，请联系店长','Store or staff account not authorized. Contact your manager.');}
   }
   function refreshStaffPortal(){renderStaffPortal();}
   function setStaffTab(t){staffTab=t;renderStaffPortal();}
@@ -1438,16 +1407,16 @@
     const button = document.getElementById('loginSubmitBtn');
     const errorBox = document.getElementById('loginError');
     button.disabled = true;
-    button.textContent = '登录中 / Signing in...';
+    button.textContent = L('登录中…','Signing in…');
     errorBox.textContent = '';
     try {
       await signInWithEmailAndPassword(auth, email, password);
       document.getElementById('loginPassword').value = '';
     } catch (error) {
-      errorBox.textContent = '登录失败 / Sign-in failed: ' + error.code;
+      authNotice(error);
     } finally {
       button.disabled = false;
-      button.textContent = '登录 / Sign In';
+      button.textContent = L('安全登录','Secure sign in');
     }
   }
 
@@ -1470,12 +1439,12 @@
     if (!auth) return;
     const email = document.getElementById('loginEmail').value.trim();
     const errorBox = document.getElementById('loginError');
-    if (!email) { errorBox.textContent = '请先输入邮箱 / Enter your email first'; return; }
+    if (!email) { notice('请先输入邮箱','Enter your email first'); return; }
     try {
       await sendPasswordResetEmail(auth, email);
-      errorBox.textContent = '重置邮件已发送 / Reset email sent.';
+      notice('重置邮件已发送','Reset email sent.');
     } catch (error) {
-      errorBox.textContent = '无法发送重置邮件 / Unable to send reset email.';
+      authNotice(error);
     }
   }
 
@@ -3726,6 +3695,9 @@
   Object.assign(window,{squareRecover,squareCancel,squareSetup,squareTransactions});
 
   document.addEventListener('click',e=>{if(!state.paymentPending&&!squareBusy)return;const b=e.target.closest('button,input,select,textarea,[onclick]');if(!b||!b.closest('#appContainer,.modal-backdrop'))return;const action=b.getAttribute('onclick')||'';if(/^(squareRecover|squareCancel|squareTransactions|logout|closeModal)\(/.test(action))return;e.preventDefault();e.stopImmediatePropagation();},true);
+  document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>{loginLang=b.dataset.lang;localStorage.setItem('posLoginLang',loginLang);paintLogin();}));
+  loginEl('staffStore').value=localStorage.getItem('posStaffStore')||'';
+  loginEl('sendOtp').addEventListener('click',sendStaffOtp);setInterval(paintOtp,1000);paintLogin();
   initFirebaseSync();
 </script>
 </body>
