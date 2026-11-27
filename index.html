@@ -946,7 +946,7 @@
         <span>收款结账 / Checkout</span>
         <button class="btn-outline btn-sm" onclick="closeModal('checkoutModal')">✕</button>
       </div>
-      <div id="checkoutItemsList" style="margin-bottom:10px;"></div>
+      <div id="checkoutItemsList" style="margin-bottom:10px;"></div><div class="split-box"><button onclick="addPurchaseGift()" class="btn-purple">＋购买礼卡 / Add gift card</button><div id="purchaseGiftRows"></div></div>
 
       <div class="member-highlight">
         <label for="checkoutMemberSearch" style="font-weight:700">👑 关联会员（可选） / Member</label>
@@ -2107,7 +2107,7 @@
     const fee = combinedFee(selectedCheckoutMethod==='礼品卡'?[{method:el('giftRemainder').value,amount:remainder}]:[{method:selectedCheckoutMethod,amount:total}]);
     document.querySelectorAll('#checkoutModal .pay-btn').forEach(b=>{const active=b.dataset.method===selectedCheckoutMethod;b.classList.toggle('selected',active);b.setAttribute('aria-pressed',String(active));});
     document.getElementById('coNext').disabled = selectedCheckoutMethod==='会员充值卡' && document.getElementById('payMemberCardBtn').disabled;
-    document.getElementById('checkoutTotalInfo').innerHTML = `<div><span class="co-muted">项目金额 / Subtotal</span><strong>$${total.toFixed(2)}</strong></div><div><span class="co-muted">服务费 / Service Fee（小费 $${tipTotal().toFixed(2)}）</span><strong>$${fee.toFixed(2)}</strong></div><div class="co-total"><span>最终应收 / Total</span><span>$${(total+fee+tipTotal()).toFixed(2)}</span></div>`;
+    document.getElementById('checkoutTotalInfo').innerHTML = `<div><span class="co-muted">项目及礼卡 / Subtotal</span><strong>$${total.toFixed(2)}</strong></div><div><span class="co-muted">服务费 / Service Fee（小费 $${tipTotal().toFixed(2)}）</span><strong>$${fee.toFixed(2)}</strong></div><div class="co-total"><span>最终应收 / Total</span><span>$${(total+fee+tipTotal()).toFixed(2)}</span></div>`;
   }
   function checkoutMemberMatches(m, query) {
     const q = query.trim().toLowerCase();
@@ -2143,7 +2143,18 @@
   }
   Object.assign(window,{searchCheckoutMembers,clearCheckoutMember});
 
-  function showCheckoutModal() {
+  let purchaseGifts=[];
+  const giftPurchaseTotal=(rows=purchaseGifts)=>Math.round(rows.reduce((n,g)=>n+Number(g.amount||0),0)*100)/100;
+  const serviceSubtotal=(cart=checkoutCart)=>Math.round(cart.reduce((n,i)=>n+Number(i.finalPrice??i.price??0),0)*100)/100;
+  function openGiftPurchase(){closeModal('extraModal');checkoutCart=[];showCheckoutModal();addPurchaseGift();}
+  function addPurchaseGift(){purchaseGifts.push({id:crypto.randomUUID(),giftCode:'',giftType:'paper',giftKind:'money',giftServiceId:'',giftFace:0,amount:0,giftEmail:'',giftBuyer:''});renderPurchaseGifts();updateCheckoutTotalDisplay();}
+  function editPurchaseGift(i,k,v){const g=purchaseGifts[i];g[k]=['giftFace','amount'].includes(k)?Number(v):v;if(k==='giftFace')g.amount=g.giftFace;if(k==='giftServiceId'&&g.giftKind==='service'){const srv=state.services.find(x=>x.id===v);if(srv)g.amount=g.giftFace=Number(srv.price);}renderPurchaseGifts();updateCheckoutTotalDisplay();}
+  function removePurchaseGift(i){purchaseGifts.splice(i,1);renderPurchaseGifts();updateCheckoutTotalDisplay();}
+  function renderPurchaseGifts(){const e=escapeHTML;el('purchaseGiftRows').innerHTML=purchaseGifts.map((g,i)=>`<div class="card" style="margin:8px 0"><strong>礼卡 / Gift card ${i+1}</strong> <button onclick="removePurchaseGift(${i})">删除 / Remove</button><div class="inline-inputs"><select onchange="editPurchaseGift(${i},'giftType',this.value)"><option value="paper" ${g.giftType==='paper'?'selected':''}>纸质 / Paper</option><option value="digital" ${g.giftType==='digital'?'selected':''}>电子 / Digital</option></select><select onchange="editPurchaseGift(${i},'giftKind',this.value)"><option value="money" ${g.giftKind==='money'?'selected':''}>金额 / Amount</option><option value="service" ${g.giftKind==='service'?'selected':''}>项目 / Service</option></select>${g.giftKind==='service'?`<select onchange="editPurchaseGift(${i},'giftServiceId',this.value)"><option value="">选择项目</option>${state.services.map(x=>`<option value="${e(x.id)}" ${x.id===g.giftServiceId?'selected':''}>${e(x.name)}</option>`).join('')}</select>`:''}</div><label>编号 / Code <input maxlength="100" value="${e(g.giftCode)}" onchange="editPurchaseGift(${i},'giftCode',this.value)"></label><button onclick="editPurchaseGift(${i},'giftCode','GC-'+crypto.randomUUID())">生成编号</button><div><label>面值 / Face $ <input type="number" min="0.01" step="0.01" value="${g.giftFace||''}" onchange="editPurchaseGift(${i},'giftFace',this.value)"></label><label>售价 / Price $ <input type="number" min="0.01" step="0.01" value="${g.amount||''}" onchange="editPurchaseGift(${i},'amount',this.value)"></label></div><label>购买人 <input value="${e(g.giftBuyer)}" onchange="editPurchaseGift(${i},'giftBuyer',this.value)"></label><label>Email <input type="email" value="${e(g.giftEmail)}" onchange="editPurchaseGift(${i},'giftEmail',this.value)"></label></div>`).join('');}
+  function validPurchases(rows){const codes=new Set(state.serviceFees.filter(g=>g.giftCode).map(g=>g.giftCode.trim().toLowerCase()));for(const g of rows){const code=g.giftCode.trim().toLowerCase();if(!code||codes.has(code)||![g.amount,g.giftFace].every(v=>Number.isFinite(v)&&v>0&&Math.abs(v*100-Math.round(v*100))<1e-6)|| (g.giftKind==='service'&&!state.services.some(x=>x.id===g.giftServiceId)))return false;codes.add(code);}return true;}
+  function allocatePurchases(payments,rows){const available=payments.filter(p=>['现金','银行卡','Venmo'].includes(p.method)).map(p=>({...p,left:Math.round(p.amount*100)}));const sales=[];for(const g of rows){let need=Math.round(g.amount*100);const parts=[];for(const p of available){const take=Math.min(need,p.left);if(take){parts.push({method:p.method,amount:take/100});p.left-=take;need-=take;}}if(need)return null;sales.push({...g,payments:parts});}const remaining=payments.map(p=>({...p,amount:Math.round(p.amount*100)}));for(const sale of sales)for(const part of sale.payments){let need=Math.round(part.amount*100);for(const p of remaining.filter(p=>p.method===part.method)){const take=Math.min(need,p.amount);p.amount-=take;need-=take;}}return {sales,servicePayments:remaining.filter(p=>p.amount>0).map(p=>({...p,amount:p.amount/100}))};}
+  Object.assign(window,{openGiftPurchase,addPurchaseGift,editPurchaseGift,removePurchaseGift});
+  function showCheckoutModal() {purchaseGifts=[];renderPurchaseGifts();
     selectedCheckoutMethod = '现金'; el('giftLookup').value='';el('giftDebitInput').value='';el('giftLookupResult').textContent=''; clearCheckoutConfirmation(); el('checkoutTips').innerHTML=[...new Map(checkoutCart.map(x=>[x.staffId,x.staffName]))].map(([id,name])=>`<label style="display:block;margin:6px">${escapeHTML(name)} <input class="co-tip" data-id="${escapeHTML(id)}" type="number" min="0" step="0.01" oninput="updateCheckoutTotalDisplay()"></label>`).join('');
     el('checkoutMemberSelect').replaceChildren(new Option('非会员',''));
     el('checkoutMemberSearch').value = '';
@@ -2182,7 +2193,7 @@
   }
 
   function getCurrentCheckoutPayable() {
-    return checkoutCart.reduce((s, it) => s + Number(it.finalPrice ?? it.price ?? 0), 0);
+    return serviceSubtotal()+giftPurchaseTotal();
   }
 
   function updateSplitHint() {
@@ -2236,7 +2247,7 @@
     if (member) {
       const earnPts = calcCartEarnedPoints(checkoutCart);
       hintEl.textContent = `已关联会员【${member.name} · ${maskPhone(member.phone)}】享 ${memberDiscountLabel(member)} 优惠，卡余额 $${Number(member.balance).toFixed(2)}，预计得 +${earnPts} 积分`;
-      cardBtn.disabled = Number(member.balance) < finalTotal;
+      cardBtn.disabled = Number(member.balance) < finalTotal || purchaseGifts.length>0;
     } else {
       hintEl.textContent = '选择会员可自动享受对应折扣、从充值卡扣款并累计积分';
       cardBtn.disabled = true;
@@ -2314,20 +2325,21 @@
 
   function confirmCheckoutPayments(payments) {
     if (!currentUser || currentUser.uid !== ADMIN_UID || !initialCloudLoaded || !cloudEnabled || saveFailed) return alert('云端不可用，无法结账');
-    if (!checkoutCart.length || checkoutCart.some(it => it.timerId && !state.timers.some(t => t.id === it.timerId))) return alert('服务已变更，请重新打开结账');
+    if (!(checkoutCart.length||purchaseGifts.length) || checkoutCart.some(it => it.timerId && !state.timers.some(t => t.id === it.timerId))) return alert('服务已变更，请重新打开结账');
     if(payments.some(p=>!methodEnabled(p.method))||(tipTotal()>0&&!methodEnabled(el("coTipMethod").value)))return alert("支付方式已停用");
     if(!validTips())return alert("小费金额无效"); const gifts=payments.filter(p=>p.method==='礼品卡');
     if(el('coTipMethod').value==='礼品卡'&&tipTotal()>0&&gifts.length!==1)return alert('礼卡小费须指定唯一一张礼卡；多张礼卡时请选择其他小费方式');
     for(const p of gifts){p.giftDebit=+(p.amount+(el('coTipMethod').value==='礼品卡'?tipTotal():0)).toFixed(2);}
     if(!validateGiftPayments(payments,checkoutCart,el('coTipMethod').value,tipTotal()))return alert('礼卡编号重复、无效、余额不足或项目不符');
 
+    if(!validPurchases(purchaseGifts)||!allocatePurchases(payments,purchaseGifts))return alert("礼卡编号或金额无效，购买新礼卡须使用现金、银行卡或 Venmo");
     const fee = combinedFee(payments);
     const total = getCurrentCheckoutPayable();
     pendingCheckout = {payments, fee, total, signature: checkoutSignature()};
     document.getElementById('coConfirmDetails').innerHTML = payments.map(p=>`<div><span>${escapeHTML(p.method+(p.giftId?' · '+(state.serviceFees.find(g=>g.id===p.giftId)?.giftCode||''):''))}</span><strong>$${(p.amount).toFixed(2)}</strong></div>`).join('')+`<div><span>项目合计</span><span>$${total.toFixed(2)}</span></div><div><span>小费</span><span>$${tipTotal().toFixed(2)} (${escapeHTML(el("coTipMethod").value)})</span></div><div><span>服务费 / Service Fee</span><span>$${fee.toFixed(2)}</span></div><div class="co-total"><span>确认实收</span><span>$${(total+fee+tipTotal()).toFixed(2)}</span></div>`;
     const panel=document.getElementById('coConfirm');panel.hidden=false;panel.scrollIntoView({block:'nearest',behavior:'smooth'});
   }
-  function checkoutSignature(){return JSON.stringify([checkoutCart,tipEntries(),el("coTipMethod").value,state.cardFeeConfig,state.paymentConfig,el('checkoutMemberSelect').value,state.members.find(m=>m.id===el('checkoutMemberSelect').value),checkoutCart.map(it=>{const t=state.timers.find(t=>t.id===it.timerId);if(!t)return null;const {status,bellPlayed,checked,...stable}=t;return stable;}),el('entryDate').value,el('giftLookup').value,el('giftDebitInput').value,el('giftRemainder').value,[...document.querySelectorAll('.split-row')].map(r=>[r.querySelector('.split-method').value,r.querySelector('.split-amount').value,r.querySelector('.split-gift-code').value]),state.serviceFees.filter(g=>g.giftCode)]);}
+  function checkoutSignature(){return JSON.stringify([checkoutCart,purchaseGifts,tipEntries(),el("coTipMethod").value,state.cardFeeConfig,state.paymentConfig,el('checkoutMemberSelect').value,state.members.find(m=>m.id===el('checkoutMemberSelect').value),checkoutCart.map(it=>{const t=state.timers.find(t=>t.id===it.timerId);if(!t)return null;const {status,bellPlayed,checked,...stable}=t;return stable;}),el('entryDate').value,el('giftLookup').value,el('giftDebitInput').value,el('giftRemainder').value,[...document.querySelectorAll('.split-row')].map(r=>[r.querySelector('.split-method').value,r.querySelector('.split-amount').value,r.querySelector('.split-gift-code').value]),state.serviceFees.filter(g=>g.giftCode)]);}
   async function commitCheckoutConfirmation(){
     const p=pendingCheckout;if(!p)return;
     if(!currentUser || currentUser.uid!==ADMIN_UID || !initialCloudLoaded || !cloudEnabled || saveFailed || p.signature!==checkoutSignature()){clearCheckoutConfirmation();return alert('结账信息或云端状态已变化，请重新核对');}
@@ -2346,7 +2358,7 @@
     const dateVal = frozen?.date || el('entryDate').value || todayStr();
     const memId = frozen?.memberId ?? el('checkoutMemberSelect').value;
     const member = state.members.find(m => m.id === memId);
-    const totalPayable = cart.reduce((n,it)=>n+Number(it.finalPrice??it.price??0),0);
+    const purchases=frozen?.purchases|| (frozen?[]:purchaseGifts);const totalPayable=serviceSubtotal(cart);const fullPayments=payments;const allocation=allocatePurchases(payments,purchases);if(!validPurchases(purchases)||!allocation||Math.round(payments.reduce((n,p)=>n+p.amount,0)*100)!==Math.round((totalPayable+giftPurchaseTotal(purchases))*100))return alert('礼卡或订单金额已变化');payments=allocation.servicePayments;if(!payments.length&&cart.length)payments=[{method:'现金',amount:0}];
 
     if(tipMethod==='礼品卡'&&tipsTotal>0&&!payments.some(p=>p.method==='礼品卡'))return alert('礼卡小费需要同时使用礼卡支付项目');
     if(!validateGiftPayments(payments,cart,tipMethod,tipsTotal))return alert('礼卡余额或状态已变化');
@@ -2426,15 +2438,18 @@
 
     if (cardFee > 0) state.serviceFees.push({ id: 'sf_card_' + baseTs, date: dateVal, category: '银行卡手续费', payMethod: '银行卡', amount: +cardFee.toFixed(2), note: '结账 RC-' + baseTs.toString().slice(-6) });
     for(const t of tips.filter(t=>t.amount>0)){const emp=state.employees.find(e=>e.id===t.id);state.tips.push({id:crypto.randomUUID(),date:dateVal,staffId:t.id,staffName:emp?.name||'',type:tipMethod+'小费',amount:t.amount,note:'结账小费'});}
+    for(const g of allocation.sales){state.serviceFees.push({...g,id:'sf_gift_'+g.id,category:'销售礼卡',date:dateVal,giftCode:g.giftCode.trim(),giftRedemptions:[],payMethod:g.payments.length===1?g.payments[0].method:'拆分('+g.payments.map(p=>p.method+' $'+p.amount.toFixed(2)).join('+')+')',note:'RC-'+baseTs.toString().slice(-6),...(square?{squareCheckoutId:square.id}: {})});}
     const receiptPayload = {
       receiptNo: 'RC-' + baseTs.toString().slice(-6),
       time: nowStr(),
       title: '门店服务消费收据',
       items: cart.map(it => ({ name: `${it.serviceName} (${it.staffName})`, amount: Number(it.finalPrice ?? it.price ?? 0) })),
-      totalPaid: +(totalPayable + cardFee + tipsTotal).toFixed(2),
-      payments: [...payments.map(p=>({...p})),...(tipsTotal?[{method:tipMethod+"小费",amount:tipsTotal}]:[]),...(cardFee?[{method:"银行卡手续费",amount:cardFee}]:[])],
+      totalPaid: +(totalPayable + giftPurchaseTotal(purchases) + cardFee + tipsTotal).toFixed(2),
+      payments: [...fullPayments.map(p=>({...p})),...(tipsTotal?[{method:tipMethod+"小费",amount:tipsTotal}]:[]),...(cardFee?[{method:"银行卡手续费",amount:cardFee}]:[])],
       memberInfo: memberSummaryText
     };
+    for(const g of purchases)receiptPayload.items.push({name:"礼卡 / Gift card "+g.giftCode,amount:g.amount});
+    purchaseGifts=[];
     if(tipsTotal)receiptPayload.items.push({name:"小费",amount:tipsTotal});
     if (cardFee > 0) receiptPayload.items.push({ name: '银行卡手续费 / Service fee', amount: +cardFee.toFixed(2) });
     for(const o of state.orders.slice(orderStart)){o.paymentProvider=square?'square_terminal':o.payMethod==='银行卡'?'manual_card':'manual';}
@@ -2457,13 +2472,13 @@
   }
 
   function completeCheckout(payMethod) {
-    if (!checkoutCart.length) return;
+    if (!(checkoutCart.length||purchaseGifts.length)) return;
     const total = getCurrentCheckoutPayable();
     if(payMethod==='礼品卡'){const amount=Number(el('giftDebitInput').value);if(!Number.isFinite(amount)||amount<=0||amount>total||Math.abs(amount*100-Math.round(amount*100))>1e-6)return alert('请输入有效礼卡扣款金额');const rest=+(total-amount).toFixed(2);return confirmCheckoutPayments([{method:payMethod,amount,giftId:findGift()?.id||''},...(rest?[{method:el('giftRemainder').value,amount:rest}]:[])]);} confirmCheckoutPayments([{ method: payMethod, amount: +total.toFixed(2) }]);
   }
 
   function completeSplitCheckout() {
-    if (!checkoutCart.length) return;
+    if (!(checkoutCart.length||purchaseGifts.length)) return;
     const target = getCurrentCheckoutPayable();
     const payments = [];
     for(const row of document.querySelectorAll('.split-row')) {
@@ -3560,7 +3575,7 @@
   function findGift(){return giftByCode(el('giftLookup').value);}
   function validateGiftPayments(payments,cart,tipMethod,tipsTotal){const gifts=payments.filter(p=>p.method==='礼品卡');if(tipMethod==='礼品卡'&&tipsTotal>0&&gifts.length!==1)return false;const ids=new Set();for(const p of gifts){const g=state.serviceFees.find(x=>x.id===p.giftId);const debit=+(p.amount+(tipMethod==='礼品卡'?tipsTotal:0)).toFixed(2);if(ids.has(p.giftId)||p.giftDebit!==debit||!giftValid(g,debit,cart))return false;ids.add(p.giftId);}return true;}
   function giftValid(g,amount,cart){return !!g&&!g.giftVoid&&Number.isFinite(Number(g.giftFace))&&amount>0&&giftBalance(g)>=amount&&(g.giftKind!=='service'||(cart.length===1&&cart[0].serviceId===g.giftServiceId&&amount===giftBalance(g)&&amount===Number(cart[0].finalPrice??cart[0].price)));}
-  function giftLookupChanged(){clearCheckoutConfirmation();const g=findGift();el('giftLookupResult').textContent=g?`${g.giftCode} · ${g.giftType==='paper'?'纸质':'电子'} · ${g.giftVoid?'已作废':giftBalance(g)>0?'余额 $'+giftBalance(g).toFixed(2):'已核销'}${g.giftKind==='service'?' · 指定项目':''}`:'未找到礼卡';el('giftDebitInput').value=g&&!g.giftVoid?Math.min(giftBalance(g),getCurrentCheckoutPayable()).toFixed(2):'';renderCheckoutSummary();}
+  function giftLookupChanged(){clearCheckoutConfirmation();const g=findGift();el('giftLookupResult').textContent=g?`${g.giftCode} · ${g.giftType==='paper'?'纸质':'电子'} · ${g.giftVoid?'已作废':giftBalance(g)>0?'余额 $'+giftBalance(g).toFixed(2):'已核销'}${g.giftKind==='service'?' · 指定项目':''}`:'未找到礼卡';el('giftDebitInput').value=g&&!g.giftVoid?Math.min(giftBalance(g),serviceSubtotal()).toFixed(2):'';renderCheckoutSummary();}
   window.giftLookupChanged=giftLookupChanged;
   function giftBalance(g){return Math.max(0,Math.round((Number(g.giftFace)-(g.giftRedemptions||[]).reduce((n,x)=>n+Number(x.amount),0))*100)/100);}
   function giftStats(){
@@ -3569,7 +3584,7 @@
     const period=rows.filter(x=>matchPeriod(x.date));
     const e=escapeHTML;
     showExtra('🎁 礼卡销售与管理中心',`<div class="stat-grid">${[['当前周期',period],['纸质礼卡',period.filter(x=>x.giftType==='paper')],['电子礼卡',period.filter(x=>x.giftType==='digital')],['历史未分类',period.filter(x=>!x.giftType)],['全部历史',rows]].map(([n,r])=>`<div class="stat-box"><div class="stat-label">${n} · ${r.length}笔</div><div class="stat-val">$${sum(r)}</div></div>`).join('')}</div>
-    <div class="card"><strong>＋ 登记已收款礼卡</strong><form onsubmit="recordGiftSale(event)" style="display:grid;gap:9px;margin-top:10px"><label><input type="checkbox" id="gsHistorical" onchange="el('gsAmount').required=!this.checked;el('gsAmount').disabled=this.checked;el('gsRemaining').hidden=!this.checked"> 历史礼卡补录（不计收入）</label><label id="gsRemaining" hidden>已核实剩余余额 <input id="gsBalance" type="number" min="0" step="0.01"></label><label>用途 <select id="gsKind"><option value="money">金额卡</option><option value="service">指定项目卡</option></select></label><label>指定项目 <select id="gsService"><option value="">请选择</option>${state.services.map(x=>`<option value="${e(x.id)}">${e(x.name)}</option>`).join('')}</select></label><label>购买人 <input id="gsBuyer"></label><label>电话 <input id="gsPhone"></label><label>Email <input id="gsEmail" type="email"></label><label>类型 <select id="gsType"><option value="paper">纸质礼卡</option><option value="digital">电子礼卡（已在外部平台付款）</option></select></label><label>销售日期 <input id="gsDate" type="date" required value="${e(el('entryDate').value||todayStr())}"></label><label>面值 ($) <input id="gsFace" type="number" min="0.01" step="0.01" required></label><label>实收 ($) <input id="gsAmount" type="number" min="0.01" step="0.01" required></label><label>礼卡编号 / 外部订单号 <input id="gsCode" required maxlength="100"></label><label>支付方式 <select id="gsPay"><option>现金</option><option>银行卡</option><option>Venmo</option></select></label><label>备注 <input id="gsNote" maxlength="200"></label><div id="gsReview" style="background:#f8fafc;border-radius:12px;padding:12px"></div><button class="btn-success" type="submit">核对销售金额 / Review</button></form></div>
+    <button class="btn-success" onclick="openGiftPurchase()">＋购买礼卡 / Purchase Gift Cards</button><div class="card"><strong>＋ 登记已收款礼卡</strong><form onsubmit="recordGiftSale(event)" style="display:grid;gap:9px;margin-top:10px"><label><input type="checkbox" id="gsHistorical" onchange="el('gsAmount').required=!this.checked;el('gsAmount').disabled=this.checked;el('gsRemaining').hidden=!this.checked"> 历史礼卡补录（不计收入）</label><label id="gsRemaining" hidden>已核实剩余余额 <input id="gsBalance" type="number" min="0" step="0.01"></label><label>用途 <select id="gsKind"><option value="money">金额卡</option><option value="service">指定项目卡</option></select></label><label>指定项目 <select id="gsService"><option value="">请选择</option>${state.services.map(x=>`<option value="${e(x.id)}">${e(x.name)}</option>`).join('')}</select></label><label>购买人 <input id="gsBuyer"></label><label>电话 <input id="gsPhone"></label><label>Email <input id="gsEmail" type="email"></label><label>类型 <select id="gsType"><option value="paper">纸质礼卡</option><option value="digital">电子礼卡（已在外部平台付款）</option></select></label><label>销售日期 <input id="gsDate" type="date" required value="${e(el('entryDate').value||todayStr())}"></label><label>面值 ($) <input id="gsFace" type="number" min="0.01" step="0.01" required></label><label>实收 ($) <input id="gsAmount" type="number" min="0.01" step="0.01" required></label><label>礼卡编号 / 外部订单号 <input id="gsCode" required maxlength="100"></label><label>支付方式 <select id="gsPay"><option>现金</option><option>银行卡</option><option>Venmo</option></select></label><label>备注 <input id="gsNote" maxlength="200"></label><div id="gsReview" style="background:#f8fafc;border-radius:12px;padding:12px"></div><button class="btn-success" type="submit">核对销售金额 / Review</button></form></div>
     <div class="card"><strong>电子礼卡在线购买</strong><p>使用支付平台提供的公开礼卡购买页面；付款后在上方登记。外部付款需人工确认；本站登记的礼卡可在本站结账核销，外部平台余额不会自动同步。</p><input id="giftURL" type="url" placeholder="https://..." value="${e(state.giftURL||'')}"><button onclick="saveGiftURL()">保存链接</button>${/^https:\/\//i.test(state.giftURL||'')?`<p><a href="${e(state.giftURL)}" target="_blank" rel="noopener">打开电子礼卡购买页面</a></p>`:''}</div>
     <strong>全部礼卡 / All cards</strong><div class="inline-inputs"><input placeholder="搜索编号" oninput="filterGiftRows()" id="gsSearch"><select id="gsFilter" onchange="filterGiftRows()"><option value="">全部类型</option><option value="paper">纸质</option><option value="digital">电子</option></select></div><div style="overflow:auto"><table><thead><tr><th>日期</th><th>类型</th><th>编号</th><th>面值</th><th>余额 / 状态</th><th>实收</th><th>支付</th><th>备注</th></tr></thead><tbody>${rows.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<tr class="gift-record" data-code="${e(x.giftCode||'')}" data-type="${e(x.giftType||'')}"><td>${e(x.date)}</td><td>${x.giftType==='paper'?'纸质':x.giftType==='digital'?'电子':'未分类'}</td><td>${e(x.giftCode||'—')}</td><td>${x.giftFace==null?'—':'$'+Number(x.giftFace).toFixed(2)}</td><td>${x.giftFace==null?'未核实':giftBalance(x)>0?'$'+giftBalance(x).toFixed(2):'已核销'}</td><td>$${Number(x.amount).toFixed(2)}</td><td>${e(x.payMethod)}</td><td>${e(x.note||'')} ${x.giftCode?`<button onclick="giftHistory('${e(x.id)}')">核销记录</button>`:''}</td></tr>`).join('')||'<tr><td colspan="7">暂无记录</td></tr>'}</tbody></table></div>`);
     el('gsFace').addEventListener('input',()=>{el('gsAmount').value=el('gsFace').value;});
@@ -3648,7 +3663,7 @@
     if(squareBusy||state.paymentPending)return;
     if(p.payments.length!==1||p.payments[0].method!=='银行卡'||(tipTotal()>0&&el('coTipMethod').value!=='银行卡'))return alert('仅支持整单银行卡支付');
     if(!confirm('发送至 Square Terminal？'))return;
-    const a={key:crypto.randomUUID(),cents:Math.round((p.total+tipTotal()+p.fee)*100),cart:structuredClone(checkoutCart),tips:tipEntries(),tipMethod:el('coTipMethod').value,memberId:el('checkoutMemberSelect').value,date:el('entryDate').value||todayStr(),payments:p.payments,cardFee:p.fee,createdAt:Date.now()};
+    const a={key:crypto.randomUUID(),cents:Math.round((p.total+tipTotal()+p.fee)*100),cart:structuredClone(checkoutCart),purchases:structuredClone(purchaseGifts),tips:tipEntries(),tipMethod:el('coTipMethod').value,memberId:el('checkoutMemberSelect').value,date:el('entryDate').value||todayStr(),payments:p.payments,cardFee:p.fee,createdAt:Date.now()};
     if(a.cents<1||a.cents>100000)return alert('金额范围 $0.01–$1000');
     squareBusy=true;
     try{await saveQueue; if(saveFailed)throw Error('Cloud save failed');
