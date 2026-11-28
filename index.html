@@ -658,8 +658,8 @@
         <div class="card-title">
           <span>👥 员工管理、排班休息与隐私档案</span><button onclick="syncStaffAccounts()">同步员工账号</button><span class="tag tag-blue">门店代码：<span class="active-store-code"></span></span>
           <div class="inline-inputs">
-            <button class="btn-warning btn-sm" id="unlockSensitiveBtn" onclick="toggleSensitiveStaffLock()">🔐 解锁敏感档案</button>
-            <button class="btn-outline btn-sm" onclick="changeSensitivePassword()">🔑 改档案密码</button>
+            <button class="btn-warning btn-sm" id="unlockSensitiveBtn" onclick="toggleSensitiveStaffLock()">Show private details / 显示隐私资料</button>
+            
           </div>
         </div>
         <div class="account-panel"><h3>员工账号与权限管理 / Staff access</h3><p>门店代码：<strong class="active-store-code"></strong> · 为现有员工登记邮箱后，将门店代码告知员工。</p><div id="staffAccountList"></div></div><input type="hidden" id="editEmpId" />
@@ -672,7 +672,7 @@
         </div>
         <div class="inline-inputs" id="sensitiveInputRow" style="margin-bottom:10px; display:none; background:#fffbeb; padding:8px; border-radius:8px; border:1px solid #fde68a;">
           <input type="text" id="empAddress" placeholder="家庭地址" style="flex:1; min-width:140px;" />
-          <input type="text" id="empSSN" placeholder="社安卡号 (SSN)" style="width:135px;" />
+          <input type="hidden" id="empSSN" />
           <input type="text" id="empEmergency" placeholder="紧急联系人及电话" style="width:165px;" />
         </div>
         <div class="inline-inputs" style="margin-bottom:10px;">
@@ -1048,7 +1048,7 @@
     appointments: [],
     members: [],
     receipts: [],
-    sensitivePassword: '123456',
+
     timerCancelPin: '',
     memberCfg: {
       singlePrice: 99,
@@ -1108,7 +1108,7 @@
   function sanitizeStateData(incoming) {
     if (!incoming || typeof incoming !== 'object') return {};
     const clean = structuredClone(incoming);
-    if(currentUser && !legacyOwner()) { for(const e of (clean.employees||[])) { delete e.ssn; delete e.address; delete e.emergency; } if(clean.paymentConfig)clean.paymentConfig.squareEnabled=false; }
+    delete clean.sensitivePassword; if(currentUser && !legacyOwner() && clean.paymentConfig)clean.paymentConfig.squareEnabled=false;
     delete clean.passwords;
     delete clean.updatedAt;
     delete clean.role;
@@ -1132,6 +1132,26 @@
     };
   }
 
+  // V2.2.1: owner-only live employee documents; root retains only an ID manifest.
+  const employeeGroups=['employees','employeePrivate','compensation'];
+  function employeeRef(group,id){return doc(db,'businesses',activeStoreCode,group,id);}
+  function splitEmployee(e){
+    const {id,name,role,leaves,base,tax,...privateFields}=e;
+    if(typeof id!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(id))throw Error('Invalid employee ID');
+    return [{id,name:name||'',role:role||'',leaves:leaves||[]},{id,...privateFields},{id,base:base??0,tax:tax??0}];
+  }
+  async function hydrateLedger(target){
+    return runTransaction(db,async tx=>{
+      const snap=await tx.get(target); if(!snap.exists())throw Error('Ledger missing');
+      const data=snap.data(); if(data.employeeSchema!==1)return data;
+      const ids=data.employeeIds; if(!Array.isArray(ids)||new Set(ids).size!==ids.length)throw Error('Invalid employee manifest');
+      data.employees=await Promise.all(ids.map(async id=>{
+        const parts=await Promise.all(employeeGroups.map(g=>tx.get(employeeRef(g,id))));
+        if(parts.some(p=>!p.exists()||p.data().id!==id))throw Error('Missing employee record: '+id);
+        return Object.assign({},...parts.map(p=>p.data()));
+      })); return data;
+    });
+  }
   function getCloudPayload() {
     return { ...sanitizeStateData(state), updatedAt: serverTimestamp() };
   }
@@ -1200,15 +1220,16 @@
       if (activeSession !== sessionVersion) return;
 
       if (snapshot.exists()) {
-        mergeStateData(snapshot.data()); ledgerRevision=Number(snapshot.data().ledgerRevision||0);
+        const loaded=await hydrateLedger(targetDoc); if(activeSession!==sessionVersion)return; mergeStateData(loaded); ledgerRevision=Number(loaded.ledgerRevision||0);
+        if(loaded.employeeSchema!==1 && !loaded.paymentPending && confirm("Move employee records to protected collections now? Back up first and close other POS tabs. / 迁移员工资料？请先备份并关闭其他页面。")){await publishLedger(targetDoc,getCloudPayload());}
         state.role = 'boss';
       } else {
         const confirmed = confirm('No cloud ledger was found. Create a new empty store ledger?');
         if (!confirmed) { await signOut(auth); return; }
         state = structuredClone(EMPTY_STATE);
-        if (!legacyOwner()) { state.paymentConfig.squareEnabled=false; state.resources=[]; state.sensitivePassword=''; }
+        if (!legacyOwner()) { state.paymentConfig.squareEnabled=false; state.resources=[]; }
         state.role = 'boss';
-        await setDoc(targetDoc, getCloudPayload());
+        await setDoc(targetDoc, {...getCloudPayload(),employees:[],employeeIds:[],employeeSchema:1});
       }
 
       if (activeSession !== sessionVersion) return;
@@ -1218,7 +1239,7 @@
       initializeDashboard();
       setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green');
 
-      unsubscribeCloud = onSnapshot(targetDoc, { includeMetadataChanges: true }, snap => {
+      unsubscribeCloud = onSnapshot(targetDoc, { includeMetadataChanges: true }, async snap => {
         if (activeSession !== sessionVersion || !currentUser) return;
         if (snap.metadata.hasPendingWrites) { setCloudBadge('☁️ 等待同步 / Sync pending', 'tag-blue'); return; }
         if (snap.metadata.fromCache) {
@@ -1227,7 +1248,7 @@
           return;
         }
         if (!snap.exists()) { cloudEnabled = false; setDashboardLocked(true); setCloudBadge('⚠️ 云端账本不存在', 'tag-amber'); return; }
-        if (!saveFailed) { const remote=snap.data(); if(remote.paymentConfig&&!snap.metadata.hasPendingWrites){state.paymentConfig=remote.paymentConfig;if(remote.cardFeeConfig)state.cardFeeConfig=remote.cardFeeConfig;if(el("checkoutModal").classList.contains("open")){clearCheckoutConfirmation();renderCheckoutSummary();}} if(remote.paymentPending){state.paymentPending=remote.paymentPending;} else if(state.paymentPending && !squareBusy){mergeStateData(remote);ledgerRevision=Number(remote.ledgerRevision||0);} setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green'); setDashboardLocked(false); renderAll(); }
+        if (!saveFailed) { const remote=snap.data(); if(remote.paymentConfig&&!snap.metadata.hasPendingWrites){state.paymentConfig=remote.paymentConfig;if(remote.cardFeeConfig)state.cardFeeConfig=remote.cardFeeConfig;if(el("checkoutModal").classList.contains("open")){clearCheckoutConfirmation();renderCheckoutSummary();}} if(remote.paymentPending){state.paymentPending=remote.paymentPending;} else if(state.paymentPending && !squareBusy){try{const hydrated=await hydrateLedger(targetDoc);if(activeSession!==sessionVersion)return;mergeStateData(hydrated);ledgerRevision=Number(hydrated.ledgerRevision||0);}catch(e){saveFailed=true;setDashboardLocked(true);alert(e.message);return;}} setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green'); setDashboardLocked(false); renderAll(); }
       }, error => {
         console.error('Firestore listener error:', error.code);
         cloudEnabled = false;
@@ -1352,7 +1373,7 @@
       }]);
     }
     const removals=existing.docs.filter(d=>!keep.has(d.id));
-    if(projectionWrites.length+removals.length>450)throw Error("Too many staff projections for atomic save");
+    if(projectionWrites.length+removals.length+employees.length*3>450)throw Error("Too many staff projections for atomic save");
     await runTransaction(db, async tx=>{
       const snap=await tx.get(target); const old=snap.data()||{};
       if(Number(old.ledgerRevision||0)!==ledgerRevision)throw Error('Ledger changed; reload before saving');
@@ -1360,7 +1381,13 @@
       if(old.paymentPending && !finalizingKey)throw Error('Payment pending; reconcile first');
       for(const [ref,data] of projectionWrites)tx.set(ref,data,{merge:true});
       for(const d of removals)tx.delete(d.ref);
-      tx.set(target,{...payload,ledgerRevision:ledgerRevision+1});
+      const ids=employees.map(e=>e.id); if(new Set(ids).size!==ids.length)throw Error('Duplicate employee ID');
+      const removed=(old.employeeIds||[]).filter(id=>!ids.includes(id));
+      if(projectionWrites.length+removals.length+3*(ids.length+removed.length)>450)throw Error('Employee transaction too large');
+      for(const e of employees){const parts=splitEmployee(e);employeeGroups.forEach((g,i)=>tx.set(employeeRef(g,e.id),parts[i]));}
+      for(const id of removed)for(const g of employeeGroups)tx.delete(employeeRef(g,id));
+      const root={...payload,employees:[],employeeIds:ids,employeeSchema:1,ledgerRevision:ledgerRevision+1};delete root.sensitivePassword;
+      tx.set(target,root);
       if(finalizingKey)tx.set(doc(target,'checkoutOrders',finalizingKey),{...finalizingRecord,recordedAt:serverTimestamp()});
     }); ledgerRevision++;
 
@@ -1418,7 +1445,7 @@
       await saveQueue; status();
       const snap=await getDocFromServer(target); status();
       if(!snap.exists())throw Error('Ledger missing');
-      const data=snap.data();
+      const data=await hydrateLedger(target);
       if(data.paymentPending)throw Error('Resolve pending payment before migration');
       const revision=Number(data.ledgerRevision||0);
       const rows=[]; const counts={};
@@ -2871,36 +2898,13 @@
      第11项：员工管理（排班休息 + 密码保护敏感信息：地址/SSN/紧急联系人）
   ========================================================= */
   function toggleSensitiveStaffLock() {
-    if(!legacyOwner())return alert('Sensitive employee records are disabled in the pilot');
-    if (sensitiveUnlocked) {
-      sensitiveUnlocked = false;
-      document.getElementById('sensitiveInputRow').style.display = 'none';
-      document.getElementById('unlockSensitiveBtn').textContent = '🔐 解锁敏感档案';
-      renderAll();
-      return;
-    }
-    const pwd = prompt('请输入管理员档案密码（默认 123456）：');
-    if (pwd === null) return;
-    if (pwd !== (state.sensitivePassword || '123456')) {
-      return alert('密码错误，无法查看或修改员工敏感信息！');
-    }
-    sensitiveUnlocked = true;
-    document.getElementById('sensitiveInputRow').style.display = 'flex';
-    document.getElementById('unlockSensitiveBtn').textContent = '🔓 已解锁(点击锁定)';
+    if(!currentUser||currentUser.uid!==ADMIN_UID||!initialCloudLoaded)return;
+    sensitiveUnlocked=!sensitiveUnlocked;
+    document.getElementById('sensitiveInputRow').style.display=sensitiveUnlocked?'flex':'none';
+    document.getElementById('unlockSensitiveBtn').textContent=sensitiveUnlocked?'Hide private details / 隐藏隐私资料':'Show private details / 显示隐私资料';
+    if(!sensitiveUnlocked)for(const id of ['empAddress','empSSN','empEmergency'])document.getElementById(id).value='';
     renderAll();
   }
-
-  function changeSensitivePassword() {
-    if(!legacyOwner())return alert('Sensitive employee records are disabled in the pilot');
-    const oldPwd = prompt('请输入当前档案密码（默认 123456）：');
-    if (oldPwd !== (state.sensitivePassword || '123456')) return alert('原密码错误');
-    const newPwd = prompt('请输入新的管理员档案密码：');
-    if (!newPwd || newPwd.trim().length < 4) return alert('新密码至少需要 4 位');
-    state.sensitivePassword = newPwd.trim();
-    saveState();
-    alert('敏感档案密码已更新！');
-  }
-
   function openStaffLeaveModal(empId) {
     const emp = state.employees.find(e => e.id === empId);
     if (!emp) return;
@@ -2965,7 +2969,7 @@
       if (emp) {
         Object.assign(emp, { name, role, base, tax, phone });
         if (sensitiveUnlocked) {
-          Object.assign(emp, { address, ssn, emergency });
+          Object.assign(emp, { address, emergency });
         }
         addAudit('修改技师资料', `${name} (${role})`);
       }
@@ -2974,7 +2978,7 @@
       state.employees.push({
         id, name, role, base, tax, phone,
         address: sensitiveUnlocked ? address : '',
-        ssn: sensitiveUnlocked ? ssn : '',
+        
         emergency: sensitiveUnlocked ? emergency : '',
         leaves: []
       });
@@ -3000,7 +3004,7 @@
     document.getElementById('editEmpId').value = emp.id;
     if (sensitiveUnlocked) {
       document.getElementById('empAddress').value = emp.address || '';
-      document.getElementById('empSSN').value = emp.ssn || '';
+      
       document.getElementById('empEmergency').value = emp.emergency || '';
     }
   }
@@ -3409,7 +3413,7 @@
     document.getElementById('empTableBody').innerHTML = state.employees.map(emp => {
       const leaveCnt = Array.isArray(emp.leaves) ? emp.leaves.length : 0;
       const sensitiveInfo = sensitiveUnlocked
-        ? `<div style="font-size:0.84em;">📍 ${escapeHTML(emp.address || '未填地址')}<br>🪪 SSN: ${escapeHTML(emp.ssn || '未填')}<br>🆘 紧急: ${escapeHTML(emp.emergency || '未填')}</div>`
+        ? `<div style="font-size:0.84em;">📍 ${escapeHTML(emp.address || '未填地址')}<br>🪪 SSN: ${emp.ssn ? 'On file / 已存档' : '—'}<br>🆘 紧急: ${escapeHTML(emp.emergency || '未填')}</div>`
         : '<span class="tag tag-amber">🔒 已加密隐藏</span>';
 
       return `
@@ -3713,7 +3717,7 @@
     updateCheckoutTotalDisplay, openRevenueBreakdownModal, openCardCouponModal,
     saveRevenueRuleConfig, openProjectStatsModal, openNetProfitModal, openExpenseModal,
     addExpense, deleteExpense, openAppointmentModal, addAppointment, startApptTimer, deleteAppointment,
-    toggleSensitiveStaffLock, changeSensitivePassword, openStaffLeaveModal, addStaffLeave, deleteStaffLeave,
+    toggleSensitiveStaffLock, openStaffLeaveModal, addStaffLeave, deleteStaffLeave,
     printOrderReceipt
   });
 
@@ -3784,12 +3788,12 @@
       if(j.checkout.status==='COMPLETED'){if(!j.verified||j.checkout.amount_money.amount!==a.cents)throw Error('支付金额需人工核对');await squareRecord(a,j.checkout);return;}
       await new Promise(r=>setTimeout(r,4000));}throw Error('等待超时，请查询原交易');
   }
-  async function squareRelease(a){await runTransaction(db,async tx=>{const snap=await tx.get(cloudDocRef);if(snap.data().paymentPending?.key!==a.key)throw Error('Payment lock changed');tx.update(cloudDocRef,{paymentPending:null,ledgerRevision:Number(snap.data().ledgerRevision||0)+1});tx.set(doc(cloudDocRef,'checkoutOrders',a.key),{...a,status:'canceled',recordedAt:serverTimestamp()});});const snap=await getDocFromServer(cloudDocRef);mergeStateData(snap.data());ledgerRevision=snap.data().ledgerRevision;renderAll();}
-  async function squareRecord(a,c){const snap=await getDocFromServer(cloudDocRef);const d=snap.data();if(d.paymentPending?.key!==a.key){if(d.orders.some(o=>o.squareCheckoutId===c.id)){mergeStateData(d);ledgerRevision=d.ledgerRevision;renderAll();return;}throw Error('Payment lock changed');}
+  async function squareRelease(a){await runTransaction(db,async tx=>{const snap=await tx.get(cloudDocRef);if(snap.data().paymentPending?.key!==a.key)throw Error('Payment lock changed');tx.update(cloudDocRef,{paymentPending:null,ledgerRevision:Number(snap.data().ledgerRevision||0)+1});tx.set(doc(cloudDocRef,'checkoutOrders',a.key),{...a,status:'canceled',recordedAt:serverTimestamp()});});const snap=await getDocFromServer(cloudDocRef);const hydrated=await hydrateLedger(cloudDocRef);mergeStateData(hydrated);ledgerRevision=hydrated.ledgerRevision;renderAll();}
+  async function squareRecord(a,c){const snap=await getDocFromServer(cloudDocRef);const d=await hydrateLedger(cloudDocRef);if(d.paymentPending?.key!==a.key){if(d.orders.some(o=>o.squareCheckoutId===c.id)){mergeStateData(d);ledgerRevision=d.ledgerRevision;renderAll();return;}throw Error('Payment lock changed');}
     mergeStateData(d);ledgerRevision=d.ledgerRevision;finalizingKey=a.key;finalizingRecord={...a,status:'recorded',squareCheckoutId:c.id,squarePaymentIds:c.payment_ids};
     try{const ok=await finalizeOrderCheckout(a.payments,a.cardFee||0,c,a);if(!ok)throw Error('已收款，入账未确认；刷新后核对');}finally{finalizingKey=null;finalizingRecord=null;}
   }
-  async function squareRecover(){if(squareBusy)return alert('正在查询');if(localStorage.getItem(squarePendingKey))return alert('旧版浏览器有待核对交易，请先在 Square Dashboard 人工核对，不要重新收费');squareBusy=true;try{const snap=await getDocFromServer(cloudDocRef);mergeStateData(snap.data());ledgerRevision=Number(snap.data().ledgerRevision||0);if(!state.paymentPending)return alert('没有待核对交易');await squareResume(state.paymentPending);}catch(e){alert(e.message);}finally{squareBusy=false;paymentBanner();}}
+  async function squareRecover(){if(squareBusy)return alert('正在查询');if(localStorage.getItem(squarePendingKey))return alert('旧版浏览器有待核对交易，请先在 Square Dashboard 人工核对，不要重新收费');squareBusy=true;try{const snap=await getDocFromServer(cloudDocRef);const hydrated=await hydrateLedger(cloudDocRef);mergeStateData(hydrated);ledgerRevision=Number(hydrated.ledgerRevision||0);if(!state.paymentPending)return alert('没有待核对交易');await squareResume(state.paymentPending);}catch(e){alert(e.message);}finally{squareBusy=false;paymentBanner();}}
   async function squareCancel(){if(squareBusy)return alert('正在查询，请等待或刷新后取消');const a=state.paymentPending;if(!a?.id)return alert('请先查询原交易');squareBusy=true;try{const j=await squareCall('/cancel',{id:a.id,key:a.key});if(j.checkout.status==='CANCELED')await squareRelease(a);else alert('取消未确认，请继续查询');}catch(e){alert(e.message);}finally{squareBusy=false;paymentBanner();}}
   async function squareTransactions(){try{const docs=await getDocsFromServer(collection(cloudDocRef,'checkoutOrders'));alert(docs.docs.map(x=>{const a=x.data();return x.id+' | $'+(a.cents/100).toFixed(2)+' | '+a.status;}).join('\n')||'暂无交易');}catch(e){alert(e.message);}}
   let sqDeviceBusy=false;
