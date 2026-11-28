@@ -1132,7 +1132,7 @@
     };
   }
 
-  // V2.2.1: owner-only live employee documents; root retains only an ID manifest.
+  // V2.2.2: owner-only live employee documents; root retains only an ID manifest.
   const employeeGroups=['employees','employeePrivate','compensation'];
   function employeeRef(group,id){return doc(db,'businesses',activeStoreCode,group,id);}
   function splitEmployee(e){
@@ -1140,16 +1140,44 @@
     if(typeof id!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(id))throw Error('Invalid employee ID');
     return [{id,name:name||'',role:role||'',leaves:leaves||[]},{id,...privateFields},{id,base:base??0,tax:tax??0}];
   }
+  // V2.2.2: operational collections, committed with the ledger revision.
+  const operationalGroups={appointments:'appointments',services:'services',resources:'resources',timers:'activeSessions',dispatchDays:'dispatchDays',dispatchRecords:'dispatchRecords',dispatchControls:'dispatchControls'};
+  const operationalMaps=new Set(['dispatchDays','dispatchRecords','dispatchControls']);
+  function opRef(key,id){return doc(db,'businesses',activeStoreCode,operationalGroups[key],id);}
+  function opRows(key,value){
+    const entries=operationalMaps.has(key)?Object.entries(value||{}):(value||[]).map(record=>[record.id,record]);
+    const seen=new Set();return entries.map(([keyValue,record])=>{
+      if(typeof keyValue!=='string'||!keyValue.length||!record||typeof record!=='object')throw Error('Invalid operational record: '+key);
+      const id='r_'+encodeURIComponent(keyValue);if(id.length>1400||seen.has(id))throw Error('Invalid or duplicate operational ID: '+key);seen.add(id);
+      return {id,key:keyValue,record};
+    });
+  }
+  function operationalPayload(payload){return Object.fromEntries(Object.keys(operationalGroups).map(k=>[k,opRows(k,k==='resources'?(payload.resources??resDefaults()):payload[k])]));}
+  function operationalRoot(root,rows){
+    root.operationalSchema=1;root.operationalIds={};
+    for(const [key,list] of Object.entries(rows)){root[key]=operationalMaps.has(key)?{}:[];root.operationalIds[key]=list.map(x=>x.id);}
+    return root;
+  }
   async function hydrateLedger(target){
     return runTransaction(db,async tx=>{
-      const snap=await tx.get(target); if(!snap.exists())throw Error('Ledger missing');
-      const data=snap.data(); if(data.employeeSchema!==1)return data;
-      const ids=data.employeeIds; if(!Array.isArray(ids)||new Set(ids).size!==ids.length)throw Error('Invalid employee manifest');
-      data.employees=await Promise.all(ids.map(async id=>{
-        const parts=await Promise.all(employeeGroups.map(g=>tx.get(employeeRef(g,id))));
-        if(parts.some(p=>!p.exists()||p.data().id!==id))throw Error('Missing employee record: '+id);
-        return Object.assign({},...parts.map(p=>p.data()));
-      })); return data;
+      const snap=await tx.get(target);if(!snap.exists())throw Error('Ledger missing');
+      const data=snap.data();
+      if(data.employeeSchema===1){
+        const ids=data.employeeIds;if(!Array.isArray(ids)||new Set(ids).size!==ids.length)throw Error('Invalid employee manifest');
+        data.employees=await Promise.all(ids.map(async id=>{
+          const parts=await Promise.all(employeeGroups.map(g=>tx.get(employeeRef(g,id))));
+          if(parts.some(p=>!p.exists()||p.data().id!==id))throw Error('Missing employee record: '+id);
+          return Object.assign({},...parts.map(p=>p.data()));
+        }));
+      }
+      if(data.operationalSchema===1){
+        for(const key of Object.keys(operationalGroups)){
+          const ids=data.operationalIds?.[key];if(!Array.isArray(ids)||new Set(ids).size!==ids.length)throw Error('Invalid operational manifest: '+key);
+          const rows=await Promise.all(ids.map(async id=>{const snap=await tx.get(opRef(key,id));const row=snap.data();if(!snap.exists()||row.id!==id||'r_'+encodeURIComponent(row.key)!==id)throw Error('Missing operational record: '+key+'/'+id);return row;}));
+          data[key]=operationalMaps.has(key)?Object.fromEntries(rows.map(x=>[x.key,x.record])):rows.map(x=>x.record);
+        }
+      }
+      return data;
     });
   }
   function getCloudPayload() {
@@ -1221,7 +1249,10 @@
 
       if (snapshot.exists()) {
         const loaded=await hydrateLedger(targetDoc); if(activeSession!==sessionVersion)return; mergeStateData(loaded); ledgerRevision=Number(loaded.ledgerRevision||0);
-        if(loaded.employeeSchema!==1 && !loaded.paymentPending && confirm("Move employee records to protected collections now? Back up first and close other POS tabs. / 迁移员工资料？请先备份并关闭其他页面。")){await publishLedger(targetDoc,getCloudPayload());}
+        if((loaded.employeeSchema!==1||loaded.operationalSchema!==1)&&!loaded.paymentPending){
+          if(!confirm("Migrate employee and operational records to live collections? Verify backup and close other POS tabs first. / 迁移资料？请先备份并关闭其他页面。")){await signOut(auth);return;}
+          await publishLedger(targetDoc,getCloudPayload());
+        }
         state.role = 'boss';
       } else {
         const confirmed = confirm('No cloud ledger was found. Create a new empty store ledger?');
@@ -1229,7 +1260,7 @@
         state = structuredClone(EMPTY_STATE);
         if (!legacyOwner()) { state.paymentConfig.squareEnabled=false; state.resources=[]; }
         state.role = 'boss';
-        await setDoc(targetDoc, {...getCloudPayload(),employees:[],employeeIds:[],employeeSchema:1});
+        ledgerRevision=0; await publishLedger(targetDoc,getCloudPayload());
       }
 
       if (activeSession !== sessionVersion) return;
@@ -1373,12 +1404,29 @@
       }]);
     }
     const removals=existing.docs.filter(d=>!keep.has(d.id));
+    const opData=operationalPayload(payload);
     if(projectionWrites.length+removals.length+employees.length*3>450)throw Error("Too many staff projections for atomic save");
     await runTransaction(db, async tx=>{
       const snap=await tx.get(target); const old=snap.data()||{};
       if(Number(old.ledgerRevision||0)!==ledgerRevision)throw Error('Ledger changed; reload before saving');
       if(old.paymentPending && old.paymentPending.key!==payload.paymentPending?.key && old.paymentPending.key!==finalizingKey)throw Error('Payment locked');
       if(old.paymentPending && !finalizingKey)throw Error('Payment pending; reconcile first');
+      // All reads precede writes. Compare records so unchanged operations are not rewritten.
+      const opWrites=[];
+      for(const [key,rows] of Object.entries(opData)){
+        const previous=old.operationalSchema===1?old.operationalIds?.[key]:[];
+        if(!Array.isArray(previous))throw Error('Invalid operational manifest');
+        const next=new Map(rows.map(row=>[row.id,row]));
+        for(const id of previous){
+          if(!next.has(id)){opWrites.push([opRef(key,id),null]);continue;}
+          const prior=await tx.get(opRef(key,id));if(!prior.exists())throw Error('Missing operational record: '+id);
+          const row=next.get(id);if(JSON.stringify(prior.data().record)!==JSON.stringify(row.record))opWrites.push([opRef(key,id),row]);next.delete(id);
+        }
+        for(const row of next.values())opWrites.push([opRef(key,row.id),row]);
+      }
+      const deletedEmployees=(old.employeeIds||[]).filter(id=>!employees.some(e=>e.id===id));
+      if(opWrites.length+projectionWrites.length+removals.length+3*(employees.length+deletedEmployees.length)+2>450)throw Error('Migration/save exceeds atomic write budget; contact support before retrying');
+      for(const [ref,row] of opWrites){if(row===null)tx.delete(ref);else tx.set(ref,row);}
       for(const [ref,data] of projectionWrites)tx.set(ref,data,{merge:true});
       for(const d of removals)tx.delete(d.ref);
       const ids=employees.map(e=>e.id); if(new Set(ids).size!==ids.length)throw Error('Duplicate employee ID');
@@ -1387,7 +1435,7 @@
       for(const e of employees){const parts=splitEmployee(e);employeeGroups.forEach((g,i)=>tx.set(employeeRef(g,e.id),parts[i]));}
       for(const id of removed)for(const g of employeeGroups)tx.delete(employeeRef(g,id));
       const root={...payload,employees:[],employeeIds:ids,employeeSchema:1,ledgerRevision:ledgerRevision+1};delete root.sensitivePassword;
-      tx.set(target,root);
+      tx.set(target,operationalRoot(root,opData));
       if(finalizingKey)tx.set(doc(target,'checkoutOrders',finalizingKey),{...finalizingRecord,recordedAt:serverTimestamp()});
     }); ledgerRevision++;
 
