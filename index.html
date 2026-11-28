@@ -422,7 +422,7 @@
         <span class="tag tag-amber" id="cloudStatusBadge">☁️ 未配置 Firebase</span>
       </h1>
       <div class="toolbar">
-        <button class="btn-outline btn-sm" onclick="openStoreZone()">⚙️ 门店营业设置</button><span id="storeClock" class="tag tag-blue"></span><span id="currentUserEmail" class="tag tag-blue"></span>
+        <button class="btn-primary btn-sm boss-only" onclick="openBusinessSettings()">商家设置 / Business settings</button><button class="btn-outline btn-sm" onclick="openStoreZone()">⚙️ 门店营业设置</button><span id="storeClock" class="tag tag-blue"></span><span id="currentUserEmail" class="tag tag-blue"></span>
         <button class="btn-sm logout-btn" onclick="logout()">🚪 退出登录</button>
         <button class="btn-purple btn-sm" onclick="openMemberModal()">👑 年费会员 & 充值卡</button>
         <button class="btn-outline btn-sm" onclick="resSettings()">房间与设备设置</button><button class="btn-outline btn-sm" onclick="openContracts()">会员合同</button><button class="btn-primary btn-sm boss-only" onclick="openServiceHistory()">📋 服务历史 / History</button>
@@ -1332,7 +1332,7 @@
   // Only explicit allowlisted fields leave the administrator ledger.
   async function publishLedger(target, payload) {
     const existing = await getDocsFromServer(collection(db,'store_codes',activeStoreCode,'email_portals'));
-    const batch = writeBatch(db), keep = new Set();
+    const projectionWrites = [], keep = new Set();
     const employees = payload.employees || [];
     for (const e of employees) {
       const phone = staffEmailKey(e.loginEmail);
@@ -1342,26 +1342,27 @@
       if(prior && prior.data().employeeId!==e.id) throw Error("Revoke previous email assignment and sync before reuse");
       const own = key => (payload[key]||[]).filter(x=>x.staffId===e.id);
       const clean = (arr, fields) => arr.map(x=>Object.fromEntries(fields.filter(k=>x[k]!==undefined).map(k=>[k,x[k]])));
-      batch.set(doc(db,'store_codes',activeStoreCode,'email_portals',phone), {
-        email:phone, storeZone:payload.storeZone||"America/Los_Angeles", employeeId:e.id, name:e.name, role:e.role||'技师',
+      projectionWrites.push([doc(db,'store_codes',activeStoreCode,'email_portals',phone), {
+        email:phone, accessRole:e.accessRole||'therapist', ...(e.inviteExpiresAt ? {inviteExpiresAt:new Date(e.inviteExpiresAt)} : {}), storeZone:payload.storeZone||"America/Los_Angeles", employeeId:e.id, name:e.name, role:e.role||'技师',
         timers:clean(own('timers'),['id','serviceName','startTime','endTime','durationMins','status','earlyEndedAt']),
         orders:clean(own('orders'),['id','date','duration','commission','payMethod']),
         tips:clean(own('tips'),['date','amount','type']),
         appointments:clean(own('appointments'),['date','time','serviceName','status']),
         leaves:clean(e.leaves||[],['date','start','end']), updatedAt:serverTimestamp()
-      },{merge:true});
+      }]);
     }
-    existing.forEach(d=>{if(!keep.has(d.id)) batch.delete(d.ref)});
+    const removals=existing.docs.filter(d=>!keep.has(d.id));
+    if(projectionWrites.length+removals.length>450)throw Error("Too many staff projections for atomic save");
     await runTransaction(db, async tx=>{
       const snap=await tx.get(target); const old=snap.data()||{};
       if(Number(old.ledgerRevision||0)!==ledgerRevision)throw Error('Ledger changed; reload before saving');
       if(old.paymentPending && old.paymentPending.key!==payload.paymentPending?.key && old.paymentPending.key!==finalizingKey)throw Error('Payment locked');
       if(old.paymentPending && !finalizingKey)throw Error('Payment pending; reconcile first');
+      for(const [ref,data] of projectionWrites)tx.set(ref,data,{merge:true});
+      for(const d of removals)tx.delete(d.ref);
       tx.set(target,{...payload,ledgerRevision:ledgerRevision+1});
       if(finalizingKey)tx.set(doc(target,'checkoutOrders',finalizingKey),{...finalizingRecord,recordedAt:serverTimestamp()});
     }); ledgerRevision++;
-    // Staff projections are secondary; never retry a charge if projection fails.
-    try{await batch.commit();}catch(e){console.error('Staff projection sync failed',e); alert('员工权限同步失败 / Staff access sync failed. Retry sync.');}
 
   }
   async function syncStaffAccounts(){ if(await saveState()) alert('员工账号及个人数据已同步'); }
@@ -1370,7 +1371,29 @@
   function staffEmailKey(v){const e=String(v||'').trim().toLowerCase();return /^[^\s/@]+@[^\s/@]+\.[^\s/@]+$/.test(e)&&e.length<250?e:'';}
   async function staffAuth(event,mode){event.preventDefault();if(!auth||staffBusy)return;const code=storeCode(),email=staffEmailKey(loginEl('staffEmail').value),password=loginEl('staffPassword').value;if(!/^[A-Za-z0-9_-]{3,32}$/.test(code)|| (mode!=='google'&&(!email||!password))){notice('请填写门店代码、邮箱及密码','Enter store code, email and password');return;}staffBusy=true;loginEl('staffSubmit').disabled=true;try{await setPersistence(auth,loginEl('staffRemember').checked?browserLocalPersistence:browserSessionPersistence);sessionStorage.setItem('posLoginMode','staff');sessionStorage.setItem('posStaffStore',code);if(loginEl('staffRemember').checked)localStorage.setItem('posStaffStore',code);else localStorage.removeItem('posStaffStore');if(mode==='google')await signInWithPopup(auth,new GoogleAuthProvider());else if(mode==='activate')await createUserWithEmailAndPassword(auth,email,password);else await signInWithEmailAndPassword(auth,email,password);loginEl('staffPassword').value='';}catch(e){authNotice(e);}finally{staffBusy=false;loginEl('staffSubmit').disabled=false;}}
   async function staffReset(){const email=staffEmailKey(loginEl('staffEmail').value);if(!email)return notice('请先填写邮箱','Enter your email first');try{await sendPasswordResetEmail(auth,email);notice('如账号存在，将收到重置邮件','If the account exists, a reset email will be sent');}catch(e){authNotice(e);}}
-  async function inviteStaff(id){if(currentUser?.uid!==ADMIN_UID||state.paymentPending)return;const e=state.employees.find(x=>x.id===id);if(!e)return;const raw=prompt('员工登录邮箱 / Employee login email (留空撤销 / blank to revoke)',e.loginEmail||'');if(raw===null)return;const email=staffEmailKey(raw);if(raw.trim()&&!email)return alert('Invalid email');if(email&&state.employees.some(x=>x.id!==id&&staffEmailKey(x.loginEmail)===email))return alert('Email already assigned');if(email!==e.loginEmail&&!confirm('确认修改登录授权？ / Change access?'))return;e.loginEmail=email;await saveState();renderAll();}
+  async function inviteStaff(id){
+    if(currentUser?.uid!==ADMIN_UID||state.paymentPending)return;
+    const e=state.employees.find(x=>x.id===id);if(!e)return;
+    const raw=prompt('员工登录邮箱 / Employee email (blank to revoke)',e.loginEmail||'');if(raw===null)return;
+    const email=staffEmailKey(raw);if(raw.trim()&&!email)return alert('Invalid email');
+    if(email&&state.employees.some(x=>x.id!==id&&staffEmailKey(x.loginEmail)===email))return alert('Email already assigned');
+    if(!confirm('确认更新邀请？ / Confirm invitation change?'))return;
+    e.loginEmail=email;e.portalDisabled=!email;e.accessRole=e.accessRole||'therapist';e.inviteExpiresAt=Date.now()+7*86400000;
+    addAudit('员工邀请 / Staff invitation',e.name);
+    if(!await saveState())return;renderAll();
+    if(email){const url=new URL(location.href);url.search='';url.hash='';url.searchParams.set('staffStore',activeStoreCode);url.searchParams.set('staffEmail',email);prompt('复制邀请链接并私下发送给员工（7天内激活） / Copy and privately send invitation link (activate within 7 days)',url.toString());}
+  }
+  function openBusinessSettings(){
+    if(currentUser?.uid!==ADMIN_UID)return;
+    const p=state.businessProfile||{}, h=escapeHTML;
+    showExtra('商家设置 / Business settings',`<div class="account-panel"><h3>商家资料 / Profile</h3><p>Store code: ${h(activeStoreCode)}</p>${[['name','Business name / 商家名称'],['address','Address / 地址'],['phone','Phone / 电话'],['email','Email / 邮箱']].map(([k,label])=>`<label class="ps-field">${label}<input id="bp_${k}" maxlength="250" value="${h(p[k]||'')}"></label>`).join('')}<label class="ps-field">Time zone / 时区<input id="bp_zone" value="${h(zone())}"></label><p>Currency / 币种: USD</p><button class="btn-primary" onclick="saveBusinessProfile()">保存 / Save</button></div><div class="account-panel"><h3>团队与邀请 / Team & invitations</h3><p>Only personal employee access is enabled. Manager, receptionist and accountant roles are reserved until records are separated.</p><div id="v21Team"></div></div><div class="account-panel">Owner: full access · Therapist: own portal only · Billing: not yet available</div>`);
+    const root=document.getElementById('v21Team');for(const e of state.employees){const row=document.createElement('div');row.className='account-row';const label=document.createElement('span');label.textContent=e.name+' · '+(e.loginEmail||'No email')+' · '+(e.portalDisabled?'Revoked':e.loginEmail?'Invited / assigned':'Not invited');row.append(label);for(const [text,fn] of [['Invite / Renew',()=>inviteStaff(e.id)],['Revoke / 撤销',async()=>{if(!confirm('Revoke access?'))return;e.portalDisabled=true;addAudit('Revoke access',e.name);if(await saveState())openBusinessSettings();}]]){const b=document.createElement('button');b.textContent=text;b.onclick=fn;row.append(b);}root.append(row);}
+  }
+  async function saveBusinessProfile(){if(currentUser?.uid!==ADMIN_UID)return;const z=document.getElementById('bp_zone').value.trim();try{new Intl.DateTimeFormat('en',{timeZone:z}).format();}catch{return alert('Invalid time zone');}state.businessProfile=Object.fromEntries(['name','address','phone','email'].map(k=>[k,document.getElementById('bp_'+k).value.trim()]));state.storeZone=z;addAudit('Business profile updated','');if(await saveState()){renderAll();openBusinessSettings();}}
+  Object.assign(window,{openBusinessSettings,saveBusinessProfile});
+  const invitationParams=new URLSearchParams(location.search);
+  if(invitationParams.has('staffStore')){loginEl('staffStore').value=invitationParams.get('staffStore');loginEl('staffEmail').value=invitationParams.get('staffEmail')||'';switchLoginTab('staff');history.replaceState(null,'',location.pathname+location.hash);}
+
   async function startStaffPortal(user){
     const phone=staffEmailKey(user.email), version=sessionVersion;
     if(!phone||!user.emailVerified){try{if(phone)await sendEmailVerification(user);}catch(e){console.error(e);}await signOut(auth);showLogin();switchLoginTab('staff');notice('请验证邮箱后重新登录（检查收件箱或垃圾邮件）','Verify your email, then sign in again. Check inbox or spam.');return;}
