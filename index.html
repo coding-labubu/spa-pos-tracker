@@ -1284,7 +1284,7 @@
           return;
         }
         if (!snap.exists()) { cloudEnabled = false; setDashboardLocked(true); setCloudBadge('⚠️ 云端账本不存在', 'tag-amber'); return; }
-        if (!saveFailed) { const remote=snap.data(); if(remote.paymentConfig&&!snap.metadata.hasPendingWrites){state.paymentConfig=remote.paymentConfig;if(remote.cardFeeConfig)state.cardFeeConfig=remote.cardFeeConfig;if(el("checkoutModal").classList.contains("open")){clearCheckoutConfirmation();renderCheckoutSummary();}} if(remote.paymentPending){state.paymentPending=remote.paymentPending;} else if(state.paymentPending && !squareBusy){try{const hydrated=await hydrateLedger(targetDoc);if(activeSession!==sessionVersion)return;mergeStateData(hydrated);ledgerRevision=Number(hydrated.ledgerRevision||0);}catch(e){saveFailed=true;setDashboardLocked(true);alert(e.message);return;}} setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green'); setDashboardLocked(false); renderAll(); }
+        if (!saveFailed) { const remote=snap.data(); if(Number(remote.ledgerRevision||0)>ledgerRevision && remote.managerRevision===remote.ledgerRevision){saveFailed=true;setDashboardLocked(true);setCloudBadge('Manager updated store — reload / 店长操作已更新，请刷新','tag-amber');return;} if(remote.paymentConfig&&!snap.metadata.hasPendingWrites){state.paymentConfig=remote.paymentConfig;if(remote.cardFeeConfig)state.cardFeeConfig=remote.cardFeeConfig;if(el("checkoutModal").classList.contains("open")){clearCheckoutConfirmation();renderCheckoutSummary();}} if(remote.paymentPending){state.paymentPending=remote.paymentPending;} else if(state.paymentPending && !squareBusy){try{const hydrated=await hydrateLedger(targetDoc);if(activeSession!==sessionVersion)return;mergeStateData(hydrated);ledgerRevision=Number(hydrated.ledgerRevision||0);}catch(e){saveFailed=true;setDashboardLocked(true);alert(e.message);return;}} setCloudBadge('☁️ 云端已同步 / Cloud synced', 'tag-green'); setDashboardLocked(false); renderAll(); }
       }, error => {
         console.error('Firestore listener error:', error.code);
         cloudEnabled = false;
@@ -1394,6 +1394,7 @@
   // V2.2.4.1: explicit read permissions; unsupported writes cannot be granted.
   const permissionCatalog=[
     ['Operations / 门店运营',[['appointments','View appointments / 查看预约'],['services','View service menu / 查看项目'],['resources','View rooms and equipment / 查看房间设备'],['sessions','View active services / 查看服务中']]],
+    ['Operational editing / 运营编辑',[['dispatchEdit','Manage dispatch / 管理排工'],['serviceStart','Start services / 开钟'],['timerExtend','Extend timers / 加钟'],['timerEnd','End early / 提前结束'],['timerCancel','Cancel timers / 取消服务'],['resourceEdit','Manage equipment / 管理设备']]],
     ['Finance / 财务',[['revenue','View service revenue / 查看营业额'],['commissions','View employee commissions / 查看提成'],['tips','View employee tips / 查看小费'],['expenses','View expenses / 查看支出']]]];
   const permissionKeys=permissionCatalog.flatMap(g=>g[1].map(x=>x[0]));
   const permissionDefaults={manager:['appointments','services','resources','sessions'],receptionist:['appointments','services','resources','sessions'],therapist:[],accountant:['revenue','commissions','tips','expenses']};
@@ -1546,7 +1547,7 @@
   let permissionBusy=false;
   function openPermissionsCenter(){
     if(currentUser?.uid!==ADMIN_UID||!initialCloudLoaded||permissionBusy)return;
-    showExtra('权限管理中心 / Permissions Center',`<div class="account-panel"><p>Shared read access only. Personal portal access remains unchanged. / 仅共享只读权限，个人工作台权限不变。</p><label class="ps-field">Scope / 范围<select id="permScope"><option value="role">Role defaults / 角色默认</option><option value="employee">Individual employee / 员工单独设置</option></select></label><label class="ps-field">Role / 角色<select id="permRole"></select></label><label class="ps-field" id="permEmployeeLabel">Employee / 员工<select id="permEmployee"></select></label><div id="permFields"></div><button id="permSave" class="btn-primary">保存权限 / Save permissions</button> <button id="permReset">恢复默认 / Reset</button> <button onclick="openBusinessSettings()">返回 / Back</button></div><div class="account-panel"><h3>Locked / 暂未开放</h3><p>Appointment editing, customer profiles, dispatch management, service timers, checkout, discounts, refunds, gift cards, memberships, expense editing, exports, employee management and payment settings require trusted backend authorization.</p><p>预约编辑、客户资料、排工管理、开钟、结账、退款、礼卡、会员、财务编辑及系统管理暂未开放。</p><p>Owner-only: private employee data, tax settings, role assignment and security settings. / 隐私、税务及权限管理仅店主可用。</p></div>`);
+    showExtra('权限管理中心 / Permissions Center',`<div class="account-panel"><p>Shared reads and delegated operations. Editing is denied by default. / 共享读取及运营编辑，默认禁止编辑。</p><label class="ps-field">Scope / 范围<select id="permScope"><option value="role">Role defaults / 角色默认</option><option value="employee">Individual employee / 员工单独设置</option></select></label><label class="ps-field">Role / 角色<select id="permRole"></select></label><label class="ps-field" id="permEmployeeLabel">Employee / 员工<select id="permEmployee"></select></label><div id="permFields"></div><button id="permSave" class="btn-primary">保存权限 / Save permissions</button> <button id="permReset">恢复默认 / Reset</button> <button onclick="openBusinessSettings()">返回 / Back</button></div><div class="account-panel"><h3>Locked / 暂未开放</h3><p>Appointment editing, customer profiles, checkout, discounts, refunds, gift cards, memberships, expense editing, exports, employee management and payment settings require trusted backend authorization.</p><p>预约编辑、客户资料、结账、退款、礼卡、会员、财务编辑及系统管理暂未开放。</p><p>Owner-only: private employee data, tax settings, role assignment and security settings. / 隐私、税务及权限管理仅店主可用。</p></div>`);
     const scope=document.getElementById('permScope'), role=document.getElementById('permRole'), employee=document.getElementById('permEmployee'), fields=document.getElementById('permFields');
     for(const r of accessRoles)role.add(new Option(roleLabels[r],r));role.value='receptionist';
     for(const e of state.employees)employee.add(new Option(e.name,e.id));
@@ -1581,15 +1582,28 @@
         if(snap.metadata.fromCache){++workspaceRequestId;staffView=null;renderStaffPortal();return;}
         if(!snap.exists()){logoutStaffPortal();return;}
         const data=snap.data(); const requestId=++workspaceRequestId;
-        staffView={...data,workspace:{},permissions:[],workspaceStatus:'loading'};loggedInStaffId=staffView.employeeId;renderStaffPortal();
+        staffView={...data,workspace:{},operations:null,permissions:[],workspaceStatus:'loading'};loggedInStaffId=staffView.employeeId;renderStaffPortal();
         httpsCallable(getFunctions(undefined,'us-central1'),'staffWorkspace')({storeCode:code}).then(result=>{
           if(version!==sessionVersion||requestId!==workspaceRequestId||!staffView)return;
           staffView={...staffView,...result.data,workspaceStatus:'ready'};renderStaffPortal();
-        }).catch(()=>{if(version===sessionVersion&&requestId===workspaceRequestId&&staffView){staffView={...staffView,workspace:{},permissions:[],workspaceStatus:'error'};renderStaffPortal();}});
+        }).catch(()=>{if(version===sessionVersion&&requestId===workspaceRequestId&&staffView){staffView={...staffView,workspace:{},operations:null,permissions:[],workspaceStatus:'error'};renderStaffPortal();}});
       },()=>{++workspaceRequestId;staffView=null;renderStaffPortal();});
     }catch(e){await signOut(auth);showLogin();notice('门店或员工账号未授权，请联系店长','Store or staff account not authorized. Contact your manager.');}
   }
-  function refreshStaffPortal(){renderStaffPortal();}
+  async function refreshStaffPortal(){if(!staffView)return;const version=sessionVersion,requestId=++workspaceRequestId;staffView={...staffView,workspace:{},operations:null,permissions:[],workspaceStatus:'loading'};renderStaffPortal();try{const result=await httpsCallable(getFunctions(undefined,'us-central1'),'staffWorkspace')({storeCode:sessionStorage.getItem('posStaffStore')||localStorage.getItem('posStaffStore')});if(version===sessionVersion&&requestId===workspaceRequestId&&staffView){staffView={...staffView,...result.data,workspaceStatus:'ready'};renderStaffPortal();}}catch(e){if(version===sessionVersion&&requestId===workspaceRequestId&&staffView){staffView.workspaceStatus='error';renderStaffPortal();}}}
+
+  let operationBusy=false;
+  function renderOperations(root){const o=staffView.operations, has=k=>staffView.permissions.includes(k), box=document.createElement('div');box.className='card';const heading=document.createElement('h3');heading.textContent='Operational controls / 运营管理';box.append(heading);root.prepend(box);
+    const line=()=>{const r=document.createElement('div');r.className='inline-inputs';r.style.margin='8px 0';box.append(r);return r;};
+    const select=(r,items)=>{const e=document.createElement('select');for(const [v,n] of items)e.add(new Option(n,v));r.append(e);return e;};
+    const btn=(r,label,fn)=>{const b=document.createElement('button');b.textContent=label;b.disabled=operationBusy;b.onclick=fn;r.append(b);};
+    const run=async(action,data={})=>{if(operationBusy||!confirm('Confirm operation / 确认操作？'))return;operationBusy=true;const version=sessionVersion;try{await httpsCallable(getFunctions(undefined,'us-central1'),'staffOperation')({storeCode:sessionStorage.getItem('posStaffStore')||localStorage.getItem('posStaffStore'),revision:staffView.ledgerRevision,action,...data});if(version===sessionVersion)alert('Saved / 已保存');}catch(e){if(version===sessionVersion)alert(e.message);}finally{operationBusy=false;if(version===sessionVersion)refreshStaffPortal();}};
+    if(has('dispatchEdit')){const r=line(), order=[...o.order,...o.employees.map(e=>e.id).filter(id=>!o.order.includes(id))];const list=document.createElement('div');r.append(list);for(const id of order){const e=o.employees.find(e=>e.id===id);if(!e)continue;const row=document.createElement('div'),c=document.createElement('input');c.type='checkbox';c.checked=o.order.includes(id);row.dataset.id=id;row.append(c,document.createTextNode(e.name+' '));btn(row,'↑',()=>{if(row.previousElementSibling)list.insertBefore(row,row.previousElementSibling)});btn(row,'↓',()=>{if(row.nextElementSibling)list.insertBefore(row.nextElementSibling,row)});list.append(row);}btn(r,'Save order / 保存排工',()=>run('order',{ids:[...list.children].filter(x=>x.querySelector('input').checked).map(x=>x.dataset.id)}));const a=line(), emp=select(a,o.employees.filter(e=>e.available).map(e=>[e.id,e.name]));btn(a,'Skip / 跳过',()=>run('skip',{id:emp.value}));btn(a,'Next / 指定下一位',()=>run('override',{id:emp.value}));btn(a,'Clear / 清除',()=>run('clear'));}
+    if(has('serviceStart')){const r=line(), e=select(r,o.employees.filter(e=>e.available).map(e=>[e.id,e.name])),s=select(r,o.services.map(s=>[s.id,s.name])),q=select(r,[['','No equipment / 无设备'],...o.resources.filter(r=>r.enabled!==false).map(r=>[r.id,r.name])]);btn(r,'Start / 开钟',()=>run('start',{staffId:e.value,serviceId:s.value,resourceId:q.value}));}
+    for(const t of o.timers){const r=line();r.append(document.createTextNode(t.staffName+' · '+t.serviceName+' · '+new Date(t.endTime).toLocaleTimeString()+' '));if(has('timerExtend'))btn(r,'Extend / 加钟',()=>{const v=prompt('Minutes / 分钟');if(v!==null)run('extend',{id:t.id,minutes:Number(v)})});if(has('timerEnd'))btn(r,'End early / 提前结束',()=>run('end',{id:t.id}));if(has('timerCancel'))btn(r,'Cancel / 取消',()=>run('cancel',{id:t.id}));}
+    if(has('resourceEdit')){for(const q of o.resources){const r=line();r.append(document.createTextNode(q.name+' · '+q.type+' '));btn(r,'Edit / 编辑',()=>{const name=prompt('Name / 名称',q.name);if(name!==null)run('resource',{id:q.id,name,enabled:q.enabled!==false})});btn(r,q.enabled===false?'Enable / 启用':'Disable / 停用',()=>run('resource',{id:q.id,name:q.name,enabled:q.enabled===false}));}const r=line(),type=select(r,[['chair','Chair / 沙发'],['bed','Bed / 床']]);btn(r,'Add equipment / 新增设备',()=>{const name=prompt('Name / 名称');if(name!==null)run('addResource',{name,type:type.value})});}
+    btn(box,'Refresh / 刷新',refreshStaffPortal);
+  }
   function setStaffTab(t){staffTab=t;renderStaffPortal();}
   function setStaffPeriod(t){staffPeriod=t;renderStaffPortal();}
   function renderStaffPortal(){
@@ -1598,7 +1612,7 @@
     if(staffTab==='home' && (role!=='therapist'||(staffView.permissions||[]).length||staffView.workspaceStatus==='loading'||staffView.workspaceStatus==='error')){
       const w=staffView.workspace||{}, h=escapeHTML;
       const table=(key,title,fields)=>!Object.hasOwn(w,key)?'':`<div class="card"><h3>${h(title)}</h3><small>Up to 200 records / 最多200条</small><div style="overflow:auto"><table><thead><tr>${fields.map(([k,label])=>`<th>${h(label)}</th>`).join('')}</tr></thead><tbody>${(w[key]||[]).map(row=>`<tr>${fields.map(([k])=>`<td>${h(String(row[k]??''))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
-      root.innerHTML=`<h2>${h(roleLabels[role])}</h2><p>Read-only workspace / 只读工作台</p>${staffView.workspaceStatus==='loading'?'Verifying permissions / 正在验证权限':staffView.workspaceStatus==='error'?'Shared workspace unavailable. Reopen the portal to retry / 共享工作台暂不可用，请重新登录':''}`+[
+      root.innerHTML=`<h2>${h(roleLabels[role])}</h2><p>Authorized workspace / 授权工作台</p>${staffView.workspaceStatus==='loading'?'Verifying permissions / 正在验证权限':staffView.workspaceStatus==='error'?'Shared workspace unavailable. Reopen the portal to retry / 共享工作台暂不可用，请重新登录':''}`+[
         ['appointments','Appointments / 预约',[['date','Date'],['time','Time'],['serviceName','Service'],['staffName','Staff'],['status','Status'],['clientCount','Clients']]],
         ['services','Services / 项目',[['name','Name'],['price','Price'],['duration','Minutes']]],
         ['resources','Resources / 房间设备',[['name','Name'],['type','Type'],['room','Room'],['enabled','Enabled']]],
@@ -1607,7 +1621,7 @@
         ['commissions','Commissions / 提成',[['date','Date'],['staffName','Staff'],['commission','Commission']]],
         ['tips','Tips / 小费',[['date','Date'],['amount','Amount'],['type','Type']]],
         ['expenses','Expenses / 支出',[['date','Date'],['amount','Amount'],['category','Category']]]].map(x=>table(...x)).join('')+`<nav class="staff-nav"><button onclick="setStaffTab('home')">Workspace / 工作台</button><button onclick="setStaffTab('personal')">My services / 我的服务</button><button onclick="setStaffTab('schedule')">Schedule / 排班</button><button onclick="setStaffTab('earnings')">My earnings / 我的收入</button><button onclick="setStaffTab('profile')">Profile / 我的</button></nav>`;
-      document.getElementById('staffPortalBadge').textContent=roleLabels[role];return;
+      if(staffView.workspaceStatus==='ready'&&staffView.operations)renderOperations(root);document.getElementById('staffPortalBadge').textContent=roleLabels[role];return;
     }
     const e=staffView, h=escapeHTML, today=todayStr(), money=n=>'$'+Number(n||0).toFixed(2), sum=(a,k)=>a.reduce((v,x)=>v+Number(x[k]||0),0);
     const cutoff=new Date(today+'T12:00:00Z');cutoff.setUTCDate(cutoff.getUTCDate()-6);
