@@ -951,7 +951,7 @@
           <span id="splitRemainHint" style="font-size:0.88em; font-weight:700;"></span>
           <button class="btn-success btn-sm" onclick="completeSplitCheckout()">下一步：确认拆分收款</button>
         </div>
-      </div><div id="coConfirm" hidden><strong>确认收款 / Confirm Payment</strong><p id="squareStatus" aria-live="polite"></p><button type="button" onclick="squareDiagnostics()">连接诊断 / Diagnostics</button><pre id="sqCheckoutTrace" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto" aria-live="polite"></pre><button onclick="squareRecover()">Square 状态 / Status</button> <button onclick="squareCancel()">取消 Square 请求 / Cancel</button><div id="coConfirmDetails" class="co-summary"></div><div class="inline-inputs"><button class="btn-outline" onclick="clearCheckoutConfirmation()">返回修改</button><button class="btn-primary" onclick="commitCheckoutConfirmation()">确认收款并入账</button></div></div>
+      </div><div id="coConfirm" hidden><strong>确认收款 / Confirm Payment</strong><p id="squareStatus" aria-live="polite"></p><button type="button" onclick="squareDiagnostics()">连接诊断 / Diagnostics</button><pre id="sqCheckoutTrace" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto" aria-live="polite"></pre><button onclick="squareRecover()">Square 状态 / Status</button> <button onclick="squareCancel()">取消 Square 请求 / Cancel</button><div id="coConfirmDetails" class="co-summary"></div><div class="inline-inputs"><button class="btn-outline" onclick="clearCheckoutConfirmation()">返回修改</button><button class="btn-primary" id="coCommitPayment" onclick="commitCheckoutConfirmation()">确认收款并入账</button></div></div>
     </div>
   </div>
 
@@ -2494,12 +2494,14 @@
   }
 
   const paymentMethods=['现金','银行卡','Venmo','会员充值卡','礼品卡','优惠券'];
+  let squareSettingsSaving=false;
   function squareEnabled(){return legacyOwner() && state.paymentConfig?.squareEnabled!==false;}
   function methodEnabled(m){return state.paymentConfig?.methods?.[m]!==false;}
   function openPaymentSettings(){
+    if(squareSettingsSaving)return alert("正在保存 Square 设置，请稍候 / Saving Square settings");
     if(currentUser?.uid!==ADMIN_UID||state.paymentPending||squareBusy)return alert('请先完成待处理交易');
     const cfg=state.cardFeeConfig;
-    showExtra('支付设置 / Payment Settings',`<div class="ps-panel"><div class="ps-head"><div><strong>Square Terminal 自动收款</strong><small>Square Integration</small></div><label class="ps-switch"><input id="psSquare" type="checkbox" ${squareEnabled()?'checked':''} onchange="psPreview()"><span></span></label></div><small id="psModeHint"></small>
+    showExtra('支付设置 / Payment Settings',`<div class="ps-panel"><div class="ps-head"><div><strong>Square Terminal 自动收款</strong><small>Square Integration</small></div><label class="ps-switch"><input id="psSquare" type="checkbox" ${squareEnabled()?'checked':''} onchange="saveSquareToggle(this)"><span></span></label></div><small id="psModeHint"></small><p id="psSaveStatus" role="status" aria-live="polite">自动收款开关即时保存 / Auto-save switch</p>
     <section class="ps-device"><div class="ps-head"><div class="ps-terminal" aria-hidden="true"><svg viewBox="0 0 60 90" width="54" height="78"><rect x="8" y="3" width="44" height="84" rx="8" fill="#fff" stroke="#94a3b8"/><rect x="13" y="12" width="34" height="49" rx="3" fill="#172554"/><rect x="19" y="30" width="22" height="4" rx="2" fill="#93c5fd"/><rect x="21" y="71" width="18" height="4" rx="2" fill="#cbd5e1"/></svg></div><div style="flex:1"><strong>Square Terminal</strong><small>设备管理 / Device Management</small></div></div><div id="sqDeviceInfo" class="ps-info">正在读取配置 / Loading…</div><div class="ps-actions"><button onclick="sqDeviceAction('refresh')">刷新 / Refresh</button><button onclick="squareDiagnostics()">全面诊断 / Full diagnostics</button><pre id="sqDiagnosticTrace" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto" aria-live="polite"></pre></div><button class="btn-primary ps-wide" onclick="sqDeviceAction('pair')">生成配对码 / Pair or replace device</button><div id="sqPairInfo" class="ps-pair" aria-live="polite"></div><label class="ps-field">设备配对记录 ID / Device code ID <input id="sqPairId" autocomplete="off"></label><div class="ps-actions"><button onclick="sqDeviceAction('status')">查询配对 / Check pairing</button><button class="btn-primary" onclick="sqDeviceAction('bind')">绑定此设备 / Use device</button></div><button class="ps-wide btn-outline" style="color:#dc2626" onclick="sqDeviceAction('unbind')">解除网站绑定 / Unbind</button><small>绑定立即保存，不代表设备在线，也不会退出实体设备。</small></section>
     <h3>支付方式 / Payment Methods</h3><div class="ps-methods">${paymentMethods.map((m,i)=>`<label><input type="checkbox" id="psM${i}" ${methodEnabled(m)?'checked':''}>${m} <small>${['Cash','Card','Venmo','Member balance','Gift card','Coupon'][i]}</small></label>`).join('')}</div>
     <h3>服务费 / Service Fee</h3><div class="ps-fees"><label class="ps-field">计算方式 / Mode<select id="psFeeMode" onchange="psPreview()"><option value="off" ${cfg.mode==='off'?'selected':''}>关闭 / Disabled</option><option value="fixed" ${cfg.mode==='fixed'?'selected':''}>固定金额 / Fixed ($)</option><option value="percent" ${cfg.mode==='percent'?'selected':''}>百分比 / Percentage (%)</option></select></label><label class="ps-field" id="psFeeField">数值 / Value<input id="psFeeValue" type="number" min="0" step="0.01" value="${Number(cfg.value)||''}" oninput="psPreview()"></label><div class="ps-example"><span>$100 银行卡交易示例</span><strong id="psFeePreview"></strong></div><small>每笔银行卡交易一次。启用前确认卡种及当地法规允许收费。</small></div><button class="btn-primary ps-wide" onclick="savePaymentSettings()">保存设置 / Save settings</button></div>`);
@@ -2508,11 +2510,38 @@
   }
   function psPreview(){const mode=el('psFeeMode').value,v=Math.max(0,Number(el('psFeeValue').value)||0);el('psFeeField').hidden=mode==='off';el('psFeePreview').textContent='$'+(100+(mode==='off'?0:v)).toFixed(2);el('psModeHint').textContent=el('psSquare').checked?'自动收款 / Square Terminal':'手动收款 / External terminal';}
   window.psPreview=psPreview;
+  async function saveSquareToggle(input){
+    const previous=squareEnabled(), enabled=input.checked, session=sessionVersion;
+    const status=el('psSaveStatus');
+    const report=(msg)=>{if(status?.isConnected)status.textContent=msg;};
+    if(squareSettingsSaving||!legacyOwner()||state.paymentPending||squareBusy||saveFailed||!initialCloudLoaded||!cloudEnabled){input.checked=previous;psPreview();return alert('当前无法修改 Square 设置 / Settings unavailable');}
+    if(enabled&&!methodEnabled('银行卡')){input.checked=previous;psPreview();return alert('请先启用银行卡并保存支付方式 / Enable and save card payments first');}
+    if(!enabled&&!confirm('关闭自动收款后，银行卡须通过独立刷卡机收款。继续？ / Disable automatic Terminal payments?')){input.checked=previous;psPreview();return;}
+    squareSettingsSaving=true;input.disabled=true;report('正在保存 / Saving…');
+    let changed=false;
+    try{
+      if(enabled)await squareCall('/locations');
+      await saveQueue;
+      if(session!==sessionVersion||!legacyOwner()||state.paymentPending||squareBusy||saveFailed)throw Error('会话或支付状态已变化 / Session or payment changed');
+      state.paymentConfig={...state.paymentConfig,squareEnabled:enabled};changed=true;
+      clearCheckoutConfirmation();addAudit('Square 自动收款',enabled?'Enabled':'Disabled');
+      if(!await saveState())throw Error('云端未确认保存 / Cloud save not confirmed');
+      if(session!==sessionVersion)return;
+      report('已保存至云端 / Saved to cloud');
+    }catch(e){
+      if(session===sessionVersion){if(changed)state.paymentConfig={...state.paymentConfig,squareEnabled:previous};report('保存失败，请刷新核对 / Save failed; refresh to verify');alert(e.message);}
+    }finally{
+      squareSettingsSaving=false;
+      if(session===sessionVersion){if(input.isConnected){input.checked=squareEnabled();input.disabled=false;psPreview();}if(el('checkoutModal').classList.contains('open'))renderCheckoutSummary();}
+    }
+  }
+  window.saveSquareToggle=saveSquareToggle;
   async function savePaymentSettings(){
+    if(squareSettingsSaving)return alert("正在保存 Square 设置，请稍候 / Saving Square settings");
     if(currentUser?.uid!==ADMIN_UID||state.paymentPending||squareBusy||saveFailed||!initialCloudLoaded)return alert('当前无法修改支付设置');
     const methods=Object.fromEntries(paymentMethods.map((m,i)=>[m,el('psM'+i).checked]));
     if(!Object.values(methods).some(Boolean))return alert('至少启用一种支付方式');
-    const enabled=el('psSquare').checked;
+    const enabled=squareEnabled();
     if(enabled&&!methods['银行卡'])return alert('开启 Square 需要启用银行卡');
     if(enabled&&!squareEnabled()){try{await squareCall('/locations');}catch(e){return alert('连接失败：'+e.message);}}
     const mode=el('psFeeMode').value,value=Number(el('psFeeValue').value);if(!['off','fixed','percent'].includes(mode)||!Number.isFinite(value)||value<0||(mode==='percent'&&value>100))return alert('服务费数值无效');if(mode!=='off'&&value>0&&!confirm('请确认收费符合当地法律及卡组织规定；借记卡和预付卡不得按信用卡附加费处理。'))return;state.paymentConfig={squareEnabled:enabled,methods};state.cardFeeConfig={mode,value:mode==='off'?0:value};
@@ -2552,6 +2581,7 @@
   }
 
   function confirmCheckoutPayments(payments) {
+    if(squareSettingsSaving)return alert("正在保存 Square 设置，请稍候 / Saving Square settings");
     if (!currentUser || currentUser.uid !== ADMIN_UID || !initialCloudLoaded || !cloudEnabled || saveFailed) return alert('云端不可用，无法结账');
     if (!(checkoutCart.length||purchaseGifts.length) || checkoutCart.some(it => it.timerId && !state.timers.some(t => t.id === it.timerId))) return alert('服务已变更，请重新打开结账');
     if(payments.some(p=>!methodEnabled(p.method))||(tipTotal()>0&&!methodEnabled(el("coTipMethod").value)))return alert("支付方式已停用");
@@ -2565,10 +2595,13 @@
     const total = getCurrentCheckoutPayable();
     pendingCheckout = {payments, fee, total, signature: checkoutSignature()};
     document.getElementById('coConfirmDetails').innerHTML = payments.map(p=>`<div><span>${escapeHTML(p.method+(p.giftId?' · '+(state.serviceFees.find(g=>g.id===p.giftId)?.giftCode||''):''))}</span><strong>$${(p.amount).toFixed(2)}</strong></div>`).join('')+`<div><span>项目合计</span><span>$${total.toFixed(2)}</span></div><div><span>小费</span><span>$${tipTotal().toFixed(2)} (${escapeHTML(el("coTipMethod").value)})</span></div><div><span>服务费 / Service Fee</span><span>$${fee.toFixed(2)}</span></div><div class="co-total"><span>确认实收</span><span>$${(total+fee+tipTotal()).toFixed(2)}</span></div>`;
+    const cardSelected=payments.some(p=>p.method==='银行卡')||(tipTotal()>0&&el('coTipMethod').value==='银行卡');
+    el('coCommitPayment').textContent=cardSelected?(squareEnabled()?'发送至 Square Terminal / Send to Terminal':'确认外部刷卡已收款 / Confirm external payment'):'确认收款并入账 / Confirm payment';
     const panel=document.getElementById('coConfirm');panel.hidden=false;panel.scrollIntoView({block:'nearest',behavior:'smooth'});
   }
   function checkoutSignature(){return JSON.stringify([checkoutCart,purchaseGifts,tipEntries(),el("coTipMethod").value,state.cardFeeConfig,state.paymentConfig,el('checkoutMemberSelect').value,state.members.find(m=>m.id===el('checkoutMemberSelect').value),checkoutCart.map(it=>{const t=state.timers.find(t=>t.id===it.timerId);if(!t)return null;const {status,bellPlayed,checked,...stable}=t;return stable;}),el('entryDate').value,el('giftLookup').value,el('giftDebitInput').value,el('giftRemainder').value,[...document.querySelectorAll('.split-row')].map(r=>[r.querySelector('.split-method').value,r.querySelector('.split-amount').value,r.querySelector('.split-gift-code').value]),state.serviceFees.filter(g=>g.giftCode)]);}
   async function commitCheckoutConfirmation(){
+    if(squareSettingsSaving)return alert("正在保存 Square 设置，请稍候 / Saving Square settings");
     const p=pendingCheckout;if(!p)return;
     if(!currentUser || currentUser.uid!==ADMIN_UID || !initialCloudLoaded || !cloudEnabled || saveFailed || p.signature!==checkoutSignature()){clearCheckoutConfirmation();return alert('结账信息或云端状态已变化，请重新核对');}
     if (squareBusy || state.paymentPending || localStorage.getItem(squarePendingKey)) return alert('存在未核对 Square 支付，请先查状态 / Reconcile pending payment');
