@@ -1004,6 +1004,7 @@
 <div class="modal-backdrop" id="extraModal" style="z-index:1100"><div class="modal"><div class="card-title"><span id="extraTitle"></span><button onclick="closeModal('extraModal')">关闭</button></div><div id="extraBody"></div></div></div>
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script type="module">
+  import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-functions.js';
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
   import { doc, setDoc, getDocFromServer, collection, getDocsFromServer, writeBatch, runTransaction, onSnapshot, serverTimestamp, initializeFirestore, Bytes } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
@@ -1377,6 +1378,7 @@
   function switchLoginTab(tab){for(const [id,t] of [['tabAdminLogin','admin'],['tabStaffLogin','staff'],['tabRegisterLogin','register']])loginEl(id).classList.toggle('active',tab===t);loginEl('loginForm').hidden=tab!=='admin';loginEl('staffLoginForm').hidden=tab!=='staff';loginEl('registerPanel').hidden=tab!=='register';notice('','');}
   function authNotice(e){const map={'auth/invalid-phone-number':['手机号格式不正确','Invalid phone number'],'auth/invalid-verification-code':['验证码错误','Incorrect verification code'],'auth/code-expired':['验证码已过期，请重新发送','Code expired. Resend it.'],'auth/too-many-requests':['请求过多，请稍后再试','Too many requests. Try again later.'],'auth/quota-exceeded':['短信额度不足，请检查 Firebase 计费','SMS quota exceeded. Check Firebase billing.'],'auth/operation-not-allowed':['请启用邮箱或 Google 登录','Enable Email or Google sign-in.'],'auth/unauthorized-domain':['请在 Firebase 添加网站授权域名','Add this website to Firebase authorized domains.'],'auth/captcha-check-failed':['人机验证失败，请刷新页面','CAPTCHA failed. Refresh the page.'],'auth/billing-not-enabled':['请启用 Firebase 计费','Enable Firebase billing.'],'auth/invalid-credential':['邮箱或密码错误','Incorrect email or password.'],'auth/network-request-failed':['网络连接失败','Network connection failed.']};const m=map[e.code]||['认证失败','Authentication failed'];notice(m[0]+' ('+(e.code||e.message)+')',m[1]+' ('+(e.code||e.message)+')');}
   /* 第11项：员工手机号自助登录查看自己的排班、状态与业绩 */
+  let workspaceRequestId=0;
   let staffView = null, staffTab = 'home', staffPeriod = 'today';
   function normalizePhone(value) {
     const raw = String(value || '').trim(), digits = raw.replace(/\D/g,'');
@@ -1397,19 +1399,6 @@
   const permissionDefaults={manager:['appointments','services','resources','sessions'],receptionist:['appointments','services','resources','sessions'],therapist:[],accountant:['revenue','commissions','tips','expenses']};
   function rolePermissions(p,role){const v=p.rolePermissions?.[role];return Array.isArray(v)?permissionKeys.filter(k=>v.includes(k)):permissionDefaults[role].slice();}
   function effectivePermissions(p,e){const base=rolePermissions(p,safeRole(e));return permissionKeys.filter(k=>typeof e.permissionOverrides?.[k]==='boolean'?e.permissionOverrides[k]:base.includes(k));}
-  function delegatedProjection(p,e){
-    const allowed=effectivePermissions(p,e), has=k=>allowed.includes(k), out={};
-    const pick=(rows,keys)=>(rows||[]).slice(-200).map(x=>Object.fromEntries(keys.filter(k=>x[k]!==undefined).map(k=>[k,x[k]])));
-    if(has('appointments'))out.appointments=pick(p.appointments,['date','time','serviceName','staffName','status','clientCount']);
-    if(has('services'))out.services=pick(p.services,['name','price','duration']);
-    if(has('resources'))out.resources=pick(p.resources??resDefaults(),['name','type','room','enabled']);
-    if(has('sessions'))out.sessions=pick(p.timers,['staffName','serviceName','startTime','endTime','status']);
-    if(has('revenue'))out.revenue=pick(p.orders,['date','price','payMethod','staffName']);
-    if(has('commissions'))out.commissions=pick(p.orders,['date','commission','staffName']);
-    if(has('tips'))out.tips=pick(p.tips,['date','amount','type']);
-    if(has('expenses'))out.expenses=pick(p.expenses,['date','amount','category']);
-    return out;
-  }
   async function publishLedger(target, payload) {
     const existing = await getDocsFromServer(collection(db,'store_codes',activeStoreCode,'email_portals'));
     const projectionWrites = [], keep = new Set();
@@ -1423,7 +1412,7 @@
       const own = key => (payload[key]||[]).filter(x=>x.staffId===e.id);
       const clean = (arr, fields) => arr.map(x=>Object.fromEntries(fields.filter(k=>x[k]!==undefined).map(k=>[k,x[k]])));
       projectionWrites.push([doc(db,'store_codes',activeStoreCode,'email_portals',phone), {
-        email:phone, accessRole:safeRole(e), permissions:effectivePermissions(payload,e), workspace:delegatedProjection(payload,e), ...(e.inviteExpiresAt ? {inviteExpiresAt:new Date(e.inviteExpiresAt)} : {}), storeZone:payload.storeZone||"America/Los_Angeles", employeeId:e.id, name:e.name, role:e.role||'技师',
+        email:phone, accessRole:safeRole(e), permissions:[], workspace:{}, ...(e.inviteExpiresAt ? {inviteExpiresAt:new Date(e.inviteExpiresAt)} : {}), storeZone:payload.storeZone||"America/Los_Angeles", employeeId:e.id, name:e.name, role:e.role||'技师',
         timers:clean(own('timers'),['id','serviceName','startTime','endTime','durationMins','status','earlyEndedAt']),
         orders:clean(own('orders'),['id','date','duration','commission','payMethod']),
         tips:clean(own('tips'),['date','amount','type']),
@@ -1589,10 +1578,15 @@
       document.getElementById('loginScreen').hidden=true; document.getElementById('appContainer').hidden=true; document.getElementById('staffPortalContainer').hidden=false;
       unsubscribeCloud=onSnapshot(ref,{includeMetadataChanges:true},snap=>{
         if(version!==sessionVersion)return;
-        if(snap.metadata.fromCache){staffView=null;renderStaffPortal();return;}
+        if(snap.metadata.fromCache){++workspaceRequestId;staffView=null;renderStaffPortal();return;}
         if(!snap.exists()){logoutStaffPortal();return;}
-        staffView=snap.data();loggedInStaffId=staffView.employeeId;renderStaffPortal();
-      },()=>{staffView=null;renderStaffPortal();});
+        const data=snap.data(); const requestId=++workspaceRequestId;
+        staffView={...data,workspace:{},permissions:[],workspaceStatus:'loading'};loggedInStaffId=staffView.employeeId;renderStaffPortal();
+        httpsCallable(getFunctions(undefined,'us-central1'),'staffWorkspace')({storeCode:code}).then(result=>{
+          if(version!==sessionVersion||requestId!==workspaceRequestId||!staffView)return;
+          staffView={...staffView,...result.data,workspaceStatus:'ready'};renderStaffPortal();
+        }).catch(()=>{if(version===sessionVersion&&requestId===workspaceRequestId&&staffView){staffView={...staffView,workspace:{},permissions:[],workspaceStatus:'error'};renderStaffPortal();}});
+      },()=>{++workspaceRequestId;staffView=null;renderStaffPortal();});
     }catch(e){await signOut(auth);showLogin();notice('门店或员工账号未授权，请联系店长','Store or staff account not authorized. Contact your manager.');}
   }
   function refreshStaffPortal(){renderStaffPortal();}
@@ -1601,10 +1595,10 @@
   function renderStaffPortal(){
     const root=document.getElementById('staffPortalBody'); if(!staffView){root.textContent='正在连接云端，暂时无法显示个人数据';return;}
     const role=safeRole(staffView);
-    if(staffTab==='home' && (role!=='therapist'||(staffView.permissions||[]).length)){
+    if(staffTab==='home' && (role!=='therapist'||(staffView.permissions||[]).length||staffView.workspaceStatus==='loading'||staffView.workspaceStatus==='error')){
       const w=staffView.workspace||{}, h=escapeHTML;
       const table=(key,title,fields)=>!Object.hasOwn(w,key)?'':`<div class="card"><h3>${h(title)}</h3><small>Up to 200 records / 最多200条</small><div style="overflow:auto"><table><thead><tr>${fields.map(([k,label])=>`<th>${h(label)}</th>`).join('')}</tr></thead><tbody>${(w[key]||[]).map(row=>`<tr>${fields.map(([k])=>`<td>${h(String(row[k]??''))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
-      root.innerHTML=`<h2>${h(roleLabels[role])}</h2><p>Read-only workspace / 只读工作台</p>`+[
+      root.innerHTML=`<h2>${h(roleLabels[role])}</h2><p>Read-only workspace / 只读工作台</p>${staffView.workspaceStatus==='loading'?'Verifying permissions / 正在验证权限':staffView.workspaceStatus==='error'?'Shared workspace unavailable. Reopen the portal to retry / 共享工作台暂不可用，请重新登录':''}`+[
         ['appointments','Appointments / 预约',[['date','Date'],['time','Time'],['serviceName','Service'],['staffName','Staff'],['status','Status'],['clientCount','Clients']]],
         ['services','Services / 项目',[['name','Name'],['price','Price'],['duration','Minutes']]],
         ['resources','Resources / 房间设备',[['name','Name'],['type','Type'],['room','Room'],['enabled','Enabled']]],
