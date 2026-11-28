@@ -1395,6 +1395,7 @@
   const permissionCatalog=[
     ['Operations / 门店运营',[['appointments','View appointments / 查看预约'],['services','View service menu / 查看项目'],['resources','View rooms and equipment / 查看房间设备'],['sessions','View active services / 查看服务中']]],
     ['Operational editing / 运营编辑',[['dispatchEdit','Manage dispatch / 管理排工'],['serviceStart','Start services / 开钟'],['timerExtend','Extend timers / 加钟'],['timerEnd','End early / 提前结束'],['timerCancel','Cancel timers / 取消服务'],['resourceEdit','Manage equipment / 管理设备']]],
+    ['Reception / 前台',[['appointmentCreate','Create appointment / 新增预约'],['appointmentEdit','Edit appointment / 编辑预约'],['appointmentCancel','Cancel appointment / 取消预约'],['customerView','View customers / 查看客户'],['customerCreate','Create customer / 新增客户'],['customerEdit','Edit customer / 编辑客户'],['checkoutRequest','Request owner checkout / 请求店主结账']]],
     ['Finance / 财务',[['revenue','View service revenue / 查看营业额'],['commissions','View employee commissions / 查看提成'],['tips','View employee tips / 查看小费'],['expenses','View expenses / 查看支出']]]];
   const permissionKeys=permissionCatalog.flatMap(g=>g[1].map(x=>x[0]));
   const permissionDefaults={manager:['appointments','services','resources','sessions'],receptionist:['appointments','services','resources','sessions'],therapist:[],accountant:['revenue','commissions','tips','expenses']};
@@ -1604,6 +1605,16 @@
     if(has('resourceEdit')){for(const q of o.resources){const r=line();r.append(document.createTextNode(q.name+' · '+q.type+' '));btn(r,'Edit / 编辑',()=>{const name=prompt('Name / 名称',q.name);if(name!==null)run('resource',{id:q.id,name,enabled:q.enabled!==false})});btn(r,q.enabled===false?'Enable / 启用':'Disable / 停用',()=>run('resource',{id:q.id,name:q.name,enabled:q.enabled===false}));}const r=line(),type=select(r,[['chair','Chair / 沙发'],['bed','Bed / 床']]);btn(r,'Add equipment / 新增设备',()=>{const name=prompt('Name / 名称');if(name!==null)run('addResource',{name,type:type.value})});}
     btn(box,'Refresh / 刷新',refreshStaffPortal);
   }
+  function renderReception(root){const o=staffView.reception,has=k=>staffView.permissions.includes(k),box=document.createElement('div');box.className='card';root.prepend(box);const heading=document.createElement('h3');heading.textContent='Reception / 前台';box.append(heading);
+    const line=()=>{const r=document.createElement('div');r.className='inline-inputs';r.style.margin='8px 0';box.append(r);return r;};
+    const btn=(r,n,fn)=>{const b=document.createElement('button');b.textContent=n;b.onclick=fn;r.append(b);};
+    const select=(r,items)=>{const e=document.createElement('select');for(const [v,n] of items)e.add(new Option(n,v));r.append(e);return e;};
+    const run=async(action,data)=>{if(operationBusy||!confirm('Confirm / 确认？'))return;operationBusy=true;const version=sessionVersion;try{await httpsCallable(getFunctions(undefined,'us-central1'),'staffReception')({storeCode:sessionStorage.getItem('posStaffStore')||localStorage.getItem('posStaffStore'),revision:staffView.ledgerRevision,action,...data});if(version===sessionVersion)alert('Saved / 已保存');}catch(e){if(version===sessionVersion)alert(e.message);}finally{operationBusy=false;if(version===sessionVersion)refreshStaffPortal();}};
+    if(o.appointments){const r=line(),a=select(r,[['','New / 新增'],...o.appointments.map(a=>[a.id,a.date+' '+a.time+' '+a.custName])]),e=select(r,o.employees.map(e=>[e.id,e.name])),s=select(r,o.services.map(s=>[s.id,s.name])),q=select(r,[['','No equipment / 无设备'],...o.resources.map(q=>[q.id,q.name])]);const edit=()=>{const old=o.appointments.find(x=>x.id===a.value);const action=old?'appointmentEdit':'appointmentCreate';if(!has(action))return alert('Permission denied');const date=prompt('Date YYYY-MM-DD / 日期',old?.date||''),time=prompt('Time HH:MM / 时间',old?.time||''),name=prompt('Customer name / 姓名',old?.custName||''),phone=prompt('Phone / 电话',old?.custPhone||'');if([date,time,name,phone].includes(null))return;run(action,{id:a.value,date,time,name,phone,staffId:e.value,serviceId:s.value,resourceId:q.value});};a.onchange=()=>{const old=o.appointments.find(x=>x.id===a.value);if(old){e.value=old.staffId;s.value=old.serviceId;q.value='';}};if(has('appointmentCreate')||has('appointmentEdit'))btn(r,'Save booking / 保存预约',edit);if(has('appointmentCancel'))btn(r,'Cancel booking / 取消预约',()=>{if(a.value)run('appointmentCancel',{id:a.value})});}
+    if(o.customers||has('customerCreate')){const r=line(),search=document.createElement('input');search.placeholder='Search customers / 搜索客户';r.append(search);const c=select(r,[['','New / 新增']]);const draw=()=>{c.replaceChildren(new Option('New / 新增',''));for(const x of o.customers||[])if([x.name,x.phone,x.email].some(v=>String(v||'').toLowerCase().includes(search.value.toLowerCase())))c.add(new Option(x.name+' · '+x.phone,x.id));};search.oninput=draw;draw();if(has('customerCreate')||has('customerEdit'))btn(r,'Save customer / 保存客户',()=>{const old=(o.customers||[]).find(x=>x.id===c.value),action=old?'customerEdit':'customerCreate';if(!has(action))return alert('Permission denied');const name=prompt('Name / 姓名',old?.name||''),phone=prompt('Phone / 电话',old?.phone||''),email=prompt('Email / 邮箱',old?.email||'');if([name,phone,email].includes(null))return;run(action,{id:c.value,name,phone,email});});}
+    if(o.unpaid){for(const t of o.unpaid){const r=line();r.append(document.createTextNode(t.staffName+' · '+t.serviceName+' '));btn(r,'Request owner checkout / 请求店主结账',()=>run('checkoutRequest',{id:t.id}));}}
+    btn(box,'Refresh / 刷新',refreshStaffPortal);
+  }
   function setStaffTab(t){staffTab=t;renderStaffPortal();}
   function setStaffPeriod(t){staffPeriod=t;renderStaffPortal();}
   function renderStaffPortal(){
@@ -1621,7 +1632,7 @@
         ['commissions','Commissions / 提成',[['date','Date'],['staffName','Staff'],['commission','Commission']]],
         ['tips','Tips / 小费',[['date','Date'],['amount','Amount'],['type','Type']]],
         ['expenses','Expenses / 支出',[['date','Date'],['amount','Amount'],['category','Category']]]].map(x=>table(...x)).join('')+`<nav class="staff-nav"><button onclick="setStaffTab('home')">Workspace / 工作台</button><button onclick="setStaffTab('personal')">My services / 我的服务</button><button onclick="setStaffTab('schedule')">Schedule / 排班</button><button onclick="setStaffTab('earnings')">My earnings / 我的收入</button><button onclick="setStaffTab('profile')">Profile / 我的</button></nav>`;
-      if(staffView.workspaceStatus==='ready'&&staffView.operations)renderOperations(root);document.getElementById('staffPortalBadge').textContent=roleLabels[role];return;
+      if(staffView.workspaceStatus==='ready'&&staffView.operations)renderOperations(root);if(staffView.workspaceStatus==='ready'&&staffView.reception)renderReception(root);document.getElementById('staffPortalBadge').textContent=roleLabels[role];return;
     }
     const e=staffView, h=escapeHTML, today=todayStr(), money=n=>'$'+Number(n||0).toFixed(2), sum=(a,k)=>a.reduce((v,x)=>v+Number(x[k]||0),0);
     const cutoff=new Date(today+'T12:00:00Z');cutoff.setUTCDate(cutoff.getUTCDate()-6);
@@ -1645,7 +1656,7 @@
     document.getElementById('staffPortalBadge').textContent=e.name;
   }
   async function logoutStaffPortal(){await signOut(auth);showLogin('已退出员工工作台');}
-  setInterval(()=>{if(staffView&&staffTab==='home')renderStaffPortal()},1000);
+  setInterval(()=>{if(staffView&&staffTab==='home'&&!staffView.reception)renderStaffPortal()},1000);
 
   async function registerBusiness(event) {
     event.preventDefault(); if(!auth || auth.currentUser) return;
