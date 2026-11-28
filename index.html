@@ -975,6 +975,7 @@
     <div class="modal">
       <div class="card-title">
         <span>📜 敏感操作审计日志 (Audit Log)</span>
+        <button class="btn-outline btn-sm" onclick="openPaymentRecovery()">🛡️ 财务恢复中心</button>
         <button class="btn-outline btn-sm" onclick="closeModal('auditModal')">✕</button>
       </div>
       <div style="overflow-x:auto;">
@@ -983,6 +984,17 @@
           <tbody id="auditTableBody"></tbody>
         </table>
       </div>
+    </div>
+  </div>
+
+  <!-- V2.2.4.5 financial recovery dashboard -->
+  <div class="modal-backdrop" id="paymentRecoveryModal">
+    <div class="modal" style="max-width:900px;">
+      <div class="card-title"><span>🛡️ 财务恢复中心 / Financial Recovery</span><button class="btn-outline btn-sm" onclick="closeModal('paymentRecoveryModal')">✕</button></div>
+      <p>只查询原交易状态；不会自动重新扣款。状态不明确时保留支付锁并转人工核对。</p>
+      <div class="inline-inputs"><button class="btn-primary" onclick="loadPaymentRecovery()">刷新待处理交易</button><button class="btn-outline" onclick="loadRemoteAudit()">刷新服务器审计日志</button></div>
+      <div style="overflow:auto"><table><thead><tr><th>Intent</th><th>状态</th><th>金额</th><th>创建时间</th><th>操作</th></tr></thead><tbody id="paymentRecoveryRows"><tr><td colspan="5">尚未加载</td></tr></tbody></table></div>
+      <div style="overflow:auto;margin-top:14px"><strong>服务器审计记录 / Server audit</strong><table><thead><tr><th>时间</th><th>操作人 UID</th><th>操作</th><th>Intent / Receipt</th><th>Square 状态</th></tr></thead><tbody id="remoteAuditRows"><tr><td colspan="5">尚未加载</td></tr></tbody></table></div>
     </div>
   </div>
 
@@ -3632,6 +3644,12 @@ Total: $'+result.data.receipt.totalPaid.toFixed(2));}}catch(e){alert(e.message);
     renderAll();
   }
 
+  function recoveryStoreCode(){return localStorage.getItem('posBusinessCode')||localStorage.getItem('posStaffStore')||'COMFIGLOW';}
+  async function openPaymentRecovery(){if(currentUser?.uid!==ADMIN_UID)return alert('仅店主可访问财务恢复中心');el('paymentRecoveryModal').classList.add('open');await Promise.all([loadPaymentRecovery(),loadRemoteAudit()]);}
+  async function loadPaymentRecovery(){if(currentUser?.uid!==ADMIN_UID)return alert('仅店主可访问');const body=el('paymentRecoveryRows');body.innerHTML='<tr><td colspan="5">加载中…</td></tr>';try{const call=httpsCallable(getFunctions(undefined,'us-central1'),'ownerPaymentRecovery');const r=await call({storeCode:recoveryStoreCode(),action:'list'});body.innerHTML=(r.data.items||[]).map(x=>`<tr><td>${escapeHTML(x.id)}</td><td>${escapeHTML(x.status)} / ${escapeHTML(x.squareStatus||'—')}</td><td>$${Number(x.total).toFixed(2)}</td><td>${x.createdAt?new Date(x.createdAt).toLocaleString():'—'}</td><td>${x.hasSquare&&x.status!=='completed'?`<button class="btn-primary btn-sm" onclick="reconcilePaymentIntent('${escapeHTML(x.id)}')">核对原交易</button>`:'—'}</td></tr>`).join('')||'<tr><td colspan="5">没有委托支付记录</td></tr>';}catch(e){body.innerHTML=`<tr><td colspan="5">${escapeHTML(e.message)}</td></tr>`;}}
+  async function reconcilePaymentIntent(id){if(currentUser?.uid!==ADMIN_UID||!confirm('仅查询 Square 原交易，不会创建新扣款。继续？'))return;try{const call=httpsCallable(getFunctions(undefined,'us-central1'),'ownerPaymentRecovery');const r=await call({storeCode:recoveryStoreCode(),action:'reconcile',intentId:id});alert('Recovery status: '+r.data.status+(r.data.message?'\n'+r.data.message:''));await loadPaymentRecovery();await loadRemoteAudit();}catch(e){alert('Recovery failed: '+e.message);}}
+  async function loadRemoteAudit(){if(currentUser?.uid!==ADMIN_UID)return alert('仅店主可访问');const body=el('remoteAuditRows');body.innerHTML='<tr><td colspan="5">加载中…</td></tr>';try{const call=httpsCallable(getFunctions(undefined,'us-central1'),'ownerAuditLog');const r=await call({storeCode:recoveryStoreCode(),limit:50});body.innerHTML=(r.data.items||[]).map(x=>`<tr><td>${escapeHTML(x.at||'—')}</td><td>${escapeHTML(x.actorUid)}</td><td>${escapeHTML(x.action)}</td><td>${escapeHTML(x.intentId||x.receiptNo||'—')}</td><td>${escapeHTML(x.squareStatus||'—')}</td></tr>`).join('')||'<tr><td colspan="5">暂无服务器审计记录</td></tr>';}catch(e){body.innerHTML=`<tr><td colspan="5">${escapeHTML(e.message)}</td></tr>`;}}
+
   function openAuditModal() {
     document.getElementById('auditTableBody').innerHTML = state.auditLogs.map(l => `
       <tr><td>${l.time}</td><td>${l.role}</td><td>${l.action}</td><td>${escapeHTML(l.detail)}</td></tr>
@@ -3865,7 +3883,7 @@ Total: $'+result.data.receipt.totalPaid.toFixed(2));}}catch(e){alert(e.message);
   Object.assign(window, {
     switchLoginTab, staffAuth, staffReset, inviteStaff, refreshStaffPortal, logoutStaffPortal, setStaffTab, setStaffPeriod, syncStaffAccounts, toggleStaffAccess,
     logout, toggleLang, closeModal, toggleSound, playBell, toggleTouch, changeScale, toggleTheme,
-    openPayslipModal, exportCSV, exportJSON, importJSON, openAuditModal, openResetModal,
+    openPayslipModal, exportCSV, exportJSON, importJSON, openAuditModal, openPaymentRecovery, loadPaymentRecovery, loadRemoteAudit, reconcilePaymentIntent, openResetModal,
     toggleSelectAllTimers, openMergedCheckout, setTipType, addTip, addQuickTip,
     setSfPay, addServiceFee, setPeriod, clearStaffFilter, saveEmployee, editEmployee, deleteEmployee,
     updateCommLabel, saveService, editService, deleteService, completeCheckout, completeSplitCheckout,
