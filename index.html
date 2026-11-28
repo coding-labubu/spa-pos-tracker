@@ -497,7 +497,7 @@
       <div class="timer-grid" id="timerGrid"></div>
     </div>
 
-    <div class="card"><button onclick="squareTransactions()">交易记录 / Transactions</button><div id="paymentNotice" hidden><strong id="paymentNoticeText"></strong> <button onclick="squareRecover()">查询并恢复</button> <button onclick="squareCancel()">取消支付</button></div></div>
+    <div class="card"><button onclick="squareTransactions()">交易记录 / Transactions</button> <button onclick="squareDiagnostics()">Square 连接诊断 / Diagnostics</button><pre id="sqGlobalTrace" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto" aria-live="polite"></pre><div id="paymentNotice" hidden><strong id="paymentNoticeText"></strong> <button onclick="squareRecover()">查询并恢复</button> <button onclick="squareCancel()">取消支付</button></div></div>
     <!-- 小费与服务费/礼卡录入 -->
     <div class="grid-2 non-therapist">
       <div class="card">
@@ -951,7 +951,7 @@
           <span id="splitRemainHint" style="font-size:0.88em; font-weight:700;"></span>
           <button class="btn-success btn-sm" onclick="completeSplitCheckout()">下一步：确认拆分收款</button>
         </div>
-      </div><div id="coConfirm" hidden><strong>确认收款 / Confirm Payment</strong><p id="squareStatus" aria-live="polite"></p><button onclick="squareRecover()">Square 状态 / Status</button> <button onclick="squareCancel()">取消 Square 请求 / Cancel</button><div id="coConfirmDetails" class="co-summary"></div><div class="inline-inputs"><button class="btn-outline" onclick="clearCheckoutConfirmation()">返回修改</button><button class="btn-primary" onclick="commitCheckoutConfirmation()">确认收款并入账</button></div></div>
+      </div><div id="coConfirm" hidden><strong>确认收款 / Confirm Payment</strong><p id="squareStatus" aria-live="polite"></p><button type="button" onclick="squareDiagnostics()">连接诊断 / Diagnostics</button><pre id="sqCheckoutTrace" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto" aria-live="polite"></pre><button onclick="squareRecover()">Square 状态 / Status</button> <button onclick="squareCancel()">取消 Square 请求 / Cancel</button><div id="coConfirmDetails" class="co-summary"></div><div class="inline-inputs"><button class="btn-outline" onclick="clearCheckoutConfirmation()">返回修改</button><button class="btn-primary" onclick="commitCheckoutConfirmation()">确认收款并入账</button></div></div>
     </div>
   </div>
 
@@ -1389,15 +1389,26 @@
   const accessRoles=['therapist','manager','receptionist','accountant'];
   const roleLabels={therapist:'Therapist / 技师',manager:'Manager / 店长',receptionist:'Receptionist / 前台',accountant:'Accountant / 财务'};
   function safeRole(e){return accessRoles.includes(e.accessRole)?e.accessRole:'therapist';}
-  function delegatedProjection(p,role){
-    const pick=(rows,keys)=> (rows||[]).slice(-200).map(x=>Object.fromEntries(keys.filter(k=>x[k]!==undefined).map(k=>[k,x[k]])));
-    if(role==='manager'||role==='receptionist')return {
-      appointments:pick(p.appointments,['date','time','serviceName','staffName','status','clientCount']),
-      services:pick(p.services,['name','price','duration']),
-      resources:pick(p.resources??resDefaults(),['name','type','room','enabled']),
-      sessions:pick(p.timers,['staffName','serviceName','startTime','endTime','status'])};
-    if(role==='accountant')return {orders:pick(p.orders,['date','price','commission','payMethod','staffName']),tips:pick(p.tips,['date','amount','type']),expenses:pick(p.expenses,['date','amount','category'])};
-    return {};
+  // V2.2.4.1: explicit read permissions; unsupported writes cannot be granted.
+  const permissionCatalog=[
+    ['Operations / 门店运营',[['appointments','View appointments / 查看预约'],['services','View service menu / 查看项目'],['resources','View rooms and equipment / 查看房间设备'],['sessions','View active services / 查看服务中']]],
+    ['Finance / 财务',[['revenue','View service revenue / 查看营业额'],['commissions','View employee commissions / 查看提成'],['tips','View employee tips / 查看小费'],['expenses','View expenses / 查看支出']]]];
+  const permissionKeys=permissionCatalog.flatMap(g=>g[1].map(x=>x[0]));
+  const permissionDefaults={manager:['appointments','services','resources','sessions'],receptionist:['appointments','services','resources','sessions'],therapist:[],accountant:['revenue','commissions','tips','expenses']};
+  function rolePermissions(p,role){const v=p.rolePermissions?.[role];return Array.isArray(v)?permissionKeys.filter(k=>v.includes(k)):permissionDefaults[role].slice();}
+  function effectivePermissions(p,e){const base=rolePermissions(p,safeRole(e));return permissionKeys.filter(k=>typeof e.permissionOverrides?.[k]==='boolean'?e.permissionOverrides[k]:base.includes(k));}
+  function delegatedProjection(p,e){
+    const allowed=effectivePermissions(p,e), has=k=>allowed.includes(k), out={};
+    const pick=(rows,keys)=>(rows||[]).slice(-200).map(x=>Object.fromEntries(keys.filter(k=>x[k]!==undefined).map(k=>[k,x[k]])));
+    if(has('appointments'))out.appointments=pick(p.appointments,['date','time','serviceName','staffName','status','clientCount']);
+    if(has('services'))out.services=pick(p.services,['name','price','duration']);
+    if(has('resources'))out.resources=pick(p.resources??resDefaults(),['name','type','room','enabled']);
+    if(has('sessions'))out.sessions=pick(p.timers,['staffName','serviceName','startTime','endTime','status']);
+    if(has('revenue'))out.revenue=pick(p.orders,['date','price','payMethod','staffName']);
+    if(has('commissions'))out.commissions=pick(p.orders,['date','commission','staffName']);
+    if(has('tips'))out.tips=pick(p.tips,['date','amount','type']);
+    if(has('expenses'))out.expenses=pick(p.expenses,['date','amount','category']);
+    return out;
   }
   async function publishLedger(target, payload) {
     const existing = await getDocsFromServer(collection(db,'store_codes',activeStoreCode,'email_portals'));
@@ -1412,7 +1423,7 @@
       const own = key => (payload[key]||[]).filter(x=>x.staffId===e.id);
       const clean = (arr, fields) => arr.map(x=>Object.fromEntries(fields.filter(k=>x[k]!==undefined).map(k=>[k,x[k]])));
       projectionWrites.push([doc(db,'store_codes',activeStoreCode,'email_portals',phone), {
-        email:phone, accessRole:safeRole(e), workspace:delegatedProjection(payload,safeRole(e)), ...(e.inviteExpiresAt ? {inviteExpiresAt:new Date(e.inviteExpiresAt)} : {}), storeZone:payload.storeZone||"America/Los_Angeles", employeeId:e.id, name:e.name, role:e.role||'技师',
+        email:phone, accessRole:safeRole(e), permissions:effectivePermissions(payload,e), workspace:delegatedProjection(payload,e), ...(e.inviteExpiresAt ? {inviteExpiresAt:new Date(e.inviteExpiresAt)} : {}), storeZone:payload.storeZone||"America/Los_Angeles", employeeId:e.id, name:e.name, role:e.role||'技师',
         timers:clean(own('timers'),['id','serviceName','startTime','endTime','durationMins','status','earlyEndedAt']),
         orders:clean(own('orders'),['id','date','duration','commission','payMethod']),
         tips:clean(own('tips'),['date','amount','type']),
@@ -1539,10 +1550,26 @@
   function openBusinessSettings(){
     if(currentUser?.uid!==ADMIN_UID)return;
     const p=state.businessProfile||{}, h=escapeHTML;
-    showExtra('商家设置 / Business settings',`<div class="account-panel"><h3>商家资料 / Profile</h3><p>Store code: ${h(activeStoreCode)}</p>${[['name','Business name / 商家名称'],['address','Address / 地址'],['phone','Phone / 电话'],['email','Email / 邮箱']].map(([k,label])=>`<label class="ps-field">${label}<input id="bp_${k}" maxlength="250" value="${h(p[k]||'')}"></label>`).join('')}<label class="ps-field">Time zone / 时区<input id="bp_zone_search" type="search" placeholder="Search city or time zone / 搜索城市或时区" autocomplete="off"></label><label class="ps-field">Select time zone / 选择时区<select id="bp_zone" required style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px"></select></label><small>UTC offsets shown for today / 显示当前UTC偏移</small><p>Currency / 币种: USD</p><button class="btn-primary" onclick="saveBusinessProfile()">保存 / Save</button></div><div class="account-panel"><h3>团队与邀请 / Team & invitations</h3><p>Assign access roles below. Delegated workspaces are read-only previews; checkout and operational edits remain owner-only. / 分配角色；员工工作台暂为只读。</p><div id="v21Team"></div></div><div class="account-panel">Owner: full access · Therapist: own portal · Manager / Receptionist: operational overview · Accountant: limited financial overview</div><div class="account-panel"><h3>数据库迁移预览 / Database migration preview</h3><p>Owner-only snapshot. No live cutover. Sensitive legacy fields are not copied.</p><button onclick="previewDatabaseMigration()">Create migration preview / 创建迁移预览</button></div>`);
+    showExtra('商家设置 / Business settings',`<div class="account-panel"><h3>商家资料 / Profile</h3><p>Store code: ${h(activeStoreCode)}</p>${[['name','Business name / 商家名称'],['address','Address / 地址'],['phone','Phone / 电话'],['email','Email / 邮箱']].map(([k,label])=>`<label class="ps-field">${label}<input id="bp_${k}" maxlength="250" value="${h(p[k]||'')}"></label>`).join('')}<label class="ps-field">Time zone / 时区<input id="bp_zone_search" type="search" placeholder="Search city or time zone / 搜索城市或时区" autocomplete="off"></label><label class="ps-field">Select time zone / 选择时区<select id="bp_zone" required style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px"></select></label><small>UTC offsets shown for today / 显示当前UTC偏移</small><p>Currency / 币种: USD</p><button class="btn-primary" onclick="saveBusinessProfile()">保存 / Save</button></div><div class="account-panel"><h3>团队与邀请 / Team & invitations</h3><p>Assign access roles below. Delegated workspaces are read-only previews; checkout and operational edits remain owner-only. / 分配角色；员工工作台暂为只读。</p><div id="v21Team"></div><button class="btn-primary" onclick="openPermissionsCenter()">权限管理中心 / Permissions Center</button></div><div class="account-panel">Owner: full access · Therapist: own portal · Manager / Receptionist: operational overview · Accountant: limited financial overview</div><div class="account-panel"><h3>数据库迁移预览 / Database migration preview</h3><p>Owner-only snapshot. No live cutover. Sensitive legacy fields are not copied.</p><button onclick="previewDatabaseMigration()">Create migration preview / 创建迁移预览</button></div>`);
     setupBusinessZonePicker();
     const root=document.getElementById('v21Team');for(const e of state.employees){const row=document.createElement('div');row.className='account-row';const label=document.createElement('span');label.textContent=e.name+' · '+(e.loginEmail||'No email')+' · '+(e.portalDisabled?'Revoked':e.loginEmail?'Invited / assigned':'Not invited');row.append(label);const select=document.createElement('select');select.setAttribute('aria-label','Access role / 权限角色');for(const role of accessRoles){const option=document.createElement('option');option.value=role;option.textContent=roleLabels[role];select.append(option);}select.value=safeRole(e);select.onchange=async()=>{const prior=safeRole(e);if(state.paymentPending||!confirm('Change access role? / 确认修改权限？')){select.value=prior;return;}e.accessRole=select.value;addAudit('Access role changed',e.name+' · '+e.accessRole);if(await saveState())openBusinessSettings();else{e.accessRole=prior;select.value=prior;}};row.append(select);for(const [text,fn] of [['Invite / Renew',()=>inviteStaff(e.id)],['Revoke / 撤销',async()=>{if(!confirm('Revoke access?'))return;e.portalDisabled=true;addAudit('Revoke access',e.name);if(await saveState())openBusinessSettings();}]]){const b=document.createElement('button');b.textContent=text;b.onclick=fn;row.append(b);}root.append(row);}
   }
+  let permissionBusy=false;
+  function openPermissionsCenter(){
+    if(currentUser?.uid!==ADMIN_UID||!initialCloudLoaded||permissionBusy)return;
+    showExtra('权限管理中心 / Permissions Center',`<div class="account-panel"><p>Shared read access only. Personal portal access remains unchanged. / 仅共享只读权限，个人工作台权限不变。</p><label class="ps-field">Scope / 范围<select id="permScope"><option value="role">Role defaults / 角色默认</option><option value="employee">Individual employee / 员工单独设置</option></select></label><label class="ps-field">Role / 角色<select id="permRole"></select></label><label class="ps-field" id="permEmployeeLabel">Employee / 员工<select id="permEmployee"></select></label><div id="permFields"></div><button id="permSave" class="btn-primary">保存权限 / Save permissions</button> <button id="permReset">恢复默认 / Reset</button> <button onclick="openBusinessSettings()">返回 / Back</button></div><div class="account-panel"><h3>Locked / 暂未开放</h3><p>Appointment editing, customer profiles, dispatch management, service timers, checkout, discounts, refunds, gift cards, memberships, expense editing, exports, employee management and payment settings require trusted backend authorization.</p><p>预约编辑、客户资料、排工管理、开钟、结账、退款、礼卡、会员、财务编辑及系统管理暂未开放。</p><p>Owner-only: private employee data, tax settings, role assignment and security settings. / 隐私、税务及权限管理仅店主可用。</p></div>`);
+    const scope=document.getElementById('permScope'), role=document.getElementById('permRole'), employee=document.getElementById('permEmployee'), fields=document.getElementById('permFields');
+    for(const r of accessRoles)role.add(new Option(roleLabels[r],r));role.value='receptionist';
+    for(const e of state.employees)employee.add(new Option(e.name,e.id));
+    function draw(){const individual=scope.value==='employee', e=state.employees.find(x=>x.id===employee.value);document.getElementById('permEmployeeLabel').hidden=!individual;role.disabled=individual;if(individual&&e)role.value=safeRole(e);fields.replaceChildren();document.getElementById('permSave').disabled=individual&&!e;document.getElementById('permReset').disabled=individual&&!e;
+      for(const [title,items] of permissionCatalog){const section=document.createElement('div');section.className='account-panel';const heading=document.createElement('h3');heading.textContent=title;section.append(heading);for(const [key,label] of items){const row=document.createElement('label');row.className='account-row';const name=document.createElement('span');name.textContent=label;row.append(name);const select=document.createElement('select');select.dataset.permission=key;select.setAttribute('aria-label',label);if(individual)select.add(new Option('Inherit / 继承','inherit'));select.add(new Option('Allow / 允许','allow'));select.add(new Option('Deny / 禁止','deny'));select.value=individual?(typeof e?.permissionOverrides?.[key]==='boolean'?(e.permissionOverrides[key]?'allow':'deny'):'inherit'):(rolePermissions(state,role.value).includes(key)?'allow':'deny');row.append(select);section.append(row);}fields.append(section);}}
+    scope.onchange=role.onchange=employee.onchange=draw;draw();
+    document.getElementById('permReset').onclick=()=>{for(const x of fields.querySelectorAll('select'))x.value=scope.value==='employee'?'inherit':permissionDefaults[role.value].includes(x.dataset.permission)?'allow':'deny';};
+    document.getElementById('permSave').onclick=async()=>{if(permissionBusy||currentUser?.uid!==ADMIN_UID||state.paymentPending||saveFailed)return alert('Cannot save now / 暂无法保存');const individual=scope.value==='employee', e=state.employees.find(x=>x.id===employee.value), r=role.value;if(individual&&!e)return;const previous=structuredClone(individual?e.permissionOverrides??{}:state.rolePermissions??{}), values=[...fields.querySelectorAll('select')];if(!confirm('Apply shared access changes? / 确认修改共享权限？'))return;permissionBusy=true;document.getElementById('permSave').disabled=true;scope.disabled=role.disabled=employee.disabled=true;for(const x of values)x.disabled=true;
+      if(individual)e.permissionOverrides=Object.fromEntries(values.filter(x=>x.value!=='inherit').map(x=>[x.dataset.permission,x.value==='allow']));else state.rolePermissions={...(state.rolePermissions||{}),[r]:values.filter(x=>x.value==='allow').map(x=>x.dataset.permission)};
+      addAudit('Permission settings changed',JSON.stringify({actor:currentUser.uid,target:individual?e.id:r,before:previous,after:individual?e.permissionOverrides:state.rolePermissions[r]}));const ok=await saveState();permissionBusy=false;if(!ok){if(individual)e.permissionOverrides=previous;else state.rolePermissions=previous;alert('Permissions not confirmed; reload before retrying / 保存未确认，请刷新');return;}alert('Permissions saved / 权限已保存');openPermissionsCenter();};
+  }
+  window.openPermissionsCenter=openPermissionsCenter;
   async function saveBusinessProfile(){if(currentUser?.uid!==ADMIN_UID)return;const z=document.getElementById('bp_zone').value.trim();if(!z)return alert('Select a time zone / 请选择时区');try{new Intl.DateTimeFormat('en',{timeZone:z}).format();}catch{return alert('Invalid time zone');}state.businessProfile=Object.fromEntries(['name','address','phone','email'].map(k=>[k,document.getElementById('bp_'+k).value.trim()]));state.storeZone=z;addAudit('Business profile updated','');if(await saveState()){renderAll();openBusinessSettings();}}
   Object.assign(window,{openBusinessSettings,saveBusinessProfile});
   const invitationParams=new URLSearchParams(location.search);
@@ -1574,18 +1601,24 @@
   function renderStaffPortal(){
     const root=document.getElementById('staffPortalBody'); if(!staffView){root.textContent='正在连接云端，暂时无法显示个人数据';return;}
     const role=safeRole(staffView);
-    if(role!=='therapist' && staffTab==='home'){
+    if(staffTab==='home' && (role!=='therapist'||(staffView.permissions||[]).length)){
       const w=staffView.workspace||{}, h=escapeHTML;
-      const table=(title,rows,fields)=>`<div class="card"><h3>${h(title)}</h3><small>Up to 200 records / 最多200条</small><div style="overflow:auto"><table><thead><tr>${fields.map(([k,label])=>`<th>${h(label)}</th>`).join('')}</tr></thead><tbody>${(rows||[]).map(row=>`<tr>${fields.map(([k])=>`<td>${h(String(row[k]??''))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
-      root.innerHTML=`<h2>${h(roleLabels[role])}</h2><p>Read-only workspace / 只读工作台</p>`+(role==='accountant'?
-        table('Completed services / 已完成项目',w.orders,[['date','Date'],['staffName','Staff'],['price','Amount'],['commission','Commission'],['payMethod','Payment']])+table('Tips / 小费',w.tips,[['date','Date'],['amount','Amount'],['type','Type']])+table('Expenses / 支出',w.expenses,[['date','Date'],['amount','Amount'],['category','Category']]):
-        table('Appointments / 预约',w.appointments,[['date','Date'],['time','Time'],['serviceName','Service'],['staffName','Staff'],['status','Status'],['clientCount','Clients']])+table('Services / 项目',w.services,[['name','Name'],['price','Price'],['duration','Minutes']])+table('Resources / 房间设备',w.resources,[['name','Name'],['type','Type'],['room','Room'],['enabled','Enabled']])+table('Active sessions / 服务中',w.sessions,[['staffName','Staff'],['serviceName','Service'],['status','Status']]))+`<nav class="staff-nav"><button onclick="setStaffTab('home')">Workspace / 工作台</button><button onclick="setStaffTab('earnings')">My earnings / 我的收入</button><button onclick="setStaffTab('profile')">Profile / 我的</button></nav>`;
+      const table=(key,title,fields)=>!Object.hasOwn(w,key)?'':`<div class="card"><h3>${h(title)}</h3><small>Up to 200 records / 最多200条</small><div style="overflow:auto"><table><thead><tr>${fields.map(([k,label])=>`<th>${h(label)}</th>`).join('')}</tr></thead><tbody>${(w[key]||[]).map(row=>`<tr>${fields.map(([k])=>`<td>${h(String(row[k]??''))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
+      root.innerHTML=`<h2>${h(roleLabels[role])}</h2><p>Read-only workspace / 只读工作台</p>`+[
+        ['appointments','Appointments / 预约',[['date','Date'],['time','Time'],['serviceName','Service'],['staffName','Staff'],['status','Status'],['clientCount','Clients']]],
+        ['services','Services / 项目',[['name','Name'],['price','Price'],['duration','Minutes']]],
+        ['resources','Resources / 房间设备',[['name','Name'],['type','Type'],['room','Room'],['enabled','Enabled']]],
+        ['sessions','Active sessions / 服务中',[['staffName','Staff'],['serviceName','Service'],['status','Status']]],
+        ['revenue','Revenue / 营业额',[['date','Date'],['staffName','Staff'],['price','Amount'],['payMethod','Payment']]],
+        ['commissions','Commissions / 提成',[['date','Date'],['staffName','Staff'],['commission','Commission']]],
+        ['tips','Tips / 小费',[['date','Date'],['amount','Amount'],['type','Type']]],
+        ['expenses','Expenses / 支出',[['date','Date'],['amount','Amount'],['category','Category']]]].map(x=>table(...x)).join('')+`<nav class="staff-nav"><button onclick="setStaffTab('home')">Workspace / 工作台</button><button onclick="setStaffTab('personal')">My services / 我的服务</button><button onclick="setStaffTab('schedule')">Schedule / 排班</button><button onclick="setStaffTab('earnings')">My earnings / 我的收入</button><button onclick="setStaffTab('profile')">Profile / 我的</button></nav>`;
       document.getElementById('staffPortalBadge').textContent=roleLabels[role];return;
     }
     const e=staffView, h=escapeHTML, today=todayStr(), money=n=>'$'+Number(n||0).toFixed(2), sum=(a,k)=>a.reduce((v,x)=>v+Number(x[k]||0),0);
     const cutoff=new Date(today+'T12:00:00Z');cutoff.setUTCDate(cutoff.getUTCDate()-6);
     const filter=x=>staffPeriod==='today'?x.date===today:staffPeriod==='week'?x.date>=cutoff.toISOString().slice(0,10)&&x.date<=today:x.date?.slice(0,7)===today.slice(0,7)&&x.date<=today;
-    const orders=e.orders.filter(staffTab==='home'?x=>x.date===today:filter),tips=e.tips.filter(staffTab==='home'?x=>x.date===today:filter);
+    const orders=e.orders.filter((staffTab==='home'||staffTab==='personal')?x=>x.date===today:filter),tips=e.tips.filter((staffTab==='home'||staffTab==='personal')?x=>x.date===today:filter);
     const comm=sum(orders,'commission'),tip=sum(tips,'amount');
     const stats=`<div class="stat-grid">${[['已结账记录',orders.length],['项目提成',money(comm)],['小费',money(tip)],['提成与小费',money(comm+tip)]].map(([k,v])=>`<div class="stat-box"><div class="stat-label">${k}</div><div class="stat-val">${v}</div></div>`).join('')}</div>`;
     const appts=e.appointments.filter(a=>a.date>=today&&!['已取消','已完成','已开钟'].includes(a.status)).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
@@ -1594,7 +1627,7 @@
     const localTime=new Intl.DateTimeFormat('en-GB',{timeZone:zone(),hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
     const resting=e.leaves.some(l=>l.date===today&&l.start<=localTime&&l.end>localTime);
     let body='';
-    if(staffTab==='home')body=`<h2>你好，${h(e.name)}</h2>${e.timers.map(timer).join('')||`<div class="staff-hero">${resting?'休息中':'当前空闲 / 可接单'}</div>`}<h3>今日业绩</h3>${stats}<div class="card"><h3>下一位预约</h3>${appts.length?appt(appts[0]):'暂无预约'}</div>`;
+    if(staffTab==='home'||staffTab==='personal')body=`<h2>你好，${h(e.name)}</h2>${e.timers.map(timer).join('')||`<div class="staff-hero">${resting?'休息中':'当前空闲 / 可接单'}</div>`}<h3>今日业绩</h3>${stats}<div class="card"><h3>下一位预约</h3>${appts.length?appt(appts[0]):'暂无预约'}</div>`;
     if(staffTab==='schedule')body=`<h2>我的预约与排班</h2><div class="card">${appts.map(appt).join('')||'暂无预约'}</div><div class="card"><h3>休息安排</h3>${e.leaves.map(l=>`<div class="staff-line">${h(l.date)} · ${h(l.start)}–${h(l.end)}</div>`).join('')||'暂无安排'}</div>`;
     const periods=`<div class="staff-period">${[['today','今日'],['week','近7天'],['month','本月']].map(([v,k])=>`<button class="${staffPeriod===v?'btn-primary':''}" onclick="setStaffPeriod('${v}')">${k}</button>`).join('')}</div>`;
     if(staffTab==='earnings')body=`<h2>我的收入</h2>${periods}${stats}<div class="card">${[...new Set(tips.map(t=>t.type||'其他'))].map(k=>`<div class="staff-line">${h(k)}：${money(sum(tips.filter(t=>(t.type||'其他')===k),'amount'))}</div>`).join('')}<small>未含底薪、扣税；不代表实发工资。</small></div>`;
@@ -2467,7 +2500,7 @@
     if(currentUser?.uid!==ADMIN_UID||state.paymentPending||squareBusy)return alert('请先完成待处理交易');
     const cfg=state.cardFeeConfig;
     showExtra('支付设置 / Payment Settings',`<div class="ps-panel"><div class="ps-head"><div><strong>Square Terminal 自动收款</strong><small>Square Integration</small></div><label class="ps-switch"><input id="psSquare" type="checkbox" ${squareEnabled()?'checked':''} onchange="psPreview()"><span></span></label></div><small id="psModeHint"></small>
-    <section class="ps-device"><div class="ps-head"><div class="ps-terminal" aria-hidden="true"><svg viewBox="0 0 60 90" width="54" height="78"><rect x="8" y="3" width="44" height="84" rx="8" fill="#fff" stroke="#94a3b8"/><rect x="13" y="12" width="34" height="49" rx="3" fill="#172554"/><rect x="19" y="30" width="22" height="4" rx="2" fill="#93c5fd"/><rect x="21" y="71" width="18" height="4" rx="2" fill="#cbd5e1"/></svg></div><div style="flex:1"><strong>Square Terminal</strong><small>设备管理 / Device Management</small></div></div><div id="sqDeviceInfo" class="ps-info">正在读取配置 / Loading…</div><div class="ps-actions"><button onclick="sqDeviceAction('refresh')">刷新 / Refresh</button><button onclick="sqDeviceAction('test')">测试连接 / Test</button></div><button class="btn-primary ps-wide" onclick="sqDeviceAction('pair')">生成配对码 / Pair or replace device</button><div id="sqPairInfo" class="ps-pair" aria-live="polite"></div><label class="ps-field">设备配对记录 ID / Device code ID <input id="sqPairId" autocomplete="off"></label><div class="ps-actions"><button onclick="sqDeviceAction('status')">查询配对 / Check pairing</button><button class="btn-primary" onclick="sqDeviceAction('bind')">绑定此设备 / Use device</button></div><button class="ps-wide btn-outline" style="color:#dc2626" onclick="sqDeviceAction('unbind')">解除网站绑定 / Unbind</button><small>绑定立即保存，不代表设备在线，也不会退出实体设备。</small></section>
+    <section class="ps-device"><div class="ps-head"><div class="ps-terminal" aria-hidden="true"><svg viewBox="0 0 60 90" width="54" height="78"><rect x="8" y="3" width="44" height="84" rx="8" fill="#fff" stroke="#94a3b8"/><rect x="13" y="12" width="34" height="49" rx="3" fill="#172554"/><rect x="19" y="30" width="22" height="4" rx="2" fill="#93c5fd"/><rect x="21" y="71" width="18" height="4" rx="2" fill="#cbd5e1"/></svg></div><div style="flex:1"><strong>Square Terminal</strong><small>设备管理 / Device Management</small></div></div><div id="sqDeviceInfo" class="ps-info">正在读取配置 / Loading…</div><div class="ps-actions"><button onclick="sqDeviceAction('refresh')">刷新 / Refresh</button><button onclick="squareDiagnostics()">全面诊断 / Full diagnostics</button><pre id="sqDiagnosticTrace" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto" aria-live="polite"></pre></div><button class="btn-primary ps-wide" onclick="sqDeviceAction('pair')">生成配对码 / Pair or replace device</button><div id="sqPairInfo" class="ps-pair" aria-live="polite"></div><label class="ps-field">设备配对记录 ID / Device code ID <input id="sqPairId" autocomplete="off"></label><div class="ps-actions"><button onclick="sqDeviceAction('status')">查询配对 / Check pairing</button><button class="btn-primary" onclick="sqDeviceAction('bind')">绑定此设备 / Use device</button></div><button class="ps-wide btn-outline" style="color:#dc2626" onclick="sqDeviceAction('unbind')">解除网站绑定 / Unbind</button><small>绑定立即保存，不代表设备在线，也不会退出实体设备。</small></section>
     <h3>支付方式 / Payment Methods</h3><div class="ps-methods">${paymentMethods.map((m,i)=>`<label><input type="checkbox" id="psM${i}" ${methodEnabled(m)?'checked':''}>${m} <small>${['Cash','Card','Venmo','Member balance','Gift card','Coupon'][i]}</small></label>`).join('')}</div>
     <h3>服务费 / Service Fee</h3><div class="ps-fees"><label class="ps-field">计算方式 / Mode<select id="psFeeMode" onchange="psPreview()"><option value="off" ${cfg.mode==='off'?'selected':''}>关闭 / Disabled</option><option value="fixed" ${cfg.mode==='fixed'?'selected':''}>固定金额 / Fixed ($)</option><option value="percent" ${cfg.mode==='percent'?'selected':''}>百分比 / Percentage (%)</option></select></label><label class="ps-field" id="psFeeField">数值 / Value<input id="psFeeValue" type="number" min="0" step="0.01" value="${Number(cfg.value)||''}" oninput="psPreview()"></label><div class="ps-example"><span>$100 银行卡交易示例</span><strong id="psFeePreview"></strong></div><small>每笔银行卡交易一次。启用前确认卡种及当地法规允许收费。</small></div><button class="btn-primary ps-wide" onclick="savePaymentSettings()">保存设置 / Save settings</button></div>`);
     psPreview();
@@ -2541,8 +2574,7 @@
     if (squareBusy || state.paymentPending || localStorage.getItem(squarePendingKey)) return alert('存在未核对 Square 支付，请先查状态 / Reconcile pending payment');
     if(p.payments.some(x=>!methodEnabled(x.method))||(tipTotal()>0&&!methodEnabled(el('coTipMethod').value)))return alert('支付方式已停用');
     const hasCard=p.payments.some(x=>x.method==='银行卡')||(tipTotal()>0&&el('coTipMethod').value==='银行卡');
-    if(hasCard&&squareEnabled()&&p.payments.every(x=>x.method==='银行卡'))return squareCheckout(p);
-    if(hasCard&&squareEnabled()&&!confirm('组合支付暂不支持 Square 自动收款。请使用独立终端收取银行卡差额。继续？'))return;
+    if(hasCard&&squareEnabled())return squareCheckout(p);
     if(hasCard&&!confirm('请确认独立刷卡机已成功收款，系统不会实际扣款。 / Confirm external card payment received.'))return;
     clearCheckoutConfirmation();await finalizeOrderCheckout(p.payments,p.fee);
   }
@@ -3832,27 +3864,38 @@
   const SQUARE_API = 'https://spa-pos-square-api.comfootmassage.workers.dev'; // Cloudflare Worker URL, no trailing slash
   const squarePendingKey='spa-square-pending-v1'; // Legacy-only payment recovery; pilot tenants cannot use Square.
   let squareBusy=false;
-  async function squareCall(path,body){if(!legacyOwner())throw Error('Square merchant connection not available for this business');if(!SQUARE_API||!currentUser)throw Error('请配置 Square Worker 并登录');const r=await fetch(SQUARE_API+path,{method:body===undefined?'GET':'POST',headers:{Authorization:'Bearer '+await currentUser.getIdToken(),'Content-Type':'application/json','X-POS-Tenant':activeStoreCode},...(body===undefined?{}:{body:JSON.stringify(body)})});const j=await r.json();if(!r.ok)throw Error(j.error||'Square error');return j;}
-  const sqMsg=m=>{el('squareStatus').textContent=m;};
+  async function squareCall(path,body){if(!legacyOwner())throw Error('Square merchant connection not available for this business');if(!SQUARE_API||!currentUser)throw Error('请配置 Square Worker 并登录');sqTrace('Request '+path);const r=await fetch(SQUARE_API+path,{method:body===undefined?'GET':'POST',headers:{Authorization:'Bearer '+await currentUser.getIdToken(),'Content-Type':'application/json','X-POS-Tenant':activeStoreCode},...(body===undefined?{}:{body:JSON.stringify(body)})});const j=await r.json();sqTrace(path+' HTTP '+r.status+(j.checkout?.id?' checkout '+j.checkout.id:''));if(!r.ok){sqTrace(j.error||'Square error');throw Error(j.error||'Square error');}return j;}
+  const sqEvents=[];
+  function sqTrace(m){sqEvents.push(new Date().toLocaleTimeString()+' '+m);if(sqEvents.length>60)sqEvents.shift();for(const id of ['sqCheckoutTrace','sqGlobalTrace','sqDiagnosticTrace']){const node=el(id);if(node)node.textContent=sqEvents.join('\n');}}
+  const sqMsg=m=>{el('squareStatus').textContent=m;sqTrace('Square status: '+m);};
+  async function squareDiagnostics(){
+    sqTrace('--- Diagnostics / 连接诊断 ---');
+    sqTrace('Owner: '+legacyOwner()+' | Automatic: '+squareEnabled()+' | Cloud ready: '+(initialCloudLoaded&&cloudEnabled&&!saveFailed));
+    try{const d=(await getDocFromServer(cloudDocRef)).data();sqTrace('Firestore read OK; revision '+d.ledgerRevision+'; pending '+Boolean(d.paymentPending)+'; schema '+d.operationalSchema+'/'+d.financialSchema);}catch(e){sqTrace('Firestore read failed: '+e.message);}
+    try{const d=await squareCall('/device');sqTrace('Environment '+d.environment+'; device '+(d.deviceId||'UNBOUND')+'; source '+d.source+'; location match '+d.locationMatches);const l=await squareCall('/locations');sqTrace('Merchant location exists: '+Boolean(l.locations?.some(x=>x.id===d.locationId)));if(d.environment!=='production'||!d.deviceId||!d.locationMatches)throw Error('Production device configuration required');if(squareBusy||state.paymentPending)throw Error('Pending checkout: recover first; ping skipped');const j=await squareCall('/ping',{});const id=j.action?.id;if(!id)throw Error('No ping action ID');for(let i=0;i<12;i++){const r=await squareCall('/ping-status',{id});const status=r.action?.status;sqTrace('Terminal PING: '+status);if(status==='COMPLETED'||status==='CANCELED'||status==='FAILED')return;await new Promise(r=>setTimeout(r,2000));}sqTrace('PING not acknowledged within test window; connectivity unconfirmed');}catch(e){sqTrace('Diagnostic stopped: '+e.message);}
+  }
+  Object.assign(window,{squareDiagnostics});
   const sqRead=()=>JSON.parse(localStorage.getItem(squarePendingKey)||'null');
   const sqWrite=x=>localStorage.setItem(squarePendingKey,JSON.stringify(x));
   let finalizingKey=null, finalizingRecord=null;
   function paymentBanner(){const a=state.paymentPending;el('paymentNotice').hidden=!a;el('paymentNoticeText').textContent=a?'订单 '+a.key+' · $'+(a.cents/100).toFixed(2)+' · 待核对 / Pending reconciliation':'';}
   async function squareCheckout(p){
     if(squareBusy||state.paymentPending)return;
-    if(p.payments.length!==1||p.payments[0].method!=='银行卡'||(tipTotal()>0&&el('coTipMethod').value!=='银行卡'))return alert('仅支持整单银行卡支付');
-    if(!confirm('发送至 Square Terminal？'))return;
-    try{const d=await squareCall('/device');if(!d.deviceId||!d.locationMatches)throw Error('请先在支付设置绑定正确设备');}catch(e){return alert(e.message);}
+    const cardCents=Math.round((p.payments.filter(x=>x.method==='银行卡').reduce((n,x)=>n+x.amount,0)+(el('coTipMethod').value==='银行卡'?tipTotal():0)+p.fee)*100);
+    if(p.payments.some(x=>x.method!=='银行卡')||(tipTotal()>0&&el('coTipMethod').value!=='银行卡')){if(!confirm('请确认其他支付部分已收取或可核销；Square 仅收银行卡部分。 / Confirm other tenders are received or redeemable.'))return;}
+    if(!confirm('发送至 Square Terminal $'+(cardCents/100).toFixed(2)+'？'))return;
+    sqTrace('Checkout confirmed / 已确认银行卡金额 $'+(cardCents/100).toFixed(2));
+    try{const d=await squareCall('/device');if(d.environment!=='production'||!d.deviceId||!d.locationMatches)throw Error('Production and matching bound device required / 请检查生产环境及设备绑定');}catch(e){return alert(e.message);}
     if(squareBusy||state.paymentPending)return;
-    const a={key:crypto.randomUUID(),cents:Math.round((p.total+tipTotal()+p.fee)*100),cart:structuredClone(checkoutCart),purchases:structuredClone(purchaseGifts),tips:tipEntries(),tipMethod:el('coTipMethod').value,memberId:el('checkoutMemberSelect').value,date:el('entryDate').value||todayStr(),payments:p.payments,cardFee:p.fee,createdAt:Date.now()};
+    const a={key:crypto.randomUUID(),cents:cardCents,cart:structuredClone(checkoutCart),purchases:structuredClone(purchaseGifts),tips:tipEntries(),tipMethod:el('coTipMethod').value,memberId:el('checkoutMemberSelect').value,date:el('entryDate').value||todayStr(),payments:p.payments,cardFee:p.fee,createdAt:Date.now()};
     if(a.cents<1||a.cents>100000)return alert('金额范围 $0.01–$1000');
     squareBusy=true;
-    try{await saveQueue; if(saveFailed)throw Error('Cloud save failed');
+    try{sqTrace('Waiting for cloud saves / 等待云端同步');await saveQueue; if(saveFailed)throw Error('Cloud save failed');sqTrace('Creating Firebase payment lock / 创建支付锁');
       await runTransaction(db,async tx=>{const snap=await tx.get(cloudDocRef);const d=snap.data();if(d.paymentConfig?.squareEnabled===false)throw Error('Square 已关闭');if(d.paymentPending||Number(d.ledgerRevision||0)!==ledgerRevision)throw Error('存在其他交易或账本已更新，请刷新');
         for(const it of a.cart.filter(x=>x.timerId)){if(d.operationalSchema===1){const rid='r_'+encodeURIComponent(it.timerId);if(!d.operationalIds?.timers?.includes(rid))throw Error('服务已不存在');const t=await tx.get(opRef('timers',rid));if(!t.exists()||t.data().record?.id!==it.timerId)throw Error('服务已不存在');}else if(!d.timers.some(t=>t.id===it.timerId))throw Error('服务已不存在');}
         tx.update(cloudDocRef,{paymentPending:a,ledgerRevision:ledgerRevision+1});});
-      ledgerRevision++;state.paymentPending=a;paymentBanner();closeModal('checkoutModal');await squareResume(a);
-    }catch(e){alert('请核对交易，勿重复收费：'+e.message);}finally{squareBusy=false;paymentBanner();}
+      ledgerRevision++;state.paymentPending=a;sqTrace('Firebase payment lock committed / 支付锁成功');paymentBanner();closeModal('checkoutModal');await squareResume(a);
+    }catch(e){sqTrace('Checkout stopped / 支付停止: '+e.message);alert('请核对交易，勿重复收费：'+e.message);}finally{squareBusy=false;paymentBanner();}
   }
   async function squareResume(a){
     if(!a.id){const j=await squareCall('/checkout',{key:a.key,cents:a.cents});a={...a,id:j.checkout.id};
