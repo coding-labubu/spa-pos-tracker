@@ -1386,6 +1386,19 @@
     return '';
   }
   // Only explicit allowlisted fields leave the administrator ledger.
+  const accessRoles=['therapist','manager','receptionist','accountant'];
+  const roleLabels={therapist:'Therapist / 技师',manager:'Manager / 店长',receptionist:'Receptionist / 前台',accountant:'Accountant / 财务'};
+  function safeRole(e){return accessRoles.includes(e.accessRole)?e.accessRole:'therapist';}
+  function delegatedProjection(p,role){
+    const pick=(rows,keys)=> (rows||[]).slice(-200).map(x=>Object.fromEntries(keys.filter(k=>x[k]!==undefined).map(k=>[k,x[k]])));
+    if(role==='manager'||role==='receptionist')return {
+      appointments:pick(p.appointments,['date','time','serviceName','staffName','status','clientCount']),
+      services:pick(p.services,['name','price','duration']),
+      resources:pick(p.resources??resDefaults(),['name','type','room','enabled']),
+      sessions:pick(p.timers,['staffName','serviceName','startTime','endTime','status'])};
+    if(role==='accountant')return {orders:pick(p.orders,['date','price','commission','payMethod','staffName']),tips:pick(p.tips,['date','amount','type']),expenses:pick(p.expenses,['date','amount','category'])};
+    return {};
+  }
   async function publishLedger(target, payload) {
     const existing = await getDocsFromServer(collection(db,'store_codes',activeStoreCode,'email_portals'));
     const projectionWrites = [], keep = new Set();
@@ -1399,7 +1412,7 @@
       const own = key => (payload[key]||[]).filter(x=>x.staffId===e.id);
       const clean = (arr, fields) => arr.map(x=>Object.fromEntries(fields.filter(k=>x[k]!==undefined).map(k=>[k,x[k]])));
       projectionWrites.push([doc(db,'store_codes',activeStoreCode,'email_portals',phone), {
-        email:phone, accessRole:e.accessRole||'therapist', ...(e.inviteExpiresAt ? {inviteExpiresAt:new Date(e.inviteExpiresAt)} : {}), storeZone:payload.storeZone||"America/Los_Angeles", employeeId:e.id, name:e.name, role:e.role||'技师',
+        email:phone, accessRole:safeRole(e), workspace:delegatedProjection(payload,safeRole(e)), ...(e.inviteExpiresAt ? {inviteExpiresAt:new Date(e.inviteExpiresAt)} : {}), storeZone:payload.storeZone||"America/Los_Angeles", employeeId:e.id, name:e.name, role:e.role||'技师',
         timers:clean(own('timers'),['id','serviceName','startTime','endTime','durationMins','status','earlyEndedAt']),
         orders:clean(own('orders'),['id','date','duration','commission','payMethod']),
         tips:clean(own('tips'),['date','amount','type']),
@@ -1431,7 +1444,7 @@
       const deletedEmployees=(old.employeeIds||[]).filter(id=>!employees.some(e=>e.id===id));
       if(opWrites.length+projectionWrites.length+removals.length+3*(employees.length+deletedEmployees.length)+2>450)throw Error('Migration/save exceeds atomic write budget; contact support before retrying');
       for(const [ref,row] of opWrites){if(row===null)tx.delete(ref);else tx.set(ref,row);}
-      for(const [ref,data] of projectionWrites)tx.set(ref,data,{merge:true});
+      for(const [ref,data] of projectionWrites)tx.set(ref,data,{mergeFields:Object.keys(data)});
       for(const d of removals)tx.delete(d.ref);
       const ids=employees.map(e=>e.id); if(new Set(ids).size!==ids.length)throw Error('Duplicate employee ID');
       const removed=(old.employeeIds||[]).filter(id=>!ids.includes(id));
@@ -1457,7 +1470,7 @@
     const email=staffEmailKey(raw);if(raw.trim()&&!email)return alert('Invalid email');
     if(email&&state.employees.some(x=>x.id!==id&&staffEmailKey(x.loginEmail)===email))return alert('Email already assigned');
     if(!confirm('确认更新邀请？ / Confirm invitation change?'))return;
-    e.loginEmail=email;e.portalDisabled=!email;e.accessRole=e.accessRole||'therapist';e.inviteExpiresAt=Date.now()+7*86400000;
+    e.loginEmail=email;e.portalDisabled=!email;e.accessRole=safeRole(e);e.inviteExpiresAt=Date.now()+7*86400000;
     addAudit('员工邀请 / Staff invitation',e.name);
     if(!await saveState())return;renderAll();
     if(email){const url=new URL(location.href);url.search='';url.hash='';url.searchParams.set('staffStore',activeStoreCode);url.searchParams.set('staffEmail',email);prompt('复制邀请链接并私下发送给员工（7天内激活） / Copy and privately send invitation link (activate within 7 days)',url.toString());}
@@ -1526,9 +1539,9 @@
   function openBusinessSettings(){
     if(currentUser?.uid!==ADMIN_UID)return;
     const p=state.businessProfile||{}, h=escapeHTML;
-    showExtra('商家设置 / Business settings',`<div class="account-panel"><h3>商家资料 / Profile</h3><p>Store code: ${h(activeStoreCode)}</p>${[['name','Business name / 商家名称'],['address','Address / 地址'],['phone','Phone / 电话'],['email','Email / 邮箱']].map(([k,label])=>`<label class="ps-field">${label}<input id="bp_${k}" maxlength="250" value="${h(p[k]||'')}"></label>`).join('')}<label class="ps-field">Time zone / 时区<input id="bp_zone_search" type="search" placeholder="Search city or time zone / 搜索城市或时区" autocomplete="off"></label><label class="ps-field">Select time zone / 选择时区<select id="bp_zone" required style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px"></select></label><small>UTC offsets shown for today / 显示当前UTC偏移</small><p>Currency / 币种: USD</p><button class="btn-primary" onclick="saveBusinessProfile()">保存 / Save</button></div><div class="account-panel"><h3>团队与邀请 / Team & invitations</h3><p>Only personal employee access is enabled. Manager, receptionist and accountant roles are reserved until records are separated.</p><div id="v21Team"></div></div><div class="account-panel">Owner: full access · Therapist: own portal only · Billing: not yet available</div><div class="account-panel"><h3>数据库迁移预览 / Database migration preview</h3><p>Owner-only snapshot. No live cutover. Sensitive legacy fields are not copied.</p><button onclick="previewDatabaseMigration()">Create migration preview / 创建迁移预览</button></div>`);
+    showExtra('商家设置 / Business settings',`<div class="account-panel"><h3>商家资料 / Profile</h3><p>Store code: ${h(activeStoreCode)}</p>${[['name','Business name / 商家名称'],['address','Address / 地址'],['phone','Phone / 电话'],['email','Email / 邮箱']].map(([k,label])=>`<label class="ps-field">${label}<input id="bp_${k}" maxlength="250" value="${h(p[k]||'')}"></label>`).join('')}<label class="ps-field">Time zone / 时区<input id="bp_zone_search" type="search" placeholder="Search city or time zone / 搜索城市或时区" autocomplete="off"></label><label class="ps-field">Select time zone / 选择时区<select id="bp_zone" required style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px"></select></label><small>UTC offsets shown for today / 显示当前UTC偏移</small><p>Currency / 币种: USD</p><button class="btn-primary" onclick="saveBusinessProfile()">保存 / Save</button></div><div class="account-panel"><h3>团队与邀请 / Team & invitations</h3><p>Assign access roles below. Delegated workspaces are read-only previews; checkout and operational edits remain owner-only. / 分配角色；员工工作台暂为只读。</p><div id="v21Team"></div></div><div class="account-panel">Owner: full access · Therapist: own portal · Manager / Receptionist: operational overview · Accountant: limited financial overview</div><div class="account-panel"><h3>数据库迁移预览 / Database migration preview</h3><p>Owner-only snapshot. No live cutover. Sensitive legacy fields are not copied.</p><button onclick="previewDatabaseMigration()">Create migration preview / 创建迁移预览</button></div>`);
     setupBusinessZonePicker();
-    const root=document.getElementById('v21Team');for(const e of state.employees){const row=document.createElement('div');row.className='account-row';const label=document.createElement('span');label.textContent=e.name+' · '+(e.loginEmail||'No email')+' · '+(e.portalDisabled?'Revoked':e.loginEmail?'Invited / assigned':'Not invited');row.append(label);for(const [text,fn] of [['Invite / Renew',()=>inviteStaff(e.id)],['Revoke / 撤销',async()=>{if(!confirm('Revoke access?'))return;e.portalDisabled=true;addAudit('Revoke access',e.name);if(await saveState())openBusinessSettings();}]]){const b=document.createElement('button');b.textContent=text;b.onclick=fn;row.append(b);}root.append(row);}
+    const root=document.getElementById('v21Team');for(const e of state.employees){const row=document.createElement('div');row.className='account-row';const label=document.createElement('span');label.textContent=e.name+' · '+(e.loginEmail||'No email')+' · '+(e.portalDisabled?'Revoked':e.loginEmail?'Invited / assigned':'Not invited');row.append(label);const select=document.createElement('select');select.setAttribute('aria-label','Access role / 权限角色');for(const role of accessRoles){const option=document.createElement('option');option.value=role;option.textContent=roleLabels[role];select.append(option);}select.value=safeRole(e);select.onchange=async()=>{const prior=safeRole(e);if(state.paymentPending||!confirm('Change access role? / 确认修改权限？')){select.value=prior;return;}e.accessRole=select.value;addAudit('Access role changed',e.name+' · '+e.accessRole);if(await saveState())openBusinessSettings();else{e.accessRole=prior;select.value=prior;}};row.append(select);for(const [text,fn] of [['Invite / Renew',()=>inviteStaff(e.id)],['Revoke / 撤销',async()=>{if(!confirm('Revoke access?'))return;e.portalDisabled=true;addAudit('Revoke access',e.name);if(await saveState())openBusinessSettings();}]]){const b=document.createElement('button');b.textContent=text;b.onclick=fn;row.append(b);}root.append(row);}
   }
   async function saveBusinessProfile(){if(currentUser?.uid!==ADMIN_UID)return;const z=document.getElementById('bp_zone').value.trim();if(!z)return alert('Select a time zone / 请选择时区');try{new Intl.DateTimeFormat('en',{timeZone:z}).format();}catch{return alert('Invalid time zone');}state.businessProfile=Object.fromEntries(['name','address','phone','email'].map(k=>[k,document.getElementById('bp_'+k).value.trim()]));state.storeZone=z;addAudit('Business profile updated','');if(await saveState()){renderAll();openBusinessSettings();}}
   Object.assign(window,{openBusinessSettings,saveBusinessProfile});
@@ -1560,6 +1573,15 @@
   function setStaffPeriod(t){staffPeriod=t;renderStaffPortal();}
   function renderStaffPortal(){
     const root=document.getElementById('staffPortalBody'); if(!staffView){root.textContent='正在连接云端，暂时无法显示个人数据';return;}
+    const role=safeRole(staffView);
+    if(role!=='therapist' && staffTab==='home'){
+      const w=staffView.workspace||{}, h=escapeHTML;
+      const table=(title,rows,fields)=>`<div class="card"><h3>${h(title)}</h3><small>Up to 200 records / 最多200条</small><div style="overflow:auto"><table><thead><tr>${fields.map(([k,label])=>`<th>${h(label)}</th>`).join('')}</tr></thead><tbody>${(rows||[]).map(row=>`<tr>${fields.map(([k])=>`<td>${h(String(row[k]??''))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
+      root.innerHTML=`<h2>${h(roleLabels[role])}</h2><p>Read-only workspace / 只读工作台</p>`+(role==='accountant'?
+        table('Completed services / 已完成项目',w.orders,[['date','Date'],['staffName','Staff'],['price','Amount'],['commission','Commission'],['payMethod','Payment']])+table('Tips / 小费',w.tips,[['date','Date'],['amount','Amount'],['type','Type']])+table('Expenses / 支出',w.expenses,[['date','Date'],['amount','Amount'],['category','Category']]):
+        table('Appointments / 预约',w.appointments,[['date','Date'],['time','Time'],['serviceName','Service'],['staffName','Staff'],['status','Status'],['clientCount','Clients']])+table('Services / 项目',w.services,[['name','Name'],['price','Price'],['duration','Minutes']])+table('Resources / 房间设备',w.resources,[['name','Name'],['type','Type'],['room','Room'],['enabled','Enabled']])+table('Active sessions / 服务中',w.sessions,[['staffName','Staff'],['serviceName','Service'],['status','Status']]))+`<nav class="staff-nav"><button onclick="setStaffTab('home')">Workspace / 工作台</button><button onclick="setStaffTab('earnings')">My earnings / 我的收入</button><button onclick="setStaffTab('profile')">Profile / 我的</button></nav>`;
+      document.getElementById('staffPortalBadge').textContent=roleLabels[role];return;
+    }
     const e=staffView, h=escapeHTML, today=todayStr(), money=n=>'$'+Number(n||0).toFixed(2), sum=(a,k)=>a.reduce((v,x)=>v+Number(x[k]||0),0);
     const cutoff=new Date(today+'T12:00:00Z');cutoff.setUTCDate(cutoff.getUTCDate()-6);
     const filter=x=>staffPeriod==='today'?x.date===today:staffPeriod==='week'?x.date>=cutoff.toISOString().slice(0,10)&&x.date<=today:x.date?.slice(0,7)===today.slice(0,7)&&x.date<=today;
