@@ -1402,10 +1402,52 @@
     }
     search.addEventListener('input',render);select.addEventListener('change',()=>{chosen=select.value;});render();
   }
+
+  // V2.2 migration preview: immutable, owner-only generations; legacy ledger remains authoritative.
+  let migrationBusy=false;
+  async function previewDatabaseMigration(){
+    if(migrationBusy || !currentUser || currentUser.uid!==ADMIN_UID || !cloudEnabled || !initialCloudLoaded || saveFailed)return;
+    if(!confirm('Create an owner-only migration snapshot? The live ledger will remain unchanged. / 创建迁移快照？现有账本不变。'))return;
+    migrationBusy=true;
+    const version=sessionVersion, target=cloudDocRef, uid=currentUser.uid;
+    const businessId=legacyOwner()?'COMFIGLOW':uid;
+    const generation=crypto.randomUUID();
+    const base=doc(db,'businesses',businessId,'migrationRuns',generation);
+    const status=()=>{if(version!==sessionVersion || currentUser?.uid!==uid)throw Error('Session changed');};
+    try {
+      await saveQueue; status();
+      const snap=await getDocFromServer(target); status();
+      if(!snap.exists())throw Error('Ledger missing');
+      const data=snap.data();
+      if(data.paymentPending)throw Error('Resolve pending payment before migration');
+      const revision=Number(data.ledgerRevision||0);
+      const rows=[]; const counts={};
+      function add(group,record){const n=counts[group]||0;counts[group]=n+1;rows.push([doc(base,group,String(n).padStart(9,'0')),record]);}
+      for(const e of data.employees||[]){
+        const {ssn,address,emergency,phone,loginEmail,base,tax,...rest}=e;
+        add('employees',{record:rest});
+        add('employeePrivate',{employeeId:e.id,phone:phone||'',loginEmail:loginEmail||''});
+        add('compensation',{employeeId:e.id,base:base??0,tax:tax??0});
+      }
+      for(const [key,group] of Object.entries({services:'services',resources:'resources',appointments:'appointments',timers:'activeSessions',orders:'completedServices',tips:'tips',serviceFees:'serviceFees',expenses:'expenses',members:'customers',receipts:'receipts',rewardCodes:'rewardCodes',auditLogs:'auditLogs'})){
+        for(const record of data[key]||[])add(group,{record});
+      }
+      add('settings',{record:{businessProfile:data.businessProfile||{},storeZone:data.storeZone||'America/Los_Angeles',memberCfg:data.memberCfg||{},cardFeeConfig:data.cardFeeConfig||{},revenueRules:data.revenueRules||{}}});
+      await setDoc(base,{ownerUid:uid,status:'building',sourceRevision:revision,sourcePath:target.path,counts,createdAt:serverTimestamp()});
+      for(let i=0;i<rows.length;i+=100){status();const batch=writeBatch(db);for(const [ref,value] of rows.slice(i,i+100))batch.set(ref,value);await batch.commit();}
+      status();
+      for(const [group,count] of Object.entries(counts)){const check=await getDocsFromServer(collection(base,group));if(check.size!==count)throw Error('Count mismatch: '+group);}
+      status();
+      await runTransaction(db,async tx=>{const latest=await tx.get(target);if(latest.updateTime && snap.updateTime && !latest.updateTime.isEqual(snap.updateTime))throw Error('Ledger changed');if(!latest.exists()||Number(latest.data().ledgerRevision||0)!==revision||latest.data().paymentPending)throw Error('Ledger changed or payment pending');tx.update(base,{status:'countChecked',completedAt:serverTimestamp()});});
+      alert('Migration preview created: '+generation+'\nRecords: '+rows.length+'\nLive ledger unchanged. SSN, home address and emergency contact were not copied.');
+    }catch(e){alert('Migration preview incomplete: '+e.message+'\nNo live ledger changes were made. Run ID: '+generation);}finally{migrationBusy=false;}
+  }
+  window.previewDatabaseMigration=previewDatabaseMigration;
+
   function openBusinessSettings(){
     if(currentUser?.uid!==ADMIN_UID)return;
     const p=state.businessProfile||{}, h=escapeHTML;
-    showExtra('商家设置 / Business settings',`<div class="account-panel"><h3>商家资料 / Profile</h3><p>Store code: ${h(activeStoreCode)}</p>${[['name','Business name / 商家名称'],['address','Address / 地址'],['phone','Phone / 电话'],['email','Email / 邮箱']].map(([k,label])=>`<label class="ps-field">${label}<input id="bp_${k}" maxlength="250" value="${h(p[k]||'')}"></label>`).join('')}<label class="ps-field">Time zone / 时区<input id="bp_zone_search" type="search" placeholder="Search city or time zone / 搜索城市或时区" autocomplete="off"></label><label class="ps-field">Select time zone / 选择时区<select id="bp_zone" required style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px"></select></label><small>UTC offsets shown for today / 显示当前UTC偏移</small><p>Currency / 币种: USD</p><button class="btn-primary" onclick="saveBusinessProfile()">保存 / Save</button></div><div class="account-panel"><h3>团队与邀请 / Team & invitations</h3><p>Only personal employee access is enabled. Manager, receptionist and accountant roles are reserved until records are separated.</p><div id="v21Team"></div></div><div class="account-panel">Owner: full access · Therapist: own portal only · Billing: not yet available</div>`);
+    showExtra('商家设置 / Business settings',`<div class="account-panel"><h3>商家资料 / Profile</h3><p>Store code: ${h(activeStoreCode)}</p>${[['name','Business name / 商家名称'],['address','Address / 地址'],['phone','Phone / 电话'],['email','Email / 邮箱']].map(([k,label])=>`<label class="ps-field">${label}<input id="bp_${k}" maxlength="250" value="${h(p[k]||'')}"></label>`).join('')}<label class="ps-field">Time zone / 时区<input id="bp_zone_search" type="search" placeholder="Search city or time zone / 搜索城市或时区" autocomplete="off"></label><label class="ps-field">Select time zone / 选择时区<select id="bp_zone" required style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px"></select></label><small>UTC offsets shown for today / 显示当前UTC偏移</small><p>Currency / 币种: USD</p><button class="btn-primary" onclick="saveBusinessProfile()">保存 / Save</button></div><div class="account-panel"><h3>团队与邀请 / Team & invitations</h3><p>Only personal employee access is enabled. Manager, receptionist and accountant roles are reserved until records are separated.</p><div id="v21Team"></div></div><div class="account-panel">Owner: full access · Therapist: own portal only · Billing: not yet available</div><div class="account-panel"><h3>数据库迁移预览 / Database migration preview</h3><p>Owner-only snapshot. No live cutover. Sensitive legacy fields are not copied.</p><button onclick="previewDatabaseMigration()">Create migration preview / 创建迁移预览</button></div>`);
     setupBusinessZonePicker();
     const root=document.getElementById('v21Team');for(const e of state.employees){const row=document.createElement('div');row.className='account-row';const label=document.createElement('span');label.textContent=e.name+' · '+(e.loginEmail||'No email')+' · '+(e.portalDisabled?'Revoked':e.loginEmail?'Invited / assigned':'Not invited');row.append(label);for(const [text,fn] of [['Invite / Renew',()=>inviteStaff(e.id)],['Revoke / 撤销',async()=>{if(!confirm('Revoke access?'))return;e.portalDisabled=true;addAudit('Revoke access',e.name);if(await saveState())openBusinessSettings();}]]){const b=document.createElement('button');b.textContent=text;b.onclick=fn;row.append(b);}root.append(row);}
   }
