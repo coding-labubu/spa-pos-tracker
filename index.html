@@ -1142,20 +1142,23 @@
   }
   // V2.2.2: operational collections, committed with the ledger revision.
   const operationalGroups={appointments:'appointments',services:'services',resources:'resources',timers:'activeSessions',dispatchDays:'dispatchDays',dispatchRecords:'dispatchRecords',dispatchControls:'dispatchControls'};
+  const financialGroups={orders:'completedServices',tips:'tips',serviceFees:'serviceFees',expenses:'expenses',members:'memberships',receipts:'receipts',rewardCodes:'rewardCodes'};
+  const liveGroups={...operationalGroups,...financialGroups};
+  const schemaFor=k=>Object.hasOwn(financialGroups,k)?'financial':'operational';
   const operationalMaps=new Set(['dispatchDays','dispatchRecords','dispatchControls']);
-  function opRef(key,id){return doc(db,'businesses',activeStoreCode,operationalGroups[key],id);}
+  function opRef(key,id){return doc(db,'businesses',activeStoreCode,liveGroups[key],id);}
   function opRows(key,value){
-    const entries=operationalMaps.has(key)?Object.entries(value||{}):(value||[]).map(record=>[record.id,record]);
+    const entries=operationalMaps.has(key)?Object.entries(value||{}):(value||[]).map((record,index)=>[key==='receipts'?(record.storageId??record.id):record.id,record]);
     const seen=new Set();return entries.map(([keyValue,record])=>{
       if(typeof keyValue!=='string'||!keyValue.length||!record||typeof record!=='object')throw Error('Invalid operational record: '+key);
       const id='r_'+encodeURIComponent(keyValue);if(id.length>1400||seen.has(id))throw Error('Invalid or duplicate operational ID: '+key);seen.add(id);
       return {id,key:keyValue,record};
     });
   }
-  function operationalPayload(payload){return Object.fromEntries(Object.keys(operationalGroups).map(k=>[k,opRows(k,k==='resources'?(payload.resources??resDefaults()):payload[k])]));}
+  function operationalPayload(payload){return Object.fromEntries(Object.keys(liveGroups).map(k=>[k,opRows(k,k==='resources'?(payload.resources??resDefaults()):payload[k])]));}
   function operationalRoot(root,rows){
-    root.operationalSchema=1;root.operationalIds={};
-    for(const [key,list] of Object.entries(rows)){root[key]=operationalMaps.has(key)?{}:[];root.operationalIds[key]=list.map(x=>x.id);}
+    root.operationalSchema=1;root.operationalIds={};root.financialSchema=1;root.financialIds={};
+    for(const [key,list] of Object.entries(rows)){root[key]=operationalMaps.has(key)?{}:[];root[schemaFor(key)+'Ids'][key]=list.map(x=>x.id);}
     return root;
   }
   async function hydrateLedger(target){
@@ -1170,9 +1173,10 @@
           return Object.assign({},...parts.map(p=>p.data()));
         }));
       }
-      if(data.operationalSchema===1){
-        for(const key of Object.keys(operationalGroups)){
-          const ids=data.operationalIds?.[key];if(!Array.isArray(ids)||new Set(ids).size!==ids.length)throw Error('Invalid operational manifest: '+key);
+      {
+        for(const key of Object.keys(liveGroups)){
+          const schema=schemaFor(key);if(data[schema+'Schema']!==1)continue;
+          const ids=data[schema+'Ids']?.[key];if(!Array.isArray(ids)||new Set(ids).size!==ids.length)throw Error('Invalid operational manifest: '+key);
           const rows=await Promise.all(ids.map(async id=>{const snap=await tx.get(opRef(key,id));const row=snap.data();if(!snap.exists()||row.id!==id||'r_'+encodeURIComponent(row.key)!==id)throw Error('Missing operational record: '+key+'/'+id);return row;}));
           data[key]=operationalMaps.has(key)?Object.fromEntries(rows.map(x=>[x.key,x.record])):rows.map(x=>x.record);
         }
@@ -1181,7 +1185,7 @@
     });
   }
   function getCloudPayload() {
-    return { ...sanitizeStateData(state), updatedAt: serverTimestamp() };
+    for(const k of Object.keys(financialGroups)){for(const row of state[k]||[]){if(k==='receipts'){row.storageId??=crypto.randomUUID();}else{row.id??=crypto.randomUUID();}}} return { ...sanitizeStateData(state), updatedAt: serverTimestamp() };
   }
 
   function setDashboardLocked(locked) {
@@ -1249,8 +1253,8 @@
 
       if (snapshot.exists()) {
         const loaded=await hydrateLedger(targetDoc); if(activeSession!==sessionVersion)return; mergeStateData(loaded); ledgerRevision=Number(loaded.ledgerRevision||0);
-        if((loaded.employeeSchema!==1||loaded.operationalSchema!==1)&&!loaded.paymentPending){
-          if(!confirm("Migrate employee and operational records to live collections? Verify backup and close other POS tabs first. / 迁移资料？请先备份并关闭其他页面。")){await signOut(auth);return;}
+        if((loaded.employeeSchema!==1||loaded.operationalSchema!==1||loaded.financialSchema!==1)&&!loaded.paymentPending){
+          if(!confirm("Migrate employee, operational and financial records to live collections? Verify backup and close other POS tabs first. / 迁移资料？请先备份并关闭其他页面。")){await signOut(auth);return;}
           await publishLedger(targetDoc,getCloudPayload());
         }
         state.role = 'boss';
@@ -1414,7 +1418,7 @@
       // All reads precede writes. Compare records so unchanged operations are not rewritten.
       const opWrites=[];
       for(const [key,rows] of Object.entries(opData)){
-        const previous=old.operationalSchema===1?old.operationalIds?.[key]:[];
+        const previous=old[schemaFor(key)+'Schema']===1?old[schemaFor(key)+'Ids']?.[key]:[];
         if(!Array.isArray(previous))throw Error('Invalid operational manifest');
         const next=new Map(rows.map(row=>[row.id,row]));
         for(const id of previous){
@@ -3823,7 +3827,7 @@
     squareBusy=true;
     try{await saveQueue; if(saveFailed)throw Error('Cloud save failed');
       await runTransaction(db,async tx=>{const snap=await tx.get(cloudDocRef);const d=snap.data();if(d.paymentConfig?.squareEnabled===false)throw Error('Square 已关闭');if(d.paymentPending||Number(d.ledgerRevision||0)!==ledgerRevision)throw Error('存在其他交易或账本已更新，请刷新');
-        if(a.cart.some(it=>it.timerId&&!d.timers.some(t=>t.id===it.timerId)))throw Error('服务已不存在');
+        for(const it of a.cart.filter(x=>x.timerId)){if(d.operationalSchema===1){const rid='r_'+encodeURIComponent(it.timerId);if(!d.operationalIds?.timers?.includes(rid))throw Error('服务已不存在');const t=await tx.get(opRef('timers',rid));if(!t.exists()||t.data().record?.id!==it.timerId)throw Error('服务已不存在');}else if(!d.timers.some(t=>t.id===it.timerId))throw Error('服务已不存在');}
         tx.update(cloudDocRef,{paymentPending:a,ledgerRevision:ledgerRevision+1});});
       ledgerRevision++;state.paymentPending=a;paymentBanner();closeModal('checkoutModal');await squareResume(a);
     }catch(e){alert('请核对交易，勿重复收费：'+e.message);}finally{squareBusy=false;paymentBanner();}
